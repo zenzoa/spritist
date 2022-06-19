@@ -1,0 +1,4 @@
+love.exe
+*.love
+*.zip
+.DS_Store

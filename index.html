@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>Spritist</title>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+
+		<div id="imgDimensions"></div>
+
+		<div id="bgDimensions" class="invisible">
+			<span>Background blocks:</span>
+			<input id="bgWidth" type="number" min="1" value="1" onchange="window.sketch.setBgWidth(this.value)">
+			<span>&times;</span>
+			<input id="bgHeight" type="number" min="1" value="1" onchange="window.sketch.setBgHeight(this.value)">
+		</div>
+
+		<main id="sketch"></main>
+
+		<input id="fileOpen" type="file" />
+		<input id="fileSave" type="file" nwsaveas />
+
+		<script src="./library/p5.min.js"></script>
+		<script src="./script/sprite.js"></script>
+		<script src="./script/datahelper.js"></script>
+		<script src="./script/palette.js"></script>
+		<script src="./script/c16.js"></script>
+		<script src="./script/s16.js"></script>
+		<script src="./script/spr.js"></script>
+		<script src="./script/blk.js"></script>
+		<script src="./script/png.js"></script>
+		<script src="./script/gif.js"></script>
+		<script src="./script/charset.js"></script>
+		<script src="./script/sketch.js"></script>
+
+	</body>
+</html>

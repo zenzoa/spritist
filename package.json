@@ -1,0 +1,15 @@
+{
+	"name": "spritist",
+	"version": "0.1.0",
+	"description": "A sprite editor for the Creatures games.",
+	"main": "main.js",
+	"author": "Zenzoa",
+	"license": "MIT",
+	"window": {
+		"title": "Spritist",
+		"width": 800,
+		"height": 600,
+		"icon": "image/spritist.png"
+	},
+	"chromium-args": "--disable-pinch"
+}
