@@ -120,13 +120,22 @@ exports.api = {
 		menu.redo.enabled = value
 	},
 
-	'setCanvasColor': (menuItem, color) => {
-		menu.setCanvasToBlack.checked = false
-		menu.setCanvasToDarkGrey.checked = false
-		menu.setCanvasToMediumGrey.checked = false
-		menu.setCanvasToLightGrey.checked = false
-		menu.setCanvasToWhite.checked = false
-		menu[menuItem].checked = true
-		nw.Window.get().window.sketch.setCanvasColor(color)
+	'setTransparentColor': color => {
+		if (color === 'black') {
+			menu.setTransparentBlack.checked = true
+			menu.setTransparentWhite.checked = false
+			menu.setTransparentNone.checked = false
+			nw.Window.get().window.sketch.setTransparentColor({ r: 0, g: 0, b: 0, a: 255 })
+		} else if (color === 'white') {
+			menu.setTransparentBlack.checked = false
+			menu.setTransparentWhite.checked = true
+			menu.setTransparentNone.checked = false
+			nw.Window.get().window.sketch.setTransparentColor({ r: 255, g: 255, b: 255, a: 255 })
+		} else if (color === 'none') {
+			menu.setTransparentBlack.checked = false
+			menu.setTransparentWhite.checked = false
+			menu.setTransparentNone.checked = true
+			nw.Window.get().window.sketch.setTransparentColor({ r: 0, g: 0, b: 0, a: 0 })
+		}
 	}
 }

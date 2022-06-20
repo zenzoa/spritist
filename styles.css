@@ -6,7 +6,7 @@ html, body {
 	padding: 0;
 	margin: 0;
 	overflow: hidden;
-	background-color: black;
+	background-color: #8f8f8f;
 	font-family: "Lato", "Segoe UI", sans-serif;
 	font-size: 12px;
 }
@@ -18,6 +18,7 @@ main {
 	left: 0;
 	right: 0;
 	overflow: overlay;
+	background-image: repeating-linear-gradient(145deg, #8f8f8f, #8f8f8f 6px, #999 6px, #999 12px);
 }
 
 #sketch {
@@ -30,6 +31,7 @@ canvas {
 
 #imgDimensions,
 #bgDimensions {
+	z-index: 1;
 	position: fixed;
 	width: 100%;
 	height: 50px;

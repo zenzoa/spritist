@@ -13,8 +13,6 @@ class Sketch {
 		this.scale = 1
 		this.xOffset = 0
 		this.yOffset = 0
-
-		this.canvasColor = 128
 	}
 
 	setup(p) {
@@ -45,7 +43,7 @@ class Sketch {
 	}
 
 	draw(p) {
-		p.background(this.canvasColor)
+		p.clear()
 		if (this.currentSprite) {
 			p.push()
 			p.scale(this.scale)
@@ -522,8 +520,10 @@ class Sketch {
 		}
 	}
 
-	setCanvasColor(value) {
-		this.canvasColor = value
+	setTransparentColor(value) {
+		if (this.currentSprite) {
+			this.currentSprite.transparentColor = value
+		}
 	}
 }
 

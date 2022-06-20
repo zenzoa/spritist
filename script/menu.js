@@ -258,43 +258,31 @@ let buildViewMenu = () => {
 
 	viewMenu.append(new nw.MenuItem({ type: 'separator' }))
 
-	let canvasColorMenu = new nw.Menu()
-	exports.setCanvasToBlack = new nw.MenuItem({
+	let transparentMenu = new nw.Menu()
+	exports.setTransparentBlack = new nw.MenuItem({
 		label: 'Black',
 		type: 'checkbox',
-		click: () => nw.Window.get().window.api.setCanvasColor('setCanvasToBlack', 0)
-	})
-	canvasColorMenu.append(exports.setCanvasToBlack)
-	exports.setCanvasToDarkGrey = new nw.MenuItem({
-		label: 'Dark Grey',
-		type: 'checkbox',
-		click: () => nw.Window.get().window.api.setCanvasColor('setCanvasToDarkGrey', 64)
-	})
-	canvasColorMenu.append(exports.setCanvasToDarkGrey)
-	exports.setCanvasToMediumGrey = new nw.MenuItem({
-		label: 'Medium Grey',
-		type: 'checkbox',
 		checked: true,
-		click: () => nw.Window.get().window.api.setCanvasColor('setCanvasToMediumGrey', 128)
+		click: () => nw.Window.get().window.api.setTransparentColor('black')
 	})
-	canvasColorMenu.append(exports.setCanvasToMediumGrey)
-	exports.setCanvasToLightGrey = new nw.MenuItem({
-		label: 'Light Grey',
-		type: 'checkbox',
-		click: () => nw.Window.get().window.api.setCanvasColor('setCanvasToLightGrey', 191)
-	})
-	canvasColorMenu.append(exports.setCanvasToLightGrey)
-	exports.setCanvasToWhite = new nw.MenuItem({
+	transparentMenu.append(exports.setTransparentBlack)
+	exports.setTransparentWhite = new nw.MenuItem({
 		label: 'White',
 		type: 'checkbox',
-		click: () => nw.Window.get().window.api.setCanvasColor('setCanvasToWhite', 255)
+		click: () => nw.Window.get().window.api.setTransparentColor('white')
 	})
-	canvasColorMenu.append(exports.setCanvasToWhite)
-	exports.setCanvasColor = new nw.MenuItem({
-		label: 'Change Canvas Color',
-		submenu: canvasColorMenu
+	transparentMenu.append(exports.setTransparentWhite)
+	exports.setTransparentNone = new nw.MenuItem({
+		label: 'Transparent',
+		type: 'checkbox',
+		click: () => nw.Window.get().window.api.setTransparentColor('none')
 	})
-	viewMenu.append(exports.setCanvasColor)
+	transparentMenu.append(exports.setTransparentNone)
+	exports.setTransparentColor = new nw.MenuItem({
+		label: 'Transparent Color',
+		submenu: transparentMenu
+	})
+	viewMenu.append(exports.setTransparentColor)
 
 	return viewMenu
 }

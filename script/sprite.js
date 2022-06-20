@@ -28,6 +28,8 @@ class Sprite {
 		this.isBackground = false
 		this.bgWidth = 1
 		this.bgHeight = 1
+
+		this.transparentColor = { r: 0, g: 0, b: 0, a: 255 }
 	}
 
 	setModified(value) {
@@ -256,8 +258,8 @@ class Sprite {
 			frameY: -1
 		}
 		this.forEachFrame((frame, i, x, y) => {
-			if (px >= x - (this.hGap / 2) && px < x + frame.width + (this.hGap / 2) &&
-				py >= y - (this.vGap / 2) && py < y + frame.height + (this.vGap / 2)) {
+			if (px >= x - (this.hGap / 2) && px < x + this.maxFrameWidth + (this.hGap / 2) &&
+				py >= y - (this.vGap / 2) && py < y + this.maxFrameHeight + (this.vGap / 2)) {
 					returnFrame.frameIndex = i
 					returnFrame.frameX = x
 					returnFrame.frameY = y
@@ -322,7 +324,7 @@ class Sprite {
 				let frame = this.frames[this.selectedFrames[0]]
 				document.getElementById('imgDimensions').innerText = `Image ${this.selectedFrames[0]} ( ${frame.width} × ${frame.height} )`
 			} else {
-				document.getElementById('imgDimensions').innerText = `Selected images: ${this.selectedFrames.sort().join(', ')}`
+				document.getElementById('imgDimensions').innerText = `${this.selectedFrames.length} images selected`
 			}
 		}
 	}
@@ -368,51 +370,59 @@ class Sprite {
 		let px = p.mouseX / window.sketch.scale
 		let py = p.mouseY / window.sketch.scale
 
-		this.forEachFrame((frame, i, x, y) => {
+		this.drawFrame = (frame, x, y, isSelected) => {
 			if (y + frame.Height < yMin || y > yMax) return
 
-			if (!this.selectedFrames.includes(i)) {
-				p.fill(0, 25)
-				p.noStroke()
-				p.rect(x, y, frame.width, frame.height)
-
-				p.image(frame, x, y)
-
-				if (this.isDragging &&
-					px >= x - (this.hGap / 2) && px < x + frame.width + (this.hGap / 2) &&
-					py >= y - (this.vGap / 2) && py < y + frame.height + (this.vGap / 2)) {
-						p.stroke(255)
-						p.strokeWeight(4)
-						if (px >= x + (frame.width / 2)) {
-							p.line(Math.floor(x + frame.width + (this.hGap / 2)), Math.floor(y), Math.floor(x + frame.width + (this.hGap / 2)), Math.floor(y + frame.height))
-						} else {
-							p.line(Math.floor(x - (this.hGap / 2)), Math.floor(y), Math.floor(x - (this.hGap / 2)), Math.floor(y + frame.height))
-						}
-				}
+			let xOffset = 0
+			let yOffset = 0
+			if (this.isDragging && isSelected) {
+				xOffset = px - this.xDrag
+				yOffset = py - this.yDrag
 			}
-		})
+			if (frame.width < this.maxFrameWidth) {
+				xOffset += Math.floor((this.maxFrameWidth - frame.width) / 2)
+			}
+			if (frame.height < this.maxFrameHeight) {
+				yOffset += Math.floor((this.maxFrameHeight - frame.height) / 2)
+			}
 
-		this.forEachFrame((frame, i, x, y) => {
-			if (y + frame.Height < yMin || y > yMax) return
+			if (this.transparentColor.a > 0) {
+				p.fill(this.transparentColor.r, this.transparentColor.g, this.transparentColor.b)
+				p.noStroke()
+				p.rect(x + xOffset, y + yOffset, frame.width, frame.height)
+			}
 
-			if (this.selectedFrames.includes(i)) {
-				let xOffset = 0
-				let yOffset = 0
-				if (this.isDragging) {
-					xOffset = px - this.xDrag
-					yOffset = py - this.yDrag
-				} else {
-					p.fill(0, 25)
-					p.noStroke()
-					p.rect(x, y, frame.width, frame.height)
-				}
+			p.image(frame, x + xOffset, y + yOffset)
 
-				p.image(frame, x + xOffset, y + yOffset)
+			if (this.isDragging && !isSelected &&
+				px >= x - (this.hGap / 2) && px < x + this.maxFrameWidth + (this.hGap / 2) &&
+				py >= y - (this.vGap / 2) && py < y + this.maxFrameHeight + (this.vGap / 2)) {
+					p.stroke(255)
+					p.strokeWeight(3)
+					if (px >= x + (this.maxFrameWidth / 2)) {
+						p.line(Math.floor(x + this.maxFrameWidth + (this.hGap / 2)), Math.floor(y), Math.floor(x + this.maxFrameWidth + (this.hGap / 2)), Math.floor(y + this.maxFrameHeight))
+					} else {
+						p.line(Math.floor(x - (this.hGap / 2)), Math.floor(y), Math.floor(x - (this.hGap / 2)), Math.floor(y + this.maxFrameHeight))
+					}
+			}
 
+			if (isSelected) {
 				p.noFill()
 				p.stroke(0, 255, 255)
 				p.strokeWeight(2)
 				p.rect(x + xOffset - 1, y + yOffset - 1, frame.width + 2, frame.height + 2)
+			}
+		}
+
+		this.forEachFrame((frame, i, x, y) => {
+			if (!this.selectedFrames.includes(i)) {
+				this.drawFrame(frame, x, y, false)
+			}
+		})
+
+		this.forEachFrame((frame, i, x, y) => {
+			if (this.selectedFrames.includes(i)) {
+				this.drawFrame(frame, x, y, true)
 			}
 		})
 	}
