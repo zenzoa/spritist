@@ -20,6 +20,10 @@ class Sketch {
 		p.createCanvas(p.windowWidth, p.windowHeight - 50)
 
 		p.noSmooth()
+		p.textSize(12)
+		p.textLeading(14)
+		p.textStyle(p.BOLD)
+		p.textAlign(p.CENTER)
 
 		document.body.addEventListener('contextmenu', event => {
 			event.preventDefault()
@@ -48,7 +52,11 @@ class Sketch {
 			p.push()
 			p.scale(this.scale)
 			p.translate(this.xOffset, this.yOffset)
-			this.currentSprite.draw(p)
+			if (this.currentSprite.isBackground) {
+				this.currentSprite.drawAsBackground(p)
+			} else {
+				this.currentSprite.draw(p)
+			}
 			p.pop()
 		}
 	}
@@ -517,6 +525,14 @@ class Sketch {
 	setBgHeight(value) {
 		if (this.currentSprite) {
 			this.currentSprite.setBgHeight(parseInt(value))
+		}
+	}
+
+	showImageInfo(value) {
+		if (this.currentSprite) {
+			this.currentSprite.showImageInfo = value
+			this.currentSprite.setMaxFrameSize()
+			this.windowResized(window.p)
 		}
 	}
 

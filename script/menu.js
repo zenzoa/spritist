@@ -258,6 +258,14 @@ let buildViewMenu = () => {
 
 	viewMenu.append(new nw.MenuItem({ type: 'separator' }))
 
+	exports.showImageInfo = new nw.MenuItem({
+		label: 'Show Image Info',
+		type: 'checkbox',
+		checked: true,
+		click: () => nw.Window.get().window.sketch.showImageInfo(exports.showImageInfo.checked)
+	})
+	viewMenu.append(exports.showImageInfo)
+
 	let transparentMenu = new nw.Menu()
 	exports.setTransparentBlack = new nw.MenuItem({
 		label: 'Black',

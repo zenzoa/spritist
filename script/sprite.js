@@ -30,6 +30,8 @@ class Sprite {
 		this.bgHeight = 1
 
 		this.transparentColor = { r: 0, g: 0, b: 0, a: 255 }
+
+		this.showImageInfo = true
 	}
 
 	setModified(value) {
@@ -234,17 +236,30 @@ class Sprite {
 				this.maxFrameHeight = frame.height
 			}
 		})
+
+		if (this.showImageInfo) {
+			let infoString = `${this.frames.length - 1}\n(${this.maxFrameWidth} × ${this.maxFrameHeight})`
+			let infoWidth = Math.floor(window.p.textWidth(infoString) + 10)
+			let infoHeight = Math.floor(window.p.textLeading() * 2.5)
+			this.maxFrameWidth = Math.max(this.maxFrameWidth, infoWidth)
+			this.maxFrameHeight = Math.max(this.maxFrameHeight, infoHeight)
+			this.vGap = infoHeight + 10
+		} else {
+			this.vGap = 10
+		}
+
+		let framesPerRow = Math.floor((window.p.windowWidth - this.hGap) / (this.maxFrameWidth + this.hGap))
+		let rows = Math.floor(this.frames.length / framesPerRow)
+		this.totalFramesHeight = (rows * this.maxFrameHeight) + ((rows + 1) * this.vGap)
 	}
 
 	forEachFrame(callback) {
 		let x = this.hGap
 		let y = this.vGap
-		this.totalFramesHeight = this.maxFrameHeight + this.vGap * 2
 		this.frames.forEach((frame, i) => {
 			if (i > 0 && x + this.maxFrameWidth > (p.windowWidth / window.sketch.scale) - (this.hGap * 2)) {
 				x = this.hGap
 				y += this.maxFrameHeight + this.vGap
-				this.totalFramesHeight += this.maxFrameHeight + this.vGap
 			}
 			callback(frame, i, x, y)
 			x += this.maxFrameWidth + this.hGap
@@ -358,11 +373,6 @@ class Sprite {
 	}
 
 	draw(p) {
-		if (this.isBackground) {
-			this.drawAsBackground(p)
-			return
-		}
-
 		let container = document.getElementById('sketch')
 		let yMin = container.scrollTop
 		let yMax = yMin + container.clientHeight
@@ -370,7 +380,7 @@ class Sprite {
 		let px = p.mouseX / window.sketch.scale
 		let py = p.mouseY / window.sketch.scale
 
-		this.drawFrame = (frame, x, y, isSelected) => {
+		this.drawFrame = (frame, i, x, y, isSelected) => {
 			if (y + frame.Height < yMin || y > yMax) return
 
 			let xOffset = 0
@@ -384,6 +394,18 @@ class Sprite {
 			}
 			if (frame.height < this.maxFrameHeight) {
 				yOffset += Math.floor((this.maxFrameHeight - frame.height) / 2)
+			}
+
+			if (this.showImageInfo && !(this.isDragging && isSelected)) {
+				let infoString = `${i}\n(${frame.width} × ${frame.height})`
+				let xInfo = x + Math.floor(this.maxFrameWidth / 2)
+				let yInfo = y - Math.floor(p.textLeading() * 1.5)
+				p.stroke(68)
+				p.strokeWeight(3)
+				p.text(infoString, xInfo, yInfo)
+				p.fill(255)
+				p.noStroke()
+				p.text(infoString, xInfo, yInfo)
 			}
 
 			if (this.transparentColor.a > 0) {
@@ -416,13 +438,13 @@ class Sprite {
 
 		this.forEachFrame((frame, i, x, y) => {
 			if (!this.selectedFrames.includes(i)) {
-				this.drawFrame(frame, x, y, false)
+				this.drawFrame(frame, i, x, y, false)
 			}
 		})
 
 		this.forEachFrame((frame, i, x, y) => {
 			if (this.selectedFrames.includes(i)) {
-				this.drawFrame(frame, x, y, true)
+				this.drawFrame(frame, i, x, y, true)
 			}
 		})
 	}
