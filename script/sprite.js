@@ -10,6 +10,7 @@ class Sprite {
 
 		this.hGap = 10
 		this.vGap = 10
+		this.maxFrameWidth = 0
 		this.maxFrameHeight = 0
 		this.totalFramesHeight = 0
 
@@ -187,7 +188,7 @@ class Sprite {
 
 	addFrame(image) {
 		this.frames.push(image)
-		this.setMaxFrameHeight()
+		this.setMaxFrameSize()
 	}
 
 	insertFrame(imageList, index) {
@@ -198,7 +199,7 @@ class Sprite {
 		let before = this.frames.slice(0, index)
 		let after = this.frames.slice(index)
 		this.frames = before.concat(imageList).concat(after)
-		this.setMaxFrameHeight()
+		this.setMaxFrameSize()
 		this.setModified(true)
 	}
 
@@ -217,13 +218,16 @@ class Sprite {
 			this.lastSelectedFrame = -1
 		}
 		this.frames = newFrames
-		this.setMaxFrameHeight()
+		this.setMaxFrameSize()
 		this.setModified(true)
 		this.updateSelection()
 	}
 
-	setMaxFrameHeight() {
+	setMaxFrameSize() {
 		this.frames.forEach(frame => {
+			if (frame.width > this.maxFrameWidth) {
+				this.maxFrameWidth = frame.width
+			}
 			if (frame.height > this.maxFrameHeight) {
 				this.maxFrameHeight = frame.height
 			}
@@ -233,15 +237,15 @@ class Sprite {
 	forEachFrame(callback) {
 		let x = this.hGap
 		let y = this.vGap
-		this.totalFramesHeight = this.vGap + this.maxFrameHeight
+		this.totalFramesHeight = this.maxFrameHeight + this.vGap * 2
 		this.frames.forEach((frame, i) => {
-			if (i > 0 && x + frame.width > (p.windowWidth / window.sketch.scale) - (this.hGap * 2)) {
+			if (i > 0 && x + this.maxFrameWidth > (p.windowWidth / window.sketch.scale) - (this.hGap * 2)) {
 				x = this.hGap
 				y += this.maxFrameHeight + this.vGap
 				this.totalFramesHeight += this.maxFrameHeight + this.vGap
 			}
 			callback(frame, i, x, y)
-			x += frame.width + this.hGap
+			x += this.maxFrameWidth + this.hGap
 		})
 	}
 

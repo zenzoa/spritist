@@ -38,7 +38,6 @@ c16.parse = data => {
 		let lineOffsets = [ dataHelper.readUint32() ]
 		let width = dataHelper.readUint16()
 		let height = dataHelper.readUint16()
-		console.log(i, width, height)
 		for (let j = 0; j < height - 1; j++) {
 			lineOffsets.push( dataHelper.readUint32() )
 		}

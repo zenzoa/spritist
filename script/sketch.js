@@ -116,6 +116,56 @@ class Sketch {
 		}
 	}
 
+	keyPressed(p) {
+		if (this.currentSprite && this.currentSprite.frames.length > 0 && !this.currentSprite.isBackground) {
+			let sprite = this.currentSprite
+			let firstSelection = sprite.selectedFrames.length > 0 ? sprite.selectedFrames[0] : 0
+			let lastSelection = sprite.selectedFrames.length > 0 ? sprite.selectedFrames[sprite.selectedFrames.length - 1] : -1
+			let framesPerRow = Math.floor((p.windowWidth - sprite.hGap) / (sprite.maxFrameWidth + sprite.hGap))
+			let windowTop = document.getElementById('sketch').scrollTop
+			let windowBottom = document.getElementById('sketch').scrollTop + p.windowHeight - 50
+			
+			if (p.keyCode === p.UP_ARROW) {
+				let prevSelection = Math.max(firstSelection - framesPerRow, 0)
+				sprite.selectedFrames = [prevSelection]
+				let frameTop = Math.floor(prevSelection / framesPerRow) * (sprite.maxFrameHeight + sprite.vGap) + sprite.vGap
+				if (frameTop < windowTop) {
+					document.getElementById('sketch').scrollBy(0, -sprite.maxFrameHeight)
+				}
+
+			} else if (p.keyCode === p.DOWN_ARROW) {
+				let nextSelection = Math.min(lastSelection + framesPerRow, sprite.frames.length - 1)
+				sprite.selectedFrames = [nextSelection]
+				let frameBottom = Math.ceil(nextSelection / framesPerRow) * (sprite.maxFrameHeight + sprite.vGap) + sprite.vGap
+				if (frameBottom > windowBottom) {
+					document.getElementById('sketch').scrollBy(0, sprite.maxFrameHeight)
+				}
+
+			} else if (p.keyCode === p.LEFT_ARROW) {
+				let prevSelection = Math.max(firstSelection - 1, 0)
+				sprite.selectedFrames = [prevSelection]
+
+			} else if (p.keyCode === p.RIGHT_ARROW) {
+				let nextSelection = Math.min(lastSelection + 1, sprite.frames.length - 1)
+				sprite.selectedFrames = [nextSelection]
+
+			} else if (p.keyCode === 33) { // page up
+				let prevSelection = Math.max(firstSelection - framesPerRow * 5, 0)
+				sprite.selectedFrames = [prevSelection]
+
+			} else if (p.keyCode === 34) { // page down
+				let nextSelection = Math.min(lastSelection + framesPerRow * 5, sprite.frames.length - 1)
+				sprite.selectedFrames = [nextSelection]
+
+			} else if (p.keyCode === 36) { // home
+				sprite.selectedFrames = [0]
+
+			} else if (p.keyCode === 35) { // end
+				sprite.selectedFrames = [sprite.frames.length - 1]
+			}
+		}
+	}
+
 	updateTitle() {
 		let title = 'Spritist'
 		if (this.currentSprite) {
@@ -486,6 +536,7 @@ let s = p => {
 	p.mousePressed = () => sketch.mousePressed(p)
 	p.mouseDragged = () => sketch.mouseDragged(p)
 	p.mouseReleased = () => sketch.mouseReleased(p)
+	p.keyPressed = () => sketch.keyPressed(p)
 
 	window.sketch = sketch
 }

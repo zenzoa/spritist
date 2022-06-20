@@ -4,7 +4,6 @@ gif.load = (filePath, onSuccess) => {
 	window.api.readFile(filePath, 'binary').then(data => {
 		let str = 'data:image/gif;base64,' + window.api.dataToString(data)
 		window.p.loadImage(str, image => {
-			console.log('LOAD GIF', image)
 			let sprite = new Sprite()
 			for (let i = 0; i < image.numFrames(); i++) {
 				image.setFrame(i)
