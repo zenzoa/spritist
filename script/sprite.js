@@ -238,9 +238,9 @@ class Sprite {
 		})
 
 		if (this.showImageInfo) {
-			let infoString = `${this.frames.length - 1}\n(${this.maxFrameWidth} × ${this.maxFrameHeight})`
+			let infoString = `${this.frames.length - 1} (${this.maxFrameWidth} × ${this.maxFrameHeight})`
 			let infoWidth = Math.floor(window.p.textWidth(infoString) + 10)
-			let infoHeight = Math.floor(window.p.textLeading() * 2.5)
+			let infoHeight = Math.floor(window.p.textLeading() * 1.5)
 			this.maxFrameWidth = Math.max(this.maxFrameWidth, infoWidth)
 			this.maxFrameHeight = Math.max(this.maxFrameHeight, infoHeight)
 			this.vGap = infoHeight + 10
@@ -397,9 +397,9 @@ class Sprite {
 			}
 
 			if (this.showImageInfo && !(this.isDragging && isSelected)) {
-				let infoString = `${i}\n(${frame.width} × ${frame.height})`
+				let infoString = `${i} (${frame.width} × ${frame.height})`
 				let xInfo = x + Math.floor(this.maxFrameWidth / 2)
-				let yInfo = y - Math.floor(p.textLeading() * 1.5)
+				let yInfo = y - Math.floor(p.textLeading() * 0.5)
 				p.stroke(68)
 				p.strokeWeight(3)
 				p.text(infoString, xInfo, yInfo)
