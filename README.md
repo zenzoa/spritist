@@ -7,7 +7,7 @@ A sprite utility for the [Creatures game series](https://creatures.wiki/).
 * [C16](https://creatures.wiki/C16_files) (Creatures 3/Docking Station)
 * [BLK](https://creatures.wiki/BLK_files) (Background images for Creatures 3/Docking Station)
 * N16/M16 (Creatures 2/3/DS for the Mac - view only)
-* CHARSET.DTA (font for Creatures 0 and Creatures 1 - view only)
+* CHARSET.DTA (font for Creatures 0/1/2 - view only)
 * GIF/PNG (for importing and exporting)
 
 ## Credits
