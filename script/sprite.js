@@ -44,7 +44,8 @@ class Sprite {
 	}
 
 	setBgWidth(value) {
-		if (value === this.bgWidth) { return }
+		if (value === this.bgWidth) return
+
 		this.bgWidth = value
 		if (this.bgWidth < 1) this.bgWidth = 1
 		if (this.bgWidth > this.frames.length) this.bgWidth = this.frames.length
@@ -58,7 +59,8 @@ class Sprite {
 	}
 
 	setBgHeight(value) {
-		if (value === this.bgHeight) { return }
+		if (value === this.bgHeight) return
+
 		this.bgHeight = value
 		if (this.bgHeight < 1) this.bgHeight = 1
 		if (this.bgHeight > this.frames.length) this.bgHeight = this.frames.length
@@ -237,7 +239,7 @@ class Sprite {
 			}
 		})
 
-		if (this.showImageInfo) {
+		if (this.showImageInfo && !this.isBackground) {
 			let infoString = `${this.frames.length - 1} (${this.maxFrameWidth} × ${this.maxFrameHeight})`
 			let infoWidth = Math.floor(window.p.textWidth(infoString) + 10)
 			let infoHeight = Math.floor(window.p.textLeading() * 1.5)
@@ -248,21 +250,17 @@ class Sprite {
 			this.vGap = 10
 		}
 
-		let framesPerRow = Math.floor((window.p.windowWidth - this.hGap) / (this.maxFrameWidth + this.hGap))
-		let rows = Math.floor(this.frames.length / framesPerRow)
+		let framesPerRow = Math.floor((p.windowWidth / window.sketch.scale - this.hGap) / (this.maxFrameWidth + this.hGap))
+		let rows = Math.ceil(this.frames.length / framesPerRow)
 		this.totalFramesHeight = (rows * this.maxFrameHeight) + ((rows + 1) * this.vGap)
 	}
 
 	forEachFrame(callback) {
-		let x = this.hGap
-		let y = this.vGap
+		let framesPerRow = Math.floor((p.windowWidth / window.sketch.scale - this.hGap) / (this.maxFrameWidth + this.hGap))
 		this.frames.forEach((frame, i) => {
-			if (i > 0 && x + this.maxFrameWidth > (p.windowWidth / window.sketch.scale) - (this.hGap * 2)) {
-				x = this.hGap
-				y += this.maxFrameHeight + this.vGap
-			}
+			let x = (i % framesPerRow) * (this.maxFrameWidth + this.hGap) + this.hGap
+			let y = Math.floor(i / framesPerRow) * (this.maxFrameHeight + this.vGap) + this.vGap
 			callback(frame, i, x, y)
-			x += this.maxFrameWidth + this.hGap
 		})
 	}
 
@@ -372,17 +370,11 @@ class Sprite {
 		}
 	}
 
-	draw(p) {
-		let container = document.getElementById('sketch')
-		let yMin = container.scrollTop
-		let yMax = yMin + container.clientHeight
-
-		let px = p.mouseX / window.sketch.scale
-		let py = p.mouseY / window.sketch.scale
+	draw(p, scale, xOffsetScreen, yOffsetScreen) {
+		let px = p.mouseX / scale - xOffsetScreen
+		let py = p.mouseY / scale - yOffsetScreen
 
 		this.drawFrame = (frame, i, x, y, isSelected) => {
-			if (y + frame.Height < yMin || y > yMax) return
-
 			let xOffset = 0
 			let yOffset = 0
 			if (this.isDragging && isSelected) {
@@ -449,11 +441,7 @@ class Sprite {
 		})
 	}
 
-	drawAsBackground(p) {
-		let container = document.getElementById('sketch')
-		let yMin = container.scrollTop
-		let yMax = yMin + container.clientHeight
-
+	drawAsBackground(p, scale, xOffsetScreen, yOffsetScreen) {
 		p.fill(0)
 		p.noStroke()
 		p.rect(this.hGap, this.vGap, this.frames[0].width * this.bgWidth, this.frames[0].height * this.bgHeight)
@@ -463,9 +451,7 @@ class Sprite {
 			let y = Math.floor(i % this.bgHeight)
 			let bx = x * frame.width + this.hGap
 			let by = y * frame.height + this.vGap
-			if (by + frame.height >= yMin && by <= yMax) {
-				p.image(frame, bx, by)
-			}
+			p.image(frame, bx, by)
 		})
 
 		p.noFill()

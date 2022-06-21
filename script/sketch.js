@@ -13,11 +13,18 @@ class Sketch {
 		this.scale = 1
 		this.xOffset = 0
 		this.yOffset = 0
+
+		this.statusPanelHeight = 50
+
+		this.showScrollbarV = false
+		this.scrollbarWidth = 10
+		this.scrollThumbTop = 0
+		this.scrollThumbHeight = 0
 	}
 
 	setup(p) {
 		window.p = p
-		p.createCanvas(p.windowWidth, p.windowHeight - 50)
+		p.createCanvas(p.windowWidth, p.windowHeight - this.statusPanelHeight)
 
 		p.noSmooth()
 		p.textSize(12)
@@ -50,54 +57,68 @@ class Sketch {
 		p.clear()
 		if (this.currentSprite) {
 			p.push()
-			p.scale(this.scale)
-			p.translate(this.xOffset, this.yOffset)
+			if (this.scale !== 1) p.scale(this.scale)
+			if (this.xOffset !== 0 || this.yOffset !== 0) p.translate(this.xOffset, this.yOffset)
 			if (this.currentSprite.isBackground) {
-				this.currentSprite.drawAsBackground(p)
+				this.currentSprite.drawAsBackground(p, this.scale, this.xOffset, this.yOffset)
 			} else {
-				this.currentSprite.draw(p)
+				this.currentSprite.draw(p, this.scale, this.xOffset, this.yOffset)
 			}
 			p.pop()
+			
+			if (this.showScrollbarV) {
+				p.fill(100)
+				p.noStroke()
+				p.rect(p.windowWidth - this.scrollbarWidth, 0, this.scrollbarWidth, p.windowHeight - this.statusPanelHeight)
+				p.fill(68)
+				p.rect(p.windowWidth - this.scrollbarWidth, this.scrollThumbTop, this.scrollbarWidth, this.scrollThumbHeight)
+			}
 		}
 	}
 
 	windowResized(p) {
 		let w = p.windowWidth
-		let h = p.windowHeight - 50
-		
-		if (this.currentSprite) {
-			let displayWidth = this.currentSprite.getDisplayWidth()
-			let displayHeight = this.currentSprite.getDisplayHeight()
-			w = Math.max(w, displayWidth)
-			h = Math.max(h, displayHeight)
-		}
+		let h = p.windowHeight - this.statusPanelHeight
 		p.resizeCanvas(w, h)
+		if (this.currentSprite) {
+			this.currentSprite.setMaxFrameSize()
+			this.updateScrollbar()
+		}
 	}
 
 	mousePressed(p) {
-		let x = p.mouseX / this.scale
-		let y = p.mouseY / this.scale
+		let x = p.mouseX / this.scale - this.xOffset
+		let y = p.mouseY / this.scale - this.yOffset
 		this.xStart = x
 		this.yStart = y
 		this.xLast = x
 		this.yLast = y
+		if (this.showScrollbarV && p.mouseX >= p.windowWidth - 10) {
+			this.isScrollingV = true
+			this.yOffsetStart = this.yOffset
+			this.yMouseStart = p.mouseY
+		}
 	}
 
 	mouseDragged(p) {
-		let x = p.mouseX / this.scale
-		let y = p.mouseY / this.scale
+		let x = p.mouseX / this.scale - this.xOffset
+		let y = p.mouseY / this.scale - this.yOffset
 
 		let dx = x - this.xStart
 		let dy = y - this.yStart
-		
-		if (dx**2 + dy**2 > 10**2 && this.currentSprite && !this.currentSprite.isDragging && !this.currentSprite.isBackground) {
-				if (!this.currentSprite.isFrameSelected(x, y) && this.currentSprite.selectedFrames.length < 2) {
-					this.currentSprite.deselectAllFrames()
-					this.currentSprite.selectFrame(x, y)
-				}
-				if (this.currentSprite.isFrameSelected(x, y)) {
-					this.currentSprite.startDrag(x, y)
-				}
+
+		if (this.isScrollingV && this.currentSprite) {
+			let scrollbarChange = (p.mouseY - this.yMouseStart) / (p.windowHeight - this.statusPanelHeight)
+			let offsetChange = scrollbarChange * this.currentSprite.totalFramesHeight
+			this.scrollTo(null, this.yOffsetStart - offsetChange)
+		} else if (dx**2 + dy**2 > 10**2 && this.currentSprite && !this.currentSprite.isDragging && !this.currentSprite.isBackground) {
+			if (!this.currentSprite.isFrameSelected(x, y) && this.currentSprite.selectedFrames.length < 2) {
+				this.currentSprite.deselectAllFrames()
+				this.currentSprite.selectFrame(x, y)
+			}
+			if (this.currentSprite.isFrameSelected(x, y)) {
+				this.currentSprite.startDrag(x, y)
+			}
 		}
 
 		this.xLast = x
@@ -105,8 +126,8 @@ class Sketch {
 	}
 
 	mouseReleased(p) {
-		let x = p.mouseX / this.scale
-		let y = p.mouseY / this.scale
+		let x = p.mouseX / this.scale - this.xOffset
+		let y = p.mouseY / this.scale - this.yOffset
 
 		if (this.currentSprite && !this.currentSprite.isBackground) {
 			if (this.currentSprite.isDragging) {
@@ -122,29 +143,37 @@ class Sketch {
 		}
 	}
 
+	mouseWheel(p, event) {
+		if (this.currentSprite) {
+			if (event.delta > 0) {
+				this.scrollTo(null, this.yOffset - 5)
+			} else if (event.delta < 0) {
+				this.scrollTo(null, this.yOffset + 5)
+			}
+		}
+	}
+
 	keyPressed(p) {
 		if (this.currentSprite && this.currentSprite.frames.length > 0 && !this.currentSprite.isBackground) {
 			let sprite = this.currentSprite
 			let firstSelection = sprite.selectedFrames.length > 0 ? sprite.selectedFrames[0] : 0
 			let lastSelection = sprite.selectedFrames.length > 0 ? sprite.selectedFrames[sprite.selectedFrames.length - 1] : -1
-			let framesPerRow = Math.floor((p.windowWidth - sprite.hGap) / (sprite.maxFrameWidth + sprite.hGap))
-			let windowTop = document.getElementById('sketch').scrollTop
-			let windowBottom = document.getElementById('sketch').scrollTop + p.windowHeight - 50
+			let framesPerRow = Math.floor((p.windowWidth / this.scale - sprite.hGap) / (sprite.maxFrameWidth + sprite.hGap))
 			
 			if (p.keyCode === p.UP_ARROW) {
 				let prevSelection = Math.max(firstSelection - framesPerRow, 0)
 				sprite.selectedFrames = [prevSelection]
-				let frameTop = Math.floor(prevSelection / framesPerRow) * (sprite.maxFrameHeight + sprite.vGap) + sprite.vGap
-				if (frameTop < windowTop) {
-					document.getElementById('sketch').scrollBy(0, -sprite.maxFrameHeight)
+				let frameTop = Math.floor(prevSelection / framesPerRow) * (sprite.maxFrameHeight + sprite.vGap)
+				if (frameTop + this.yOffset < 0) {
+					this.scrollTo(null, -frameTop)
 				}
 
 			} else if (p.keyCode === p.DOWN_ARROW) {
 				let nextSelection = Math.min(lastSelection + framesPerRow, sprite.frames.length - 1)
 				sprite.selectedFrames = [nextSelection]
-				let frameBottom = Math.ceil(nextSelection / framesPerRow) * (sprite.maxFrameHeight + sprite.vGap) + sprite.vGap
-				if (frameBottom > windowBottom) {
-					document.getElementById('sketch').scrollBy(0, sprite.maxFrameHeight)
+				let frameBottom = (Math.floor(nextSelection / framesPerRow) + 1) * (sprite.maxFrameHeight + sprite.vGap) + 8
+				if ((frameBottom + this.yOffset) * this.scale > p.windowHeight - this.statusPanelHeight) {
+					this.scrollTo(null, -frameBottom + (p.windowHeight - this.statusPanelHeight) / this.scale)
 				}
 
 			} else if (p.keyCode === p.LEFT_ARROW) {
@@ -165,10 +194,47 @@ class Sketch {
 
 			} else if (p.keyCode === 36) { // home
 				sprite.selectedFrames = [0]
+				this.scrollTo(0, 0)
 
 			} else if (p.keyCode === 35) { // end
 				sprite.selectedFrames = [sprite.frames.length - 1]
+				this.scrollTo(null, -sprite.totalFramesHeight + (p.windowHeight - this.statusPanelHeight) / this.scale)
 			}
+		}
+	}
+
+	updateScrollbar() {
+		if (this.currentSprite) {
+			this.showScrollbarV = this.currentSprite.totalFramesHeight * this.scale > p.windowHeight - this.statusPanelHeight
+			let thumbHeightPercent = (p.windowHeight - this.statusPanelHeight) / (this.currentSprite.totalFramesHeight * this.scale)
+			this.scrollThumbHeight = Math.floor(thumbHeightPercent * (p.windowHeight - this.statusPanelHeight))
+			let thumbTopPercent = -this.yOffset / this.currentSprite.totalFramesHeight
+			this.scrollThumbTop = Math.floor(thumbTopPercent * (p.windowHeight - this.statusPanelHeight))
+		}
+	}
+
+	scrollTo(x, y) {
+		if (this.currentSprite) {
+			if (!isNaN(x)) {
+				this.xOffset = Math.floor(x)
+			}
+			if (!isNaN(y)) {
+				this.yOffset = Math.floor(y)
+			}
+
+			if (this.xOffset > 0) {
+				this.xOffset = 0
+			}
+			if (this.yOffset > 0) {
+				this.yOffset = 0
+			}
+
+			let yMin = -this.currentSprite.totalFramesHeight + (p.windowHeight - this.statusPanelHeight) / this.scale
+			if (this.yOffset < yMin) {
+				this.yOffset = Math.floor(yMin)
+			}
+
+			this.updateScrollbar()
 		}
 	}
 
@@ -192,9 +258,7 @@ class Sketch {
 			this.windowResized(window.p)
 			window.api.spriteIsOpen(true)
 			this.currentSprite.updateSelection()
-			this.scale = 1
-			this.xOffset = 0
-			this.yOffset = 0
+			this.resetZoom()
 		}
 
 		if (this.currentSprite && this.currentSprite.isModified) {
@@ -254,15 +318,23 @@ class Sketch {
 				this.currentSprite.filename = filename
 				this.currentSprite.extension = extension
 				this.currentSprite.updateSelection()
-				if (extension === 'blk') {
-					this.viewAsBackground()
+				if (extension === 'blk' || filename === 'back') {
+					if (filename + '.' + extension === 'back.spr') {
+						// C1 background
+						this.currentSprite.bgWidth = 58
+						this.currentSprite.bgHeight = 8
+					} else {
+						let factors = getFactors(this.currentSprite.frames.length)[0]
+						this.currentSprite.bgWidth = factors[0]
+						this.currentSprite.bgHeight = factors[1]
+					}
 					document.getElementById('bgWidth').value = this.currentSprite.bgWidth
 					document.getElementById('bgHeight').value = this.currentSprite.bgHeight
+					this.viewAsBackground()
 				} else {
 					this.viewAsSprite()
 				}
 				this.updateTitle()
-				this.windowResized(window.p)
 				window.api.spriteIsOpen(true, extension === 'spr')
 			})
 		}
@@ -472,8 +544,8 @@ class Sketch {
 
 	resetZoom() {
 		this.scale = 1
-		this.xOffset = 0
-		this.yOffset = 0
+		this.scrollTo(0, 0)
+		this.windowResized(window.p)
 	}
 
 	zoomIn() {
@@ -481,6 +553,7 @@ class Sketch {
 		if (this.scale > 10) {
 			this.scale = 10
 		}
+		this.windowResized(window.p)
 	}
 
 	zoomOut() {
@@ -488,31 +561,28 @@ class Sketch {
 		if (this.scale < 0.2) {
 			this.scale = 0.2
 		}
+		this.windowResized(window.p)
 	}
 
 	viewAsSprite() {
 		if (this.currentSprite) {
 			this.currentSprite.isBackground = false
-			this.windowResized(window.p)
+			this.resetZoom()
 			window.api.setViewAsSprite(true)
 			document.getElementById('imgDimensions').className = ''
 			document.getElementById('bgDimensions').className = 'invisible'
-			this.xOffset = 0
-			this.yOffset = 0
 		}
 	}
 
 	viewAsBackground() {
 		if (this.currentSprite && this.currentSprite.canBeBackground()) {
 			this.currentSprite.isBackground = true
-			this.windowResized(window.p)
+			this.resetZoom()
 			window.api.setViewAsSprite(false)
 			let hasSizeError = (this.currentSprite.bgWidth * this.currentSprite.bgHeight !== this.currentSprite.frames.length)
 			document.getElementById('bgDimensions').className = hasSizeError ? 'error' : ''
 			document.getElementById('imgDimensions').className = 'invisible'
 			this.currentSprite.deselectAllFrames()
-			this.xOffset = 0
-			this.yOffset = 0
 		}
 	}
 
@@ -552,8 +622,19 @@ let s = p => {
 	p.mousePressed = () => sketch.mousePressed(p)
 	p.mouseDragged = () => sketch.mouseDragged(p)
 	p.mouseReleased = () => sketch.mouseReleased(p)
+	p.mouseWheel = (event) => sketch.mouseWheel(p, event)
 	p.keyPressed = () => sketch.keyPressed(p)
 
 	window.sketch = sketch
 }
 new p5(s, 'sketch')
+
+let getFactors = (n) => {
+	let factors = []
+	for (let i = 1; i <= n; i++) {
+		if (n % i == 0 && i > n / i) {
+			factors.push([i, n / i])
+		}
+	}
+	return factors
+}
