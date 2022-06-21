@@ -16,10 +16,15 @@ class Sketch {
 
 		this.statusPanelHeight = 50
 
-		this.showScrollbarV = false
+		this.isScrolling = false
+		this.isScrollingHorizontal = false
+		this.showScrollbar = false
+		this.showScrollbarHorizontal = false
 		this.scrollbarWidth = 10
 		this.scrollThumbTop = 0
 		this.scrollThumbHeight = 0
+		this.scrollThumbLeft = 0
+		this.scrollThumbWidth = 0
 	}
 
 	setup(p) {
@@ -66,12 +71,20 @@ class Sketch {
 			}
 			p.pop()
 			
-			if (this.showScrollbarV) {
+			if (this.showScrollbar) {
 				p.fill(100)
 				p.noStroke()
 				p.rect(p.windowWidth - this.scrollbarWidth, 0, this.scrollbarWidth, p.windowHeight - this.statusPanelHeight)
 				p.fill(68)
 				p.rect(p.windowWidth - this.scrollbarWidth, this.scrollThumbTop, this.scrollbarWidth, this.scrollThumbHeight)
+			}
+			
+			if (this.showScrollbarHorizontal) {
+				p.fill(100)
+				p.noStroke()
+				p.rect(0, p.windowHeight - this.statusPanelHeight - this.scrollbarWidth, p.windowWidth, this.scrollbarWidth)
+				p.fill(68)
+				p.rect(this.scrollThumbLeft, p.windowHeight - this.statusPanelHeight - this.scrollbarWidth, this.scrollThumbWidth, this.scrollbarWidth)
 			}
 		}
 	}
@@ -89,14 +102,22 @@ class Sketch {
 	mousePressed(p) {
 		let x = p.mouseX / this.scale - this.xOffset
 		let y = p.mouseY / this.scale - this.yOffset
+
 		this.xStart = x
 		this.yStart = y
 		this.xLast = x
 		this.yLast = y
-		if (this.showScrollbarV && p.mouseX >= p.windowWidth - 10) {
-			this.isScrollingV = true
+
+		if (this.showScrollbar && p.mouseX >= p.windowWidth - this.scrollbarWidth) {
+			this.isScrolling = true
 			this.yOffsetStart = this.yOffset
 			this.yMouseStart = p.mouseY
+		}
+
+		if (this.showScrollbarHorizontal && p.mouseY >= p.windowHeight - this.statusPanelHeight - this.scrollbarWidth) {
+			this.isScrollingHorizontal = true
+			this.xOffsetStart = this.xOffset
+			this.xMouseStart = p.mouseX
 		}
 	}
 
@@ -107,17 +128,34 @@ class Sketch {
 		let dx = x - this.xStart
 		let dy = y - this.yStart
 
-		if (this.isScrollingV && this.currentSprite) {
-			let scrollbarChange = (p.mouseY - this.yMouseStart) / (p.windowHeight - this.statusPanelHeight)
-			let offsetChange = scrollbarChange * this.currentSprite.totalFramesHeight
+		let sprite = this.currentSprite
+
+		if (this.isScrolling && sprite) {
+			let scrollbarHeight = p.windowHeight - this.statusPanelHeight
+			if (this.showScrollbarHorizontal) scrollbarHeight -= this.scrollbarWidth
+			let scrollbarChange = (p.mouseY - this.yMouseStart) / scrollbarHeight
+			let bgHeight = sprite.bgHeight * sprite.maxFrameHeight + sprite.vGap * 2
+			let spriteHeight = this.currentSprite.isBackground ? bgHeight : sprite.totalFramesHeight
+			let offsetChange = scrollbarChange * spriteHeight
 			this.scrollTo(null, this.yOffsetStart - offsetChange)
-		} else if (dx**2 + dy**2 > 10**2 && this.currentSprite && !this.currentSprite.isDragging && !this.currentSprite.isBackground) {
-			if (!this.currentSprite.isFrameSelected(x, y) && this.currentSprite.selectedFrames.length < 2) {
-				this.currentSprite.deselectAllFrames()
-				this.currentSprite.selectFrame(x, y)
+
+		} else if (this.isScrollingHorizontal && sprite) {
+			let scrollbarWidth = p.windowWidth - (this.showScrollbar ? this.scrollbarWidth : 0)
+			let scrollbarChange = (p.mouseX - this.xMouseStart) / scrollbarWidth
+			let bgWidth = sprite.bgWidth * sprite.maxFrameWidth + sprite.hGap * 2
+			let offsetChange = scrollbarChange * bgWidth
+			this.scrollTo(this.xOffsetStart - offsetChange, null)
+
+		} else if (sprite && sprite.isBackground) {
+			this.scrollTo(this.xOffset + dx / this.scale, this.yOffset + dy / this.scale)
+
+		} else if (dx**2 + dy**2 > 10**2 && sprite && !sprite.isDragging) {
+			if (!sprite.isFrameSelected(x, y) && sprite.selectedFrames.length < 2) {
+				sprite.deselectAllFrames()
+				sprite.selectFrame(x, y)
 			}
-			if (this.currentSprite.isFrameSelected(x, y)) {
-				this.currentSprite.startDrag(x, y)
+			if (sprite.isFrameSelected(x, y)) {
+				sprite.startDrag(x, y)
 			}
 		}
 
@@ -128,6 +166,9 @@ class Sketch {
 	mouseReleased(p) {
 		let x = p.mouseX / this.scale - this.xOffset
 		let y = p.mouseY / this.scale - this.yOffset
+
+		this.isScrolling = false
+		this.isScrollingHorizontal = false
 
 		if (this.currentSprite && !this.currentSprite.isBackground) {
 			if (this.currentSprite.isDragging) {
@@ -200,25 +241,62 @@ class Sketch {
 				sprite.selectedFrames = [sprite.frames.length - 1]
 				this.scrollTo(null, -sprite.totalFramesHeight + (p.windowHeight - this.statusPanelHeight) / this.scale)
 			}
+			
+		} else if (this.currentSprite && this.currentSprite.isBackground) {
+			if (p.keyCode === p.UP_ARROW) {
+				this.scrollTo(null, this.yOffset + 100)
+			} else if (p.keyCode === p.DOWN_ARROW) {
+				this.scrollTo(null, this.yOffset - 100)
+			} else if (p.keyCode === p.LEFT_ARROW) {
+				this.scrollTo(this.xOffset + 100, null)
+			} else if (p.keyCode === p.RIGHT_ARROW) {
+				this.scrollTo(this.xOffset - 100, null)
+			}
 		}
 	}
 
 	updateScrollbar() {
 		if (this.currentSprite) {
-			this.showScrollbarV = this.currentSprite.totalFramesHeight * this.scale > p.windowHeight - this.statusPanelHeight
-			let thumbHeightPercent = (p.windowHeight - this.statusPanelHeight) / (this.currentSprite.totalFramesHeight * this.scale)
-			this.scrollThumbHeight = Math.floor(thumbHeightPercent * (p.windowHeight - this.statusPanelHeight))
-			let thumbTopPercent = -this.yOffset / this.currentSprite.totalFramesHeight
-			this.scrollThumbTop = Math.floor(thumbTopPercent * (p.windowHeight - this.statusPanelHeight))
+			let sprite = this.currentSprite
+			if (sprite.isBackground) {
+				let bgWidth = sprite.bgWidth * sprite.maxFrameWidth + sprite.hGap * 2
+				let bgHeight = sprite.bgHeight * sprite.maxFrameHeight + sprite.vGap * 2
+				
+				this.showScrollbarHorizontal = bgWidth * this.scale > p.windowWidth
+				this.showScrollbar = bgHeight * this.scale > p.windowHeight - this.statusPanelHeight
+
+				let displayWidth = p.windowWidth - (this.showScrollbar ? this.scrollbarWidth : 0)
+				let displayHeight = p.windowHeight - this.statusPanelHeight - (this.showScrollbarHorizontal ? this.scrollbarWidth : 0)
+
+				let thumbHeightPercent = displayHeight / (bgHeight * this.scale)
+				this.scrollThumbHeight = Math.floor(thumbHeightPercent * displayHeight)
+				this.scrollThumbTop = Math.floor((-this.yOffset / bgHeight) * displayHeight)
+
+				let thumbWidthPercent = displayWidth / (bgWidth * this.scale)
+				this.scrollThumbWidth = Math.floor(thumbWidthPercent * displayWidth)
+				this.scrollThumbLeft = Math.floor((-this.xOffset / bgWidth) * displayWidth)
+
+			} else {
+				this.showScrollbarHorizontal = false
+				this.showScrollbar = sprite.totalFramesHeight * this.scale > p.windowHeight - this.statusPanelHeight
+
+				let displayHeight = p.windowHeight - this.statusPanelHeight
+
+				let thumbHeightPercent = displayHeight / (sprite.totalFramesHeight * this.scale)
+				this.scrollThumbHeight = Math.floor(thumbHeightPercent * displayHeight)
+				this.scrollThumbTop = Math.floor((-this.yOffset / sprite.totalFramesHeight) * displayHeight)
+			}
 		}
 	}
 
 	scrollTo(x, y) {
 		if (this.currentSprite) {
-			if (!isNaN(x)) {
+			let sprite = this.currentSprite
+
+			if (x != null) {
 				this.xOffset = Math.floor(x)
 			}
-			if (!isNaN(y)) {
+			if (y != null) {
 				this.yOffset = Math.floor(y)
 			}
 
@@ -229,9 +307,21 @@ class Sketch {
 				this.yOffset = 0
 			}
 
-			let yMin = -this.currentSprite.totalFramesHeight + (p.windowHeight - this.statusPanelHeight) / this.scale
-			if (this.yOffset < yMin) {
-				this.yOffset = Math.floor(yMin)
+			if (sprite.isBackground) {
+				let bgWidth = sprite.bgWidth * sprite.maxFrameWidth + sprite.hGap * 2
+				let bgHeight = sprite.bgHeight * sprite.maxFrameHeight + sprite.vGap * 2
+				let displayWidth = p.windowWidth - (this.showScrollbar ? this.scrollbarWidth : 0)
+				let displayHeight = p.windowHeight - this.statusPanelHeight - (this.showScrollbarHorizontal ? this.scrollbarWidth : 0)
+				let xMin = -bgWidth + displayWidth / this.scale
+				let yMin = -bgHeight + displayHeight / this.scale
+				if (this.xOffset < xMin) this.xOffset = Math.floor(xMin)
+				if (this.yOffset < yMin) this.yOffset = Math.floor(yMin)
+
+			} else {
+				let yMin = -sprite.totalFramesHeight + (p.windowHeight - this.statusPanelHeight) / this.scale
+				if (this.yOffset < yMin && this.yOffset < 0) {
+					this.yOffset = Math.floor(yMin)
+				}
 			}
 
 			this.updateScrollbar()
@@ -318,22 +408,26 @@ class Sketch {
 				this.currentSprite.filename = filename
 				this.currentSprite.extension = extension
 				this.currentSprite.updateSelection()
+				filename = filename.toLowerCase()
+
 				if (extension === 'blk' || filename === 'back') {
 					if (filename + '.' + extension === 'back.spr') {
 						// C1 background
 						this.currentSprite.bgWidth = 58
 						this.currentSprite.bgHeight = 8
-					} else {
-						let factors = getFactors(this.currentSprite.frames.length)[0]
-						this.currentSprite.bgWidth = factors[0]
-						this.currentSprite.bgHeight = factors[1]
+					} else if (filename + '.' + extension === 'back.s16') {
+						// C2 background
+						this.currentSprite.bgWidth = 58
+						this.currentSprite.bgHeight = 16
 					}
 					document.getElementById('bgWidth').value = this.currentSprite.bgWidth
 					document.getElementById('bgHeight').value = this.currentSprite.bgHeight
 					this.viewAsBackground()
+
 				} else {
 					this.viewAsSprite()
 				}
+
 				this.updateTitle()
 				window.api.spriteIsOpen(true, extension === 'spr')
 			})
@@ -549,18 +643,24 @@ class Sketch {
 	}
 
 	zoomIn() {
+		let oldScale = this.scale
 		this.scale += 0.2
 		if (this.scale > 10) {
 			this.scale = 10
 		}
+		this.xOffset *= oldScale / this.scale
+		this.yOffset *= oldScale / this.scale
 		this.windowResized(window.p)
 	}
 
 	zoomOut() {
+		let oldScale = this.scale
 		this.scale -= 0.2
 		if (this.scale < 0.2) {
 			this.scale = 0.2
 		}
+		this.xOffset *= oldScale / this.scale
+		this.yOffset *= oldScale / this.scale
 		this.windowResized(window.p)
 	}
 
@@ -577,6 +677,11 @@ class Sketch {
 	viewAsBackground() {
 		if (this.currentSprite && this.currentSprite.canBeBackground()) {
 			this.currentSprite.isBackground = true
+			if (this.currentSprite.bgWidth === 1 && this.currentSprite.bgHeight === 1) {
+				let factors = getFactors(this.currentSprite.frames.length)[0]
+				this.currentSprite.bgWidth = factors[0]
+				this.currentSprite.bgHeight = factors[1]
+			}
 			this.resetZoom()
 			window.api.setViewAsSprite(false)
 			let hasSizeError = (this.currentSprite.bgWidth * this.currentSprite.bgHeight !== this.currentSprite.frames.length)

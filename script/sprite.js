@@ -75,7 +75,7 @@ class Sprite {
 
 	getDisplayWidth() {
 		if (this.isBackground) {
-			return this.bgWidth * this.frames[0].width + this.hGap * 2
+			return this.bgWidth * this.maxFrameWidth + this.hGap * 2
 		} else if (this.frames.length > 0 && this.frames[0].width > window.p.windowWidth) {
 			return this.frames[0].width + this.hGap * 2
 		} else {
@@ -85,7 +85,7 @@ class Sprite {
 
 	getDisplayHeight() {
 		if (this.isBackground) {
-			return this.bgHeight * this.frames[0].height + this.vGap * 2
+			return this.bgHeight * this.maxFrameHeight + this.vGap * 2
 		} else {
 			return Math.max(this.totalFramesHeight, this.maxFrameHeight + this.vGap * 2)
 		}
