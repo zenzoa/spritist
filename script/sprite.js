@@ -128,26 +128,50 @@ class Sprite {
 	cutSelection() {
 		this.copySelection()
 		this.removeFrame(this.selectedFrames)
-		window.api.canPaste(true)
 	}
 
 	copySelection() {
 		this.copiedFrames = this.frames.filter((frame, i) => this.selectedFrames.includes(i))
-		window.api.canPaste(true)
+
+		if (this.copiedFrames.length > 0) {
+			let image = this.copiedFrames[0]
+			let imageData = image.canvas.toDataURL('image/png')
+			let clipboard = nw.Clipboard.get()
+			clipboard.set([
+				{ type: 'png', data: imageData },
+				{ type: 'text', data: '[ sprite data ]'}
+			])
+		}
 	}
 
 	pasteSelection() {
-		let insertIndex = this.frames.length
-		if (this.lastSelectedFrame !== -1) {
-			insertIndex = this.lastSelectedFrame + 1
+		let paste = newFrames => {
+			if (newFrames.length > 0) {
+				let insertIndex = this.frames.length
+				if (this.lastSelectedFrame !== -1) {
+					insertIndex = this.lastSelectedFrame + 1
+				}
+				this.insertFrame(newFrames, insertIndex)
+			}
 		}
-		let newFrames = []
-		this.copiedFrames.forEach((frame, i) => {
-			let frameCopy = window.p.createImage(frame.width, frame.height)
-			frameCopy.copy(frame, 0, 0, frame.width, frame.height, 0, 0, frame.width, frame.height)
-			newFrames.push(frameCopy)
-		})
-		this.insertFrame(newFrames, insertIndex)
+
+		let clipboard = nw.Clipboard.get()
+		
+		if (clipboard.get('text') === '[ sprite data ]') {
+			let newFrames = []
+			this.copiedFrames.forEach(frame => {
+				let frameCopy = window.p.createImage(frame.width, frame.height)
+				frameCopy.copy(frame, 0, 0, frame.width, frame.height, 0, 0, frame.width, frame.height)
+				newFrames.push(frameCopy)
+			})
+			paste(newFrames)
+
+		} else {
+			let imageData = clipboard.get('png')
+			window.p.loadImage(imageData, image => {
+				paste([ image ])
+			})
+		}
 	}
 
 	startDrag(px, py) {

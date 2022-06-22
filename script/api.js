@@ -83,6 +83,7 @@ exports.api = {
 		menu.exportC16.enabled = value
 		menu.exportBLK.enabled = value
 		menu.exportGIF.enabled = value
+		menu.pasteFrame.enabled = value
 		menu.selectAllFrames.enabled = value
 		menu.insertImage.enabled = value
 		menu.resetZoom.enabled = value
@@ -101,10 +102,6 @@ exports.api = {
 		menu.copyFrame.enabled = value && !isBackground
 		menu.deleteFrame.enabled = value && !isBackground
 		menu.deselectAllFrames.enabled = value && !isBackground
-	},
-
-	'canPaste': value => {
-		menu.pasteFrame.enabled = value
 	},
 
 	'setViewAsSprite': value => {
