@@ -25,6 +25,8 @@ class Sketch {
 		this.scrollThumbHeight = 0
 		this.scrollThumbLeft = 0
 		this.scrollThumbWidth = 0
+
+		this.recentFiles = []
 	}
 
 	setup(p) {
@@ -362,6 +364,37 @@ class Sketch {
 		}
 	}
 
+	loadSprite(filePath, onSuccess) {
+		let path = filePath.match(/^.*[\\\/]/)[0]
+		let filename = filePath.match(/([^\\//]+)\./)[1]
+		let extension = (filePath.match(/\.(\w+)$/)[1]).toLowerCase()
+		let loader = null
+		if (extension === 'c16') {
+			loader = c16.load
+		} else if (extension === 's16' || extension === 'n16' || extension === 'm16') {
+			loader = s16.load
+		} else if (extension === 'spr') {
+			loader = spr.load
+		} else if (extension === 'blk') {
+			loader = blk.load
+		} else if (extension === 'png') {
+			loader = png.load
+		} else if (extension === 'gif') {
+			loader = gif.load
+		} else if (extension === 'dta') {
+			loader = charset.load
+		}
+		if (loader) {
+			try {
+				loader(filePath, sprite => onSuccess(sprite, path, filename, extension))
+				this.addRecentFile(filePath)
+			} catch (error) {
+				window.api.showErrorDialog('Unable to open sprite. Invalid data.')
+				console.log(error)
+			}
+		}
+	}
+
 	askForSprite(onSuccess) {
 		window.api.showOpenDialog('', [
 			{ name: 'Images', extensions: ['spr', 's16', 'c16', 'n16', 'm16', 'blk', 'png', 'gif', 'dta'] },
@@ -369,40 +402,14 @@ class Sketch {
 		]).then(result => {
 			if (result.filePaths.length > 0) {
 				let filePath = result.filePaths[0]
-				let path = filePath.match(/^.*[\\\/]/)[0]
-				let filename = filePath.match(/([^\\//]+)\./)[1]
-				let extension = (filePath.match(/\.(\w+)$/)[1]).toLowerCase()
-				let loader = null
-				if (extension === 'c16') {
-					loader = c16.load
-				} else if (extension === 's16' || extension === 'n16' || extension === 'm16') {
-					loader = s16.load
-				} else if (extension === 'spr') {
-					loader = spr.load
-				} else if (extension === 'blk') {
-					loader = blk.load
-				} else if (extension === 'png') {
-					loader = png.load
-				} else if (extension === 'gif') {
-					loader = gif.load
-				} else if (extension === 'dta') {
-					loader = charset.load
-				}
-				if (loader) {
-					try {
-						loader(filePath, sprite => onSuccess(sprite, path, filename, extension))
-					} catch (error) {
-						window.api.showErrorDialog('Unable to open sprite. Invalid data.')
-						console.log(error)
-					}
-				}
+				onSuccess(filePath)
 			}
 		})
 	}
 
-	openSprite() {
-		let openIt = () => {
-			this.askForSprite((sprite, path, filename, extension) => {
+	openSprite(givenFilePath) {
+		let loadFromFile = filePath => {
+			this.loadSprite(filePath, (sprite, path, filename, extension) => {
 				this.currentSprite = sprite
 				this.currentSprite.path = path
 				this.currentSprite.filename = filename
@@ -436,11 +443,17 @@ class Sketch {
 		if (this.currentSprite && this.currentSprite.isModified) {
 			window.api.showConfirmDialog('Are you sure you want to open a new sprite?\nUnsaved changes will be lost.').then(response => {
 				if (response === 0) {
-					openIt()
+					if (givenFilePath) {
+						loadFromFile(givenFilePath)
+					} else {
+						this.askForSprite(f => loadFromFile(f))
+					}
 				}
 			})
+		} else if (givenFilePath) {
+			loadFromFile(givenFilePath)
 		} else {
-			openIt()
+			this.askForSprite(f => loadFromFile(f))
 		}
 	}
 
@@ -504,6 +517,7 @@ class Sketch {
 			]).then(filePath => {
 				if (filePath) {
 					this.saveSprite(filePath, extension, isExporting)
+					this.addRecentFile(filePath)
 				}
 			})
 		}
@@ -715,6 +729,15 @@ class Sketch {
 		if (this.currentSprite) {
 			this.currentSprite.transparentColor = value
 		}
+	}
+
+	addRecentFile(filePath) {
+		this.recentFiles = this.recentFiles.filter(f => f !== filePath)
+		this.recentFiles.unshift(filePath)
+		if (this.recentFiles.length > 10) {
+			this.recentFiles = this.recentFiles.slice(0, 10)
+		}
+		window.api.updateRecentFiles(this.recentFiles, f => this.openSprite(f))
 	}
 }
 

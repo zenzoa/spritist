@@ -134,5 +134,17 @@ exports.api = {
 			menu.setTransparentNone.checked = true
 			nw.Window.get().window.sketch.setTransparentColor({ r: 0, g: 0, b: 0, a: 0 })
 		}
+	},
+
+	'updateRecentFiles': (recentFiles, onOpen) => {
+		menu.recentFiles = new nw.Menu()
+		recentFiles.forEach(filePath => {
+			menu.recentFiles.append(new nw.MenuItem({
+				label: filePath,
+				click: () => onOpen(filePath)
+			}))
+		})
+		menu.openRecent.enabled = true
+		menu.openRecent.submenu = menu.recentFiles
 	}
 }

@@ -19,6 +19,14 @@ let buildFileMenu = () => {
 	})
 	fileMenu.append(exports.openSprite)
 
+	exports.recentFiles = new nw.Menu()
+	exports.openRecent = new nw.MenuItem({
+		label: 'Open Recent',
+		enabled: false,
+		submenu: exports.recentFiles
+	})
+	fileMenu.append(exports.openRecent)
+
 	fileMenu.append(new nw.MenuItem({ type: 'separator' }))
 
 	exports.saveSprite = new nw.MenuItem({
