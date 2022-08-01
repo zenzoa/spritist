@@ -137,14 +137,15 @@ exports.api = {
 	},
 
 	'updateRecentFiles': (recentFiles, onOpen) => {
-		menu.recentFiles = new nw.Menu()
+		menu.openRecent.enabled = true
+		menu.openRecent.submenu.items.forEach((item, i) => {
+			menu.openRecent.submenu.removeAt(i)
+		})
 		recentFiles.forEach(filePath => {
-			menu.recentFiles.append(new nw.MenuItem({
+			menu.openRecent.submenu.append(new nw.MenuItem({
 				label: filePath,
 				click: () => onOpen(filePath)
 			}))
 		})
-		menu.openRecent.enabled = true
-		menu.openRecent.submenu = menu.recentFiles
 	}
 }
