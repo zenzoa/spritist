@@ -351,7 +351,7 @@ class Sprite {
 	}
 
 	updateSelection() {
-		if (this.selectedFrames.length === 0) {
+		if (this.selectedFrames.length === 0 && !this.isBackground) {
 			window.api.hasSelection(false)
 			document.getElementById('imgDimensions').innerText = `${this.frames.length} images`
 		} else {

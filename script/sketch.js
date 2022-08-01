@@ -414,7 +414,6 @@ class Sketch {
 				this.currentSprite.path = path
 				this.currentSprite.filename = filename
 				this.currentSprite.extension = extension
-				this.currentSprite.updateSelection()
 				filename = filename.toLowerCase()
 
 				if (extension === 'blk' || filename === 'back') {
@@ -435,6 +434,7 @@ class Sketch {
 					this.viewAsSprite()
 				}
 
+				this.currentSprite.updateSelection()
 				this.updateTitle()
 				window.api.spriteIsOpen(true, extension === 'spr')
 			})
