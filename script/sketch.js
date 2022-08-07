@@ -367,7 +367,7 @@ class Sketch {
 	loadSprite(filePath, onSuccess) {
 		let path = filePath.match(/^.*[\\\/]/)[0]
 		let filename = filePath.match(/([^\\//]+)\./)[1]
-		let extension = (filePath.match(/\.(\w+)$/)[1]).toLowerCase()
+		let extension = (filePath.match(/\.([\w\s]+)$/)[1]).toLowerCase()
 		let loader = null
 		if (extension === 'c16') {
 			loader = c16.load
@@ -383,6 +383,8 @@ class Sketch {
 			loader = gif.load
 		} else if (extension === 'dta') {
 			loader = charset.load
+		} else if (extension === 'photo album') {
+			loader = photoalbum.load
 		}
 		if (loader) {
 			try {
@@ -397,7 +399,7 @@ class Sketch {
 
 	askForSprite(onSuccess) {
 		window.api.showOpenDialog('', [
-			{ name: 'Images', extensions: ['spr', 's16', 'c16', 'n16', 'm16', 'blk', 'png', 'gif', 'dta'] },
+			{ name: 'Images', extensions: ['spr', 's16', 'c16', 'n16', 'm16', 'blk', 'png', 'gif', 'dta', 'Photo Album'] },
 			{ name: 'All Files', extensions: ['*'] }
 		]).then(result => {
 			if (result.filePaths.length > 0) {

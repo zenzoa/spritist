@@ -23,6 +23,16 @@ class DataHelper {
 		return result
 	}
 
+	readCString() {
+		if (this.offset < this.dataView.buffer.byteLength) {
+			let stringLength = this.readUint8()
+			if (stringLength === 255) {
+				stringLength = this.readUint16()
+			}
+			this.offset += stringLength // we don't need to parse the actual string
+		}
+	}
+
 	writeUint8(n) {
 		this.dataView.setUint8(this.offset, n, this.littleEndian)
 		this.offset += 1
