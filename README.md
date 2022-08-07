@@ -11,10 +11,9 @@ A sprite utility for the [Creatures game series](https://creatures.wiki/).
 * GIF/PNG (for importing and exporting)
 
 ## Credits
-* Bedalton for help with SPR palettes
+* Bedalton for help with SPR palettes and formats
 * NeoDement for testing and troubleshooting, and help with CHARSET.DTA files
 * ligfx for their [openc2e CHARSET.DTA parser](https://github.com/openc2e/openc2e/blob/main/src/fileformats/charsetdta.cpp) that I referenced extensively
-* Bedalton for help with applet SPR file formats
 * Verm, EemFoo, and the larger Creatures community for feedback and support
 
 ## Libraries
