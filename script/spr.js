@@ -4,11 +4,16 @@ let spr = {}
 
 spr.load = (filePath, onSuccess) => {
 	window.api.readFile(filePath).then(data => {
-		try {
-			onSuccess(spr.parse(data))
-		} catch (e) {
-			onSuccess(spr.parse(data, true))
-		}
+
+		let sprite =
+			spr.tryParse(data, spr.parse) ||
+			spr.tryParse(data, spr.parsePrototype) ||
+			spr.tryParse(data, spr.parseSingleWidth) ||
+			spr.tryParse(data, spr.parseDoubleWidth) ||
+			spr.tryParse(data, spr.parseMultiSprite)
+
+		onSuccess(sprite)
+
 	}).catch(error => {
 		window.api.showErrorDialog('Unable to open SPR file.')
 		console.log(error)
@@ -23,19 +28,28 @@ spr.save = (filePath, sprite) => {
 	})
 }
 
-spr.parse = (data, isLegacy) => {
+spr.tryParse = (data, callback) => {
 	let sprite = new Sprite()
 	let dataHelper = new DataHelper(data.buffer)
+	try {
+		callback(sprite, dataHelper)
+		return sprite
+	} catch(e) {
+		console.log(e)
+		return null
+	}
+}
 
+spr.parse = (sprite, dataHelper, isPrototype) => {
 	// file header
 	let imageCount = dataHelper.readUint16()
 
 	// image headers
 	let imageHeaders = []
 	for (let i = 0; i < imageCount; i++) {
-		let offset = isLegacy ? dataHelper.readUint16() : dataHelper.readUint32()
-		let width = isLegacy ? dataHelper.readUint8() : dataHelper.readUint16()
-		let height = isLegacy ? dataHelper.readUint8() : dataHelper.readUint16()
+		let offset = isPrototype ? dataHelper.readUint16() : dataHelper.readUint32()
+		let width = isPrototype ? dataHelper.readUint8() : dataHelper.readUint16()
+		let height = isPrototype ? dataHelper.readUint8() : dataHelper.readUint16()
 		imageHeaders.push({ offset, width, height })
 	}
 
@@ -44,7 +58,7 @@ spr.parse = (data, isLegacy) => {
 		let image = window.p.createImage(imageHeader.width, imageHeader.height)
 		image.loadPixels()
 
-		offset = imageHeader.offset
+		dataHelper.offset = imageHeader.offset
 		for (let y = 0; y < imageHeader.height; y++) {
 			for (let x = 0; x < imageHeader.width; x++) {
 				let colorIndex = dataHelper.readUint8()
@@ -57,6 +71,88 @@ spr.parse = (data, isLegacy) => {
 		sprite.addFrame(image)
 	})
 
+	return sprite
+}
+
+spr.parsePrototype = (sprite, dataHelper) => {
+	return spr.parse(sprite, dataHelper, true)
+}
+
+spr.parseSingleWidth = (sprite, dataHelper) => {
+	// file header
+	let imageCount = dataHelper.readUint16()
+	dataHelper.readUint32() // skip
+
+	// image data
+	for (let i = 0; i < imageCount; i++) {
+		let width = dataHelper.readUint16()
+		let height = dataHelper.readUint16()
+		
+		let image = window.p.createImage(width, height)
+		image.loadPixels()
+
+		for (let y = height - 1; y >= 0; y--) {
+			for (let x = 0; x < width; x++) {
+				let colorIndex = dataHelper.readUint8()
+				let pixel = palette.lookup(colorIndex)
+				DataHelper.setPixel(image, x, y, pixel)
+			}
+		}
+
+		image.updatePixels()
+		sprite.addFrame(image)
+	}
+
+	return sprite
+}
+
+spr.parseDoubleWidth = (sprite, dataHelper) => {
+	if (dataHelper.offset >= dataHelper.dataView.buffer.byteLength) {
+		return sprite
+	}
+
+	// file header
+	let imageCount = dataHelper.readUint16()
+	dataHelper.readUint32() // skip
+
+	// image data
+	for (let i = 0; i < imageCount; i++) {
+		let paddedWidth = dataHelper.readUint32()
+		let height = dataHelper.readUint32()
+		let width = dataHelper.readUint16()
+		
+		let image = window.p.createImage(width, height)
+		image.loadPixels()
+
+		for (let y = height - 1; y >= 0; y--) {
+			for (let x = 0; x < paddedWidth; x++) {
+				let colorIndex = dataHelper.readUint8()
+				if (x < width) {
+					let pixel = palette.lookup(colorIndex)
+					DataHelper.setPixel(image, x, y, pixel)
+				}
+			}
+		}
+
+		image.updatePixels()
+		sprite.addFrame(image)
+	}
+
+	return sprite
+}
+
+spr.parseMultiSprite = (sprite, dataHelper) => {
+	// file header
+	let spriteCount = dataHelper.readUint16()
+	dataHelper.readUint32() // skip
+
+	// sprite data
+	for (let i = 0; i < spriteCount; i++) {
+		let subSprite = spr.parseDoubleWidth(new Sprite(), dataHelper)
+		sprite.frames = sprite.frames.concat(subSprite.frames)
+	}
+
+	sprite.setMaxFrameSize()
 	return sprite
 }
 
