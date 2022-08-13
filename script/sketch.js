@@ -461,19 +461,21 @@ class Sketch {
 
 	insertImage() {
 		if (this.currentSprite) {
-			this.askForSprite(sprite => {
-				if (this.currentSprite.extension === 'spr') {
-					sprite.frames.forEach(frame => {
-						palette.swapPalette(frame, palette.table, palette.table)
-					})
-				}
-				let index = this.currentSprite.frames.length
-				if (this.currentSprite.selectedFrames.length > 0) {
-					this.currentSprite.selectedFrames.sort()
-					index = this.currentSprite.selectedFrames[this.currentSprite.selectedFrames.length - 1] + 1
-				}
-				this.currentSprite.insertFrame(sprite.frames, index)
-				this.currentSprite.deselectAllFrames()
+			this.askForSprite(filePath => {
+				this.loadSprite(filePath, sprite => {
+					if (this.currentSprite.extension === 'spr') {
+						sprite.frames.forEach(frame => {
+							palette.swapPalette(frame, palette.table, palette.table)
+						})
+					}
+					let index = this.currentSprite.frames.length
+					if (this.currentSprite.selectedFrames.length > 0) {
+						this.currentSprite.selectedFrames.sort()
+						index = this.currentSprite.selectedFrames[this.currentSprite.selectedFrames.length - 1] + 1
+					}
+					this.currentSprite.insertFrame(sprite.frames, index)
+					this.currentSprite.deselectAllFrames()
+				})
 			})
 		}
 	}
