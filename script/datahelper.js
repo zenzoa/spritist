@@ -29,7 +29,11 @@ class DataHelper {
 			if (stringLength === 255) {
 				stringLength = this.readUint16()
 			}
-			this.offset += stringLength // we don't need to parse the actual string
+			let str = ''
+			for (let i = 0; i < stringLength; i++) {
+				str += String.fromCharCode(this.readUint8())
+			}
+			// do nothing with str for now
 		}
 	}
 

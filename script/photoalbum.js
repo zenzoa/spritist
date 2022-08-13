@@ -35,7 +35,7 @@ photoalbum.parse = data => {
 			}
 		}
 		
-		dataHelper.offset -= 2
+		dataHelper.offset -= 1
 		dataHelper.readCString() // comment
 
 		image.updatePixels()
