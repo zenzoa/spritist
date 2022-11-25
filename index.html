@@ -63,6 +63,32 @@
 		</div>
 
 		<div id="spritesheetExport" class="invisible modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1>Export As Spritesheet</h1>
+					<button onclick="window.api.hideSpritesheetExportModal()">X</button>
+				</div>
+				<div class="modal-body">
+					<p>
+						<label>
+							<span>Columns</span>
+							<input id="spritesheetExportColumns" type="number" value="10">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span>Rows</span>
+							<input id="spritesheetExportRows" type="number" value="10">
+						</label>
+					</p>
+				</div>
+				<div id="spritesheetExportError" class="modal-error invisible">
+					Invalid dimensions
+				</div>
+				<div id="spritesheetExportActions" class="modal-actions">
+					<button id="spritesheetSaveButton">Save</button>
+				</div>
+			</div>
 		</div>
 
 		<input id="fileOpen" type="file" />

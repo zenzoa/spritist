@@ -111,7 +111,7 @@ let buildFileMenu = () => {
 		modifiers: isMac ? 'cmd' : 'ctrl+shift',
 		key: 't',
 		enabled: false,
-		click: () => nw.Window.get().window.sketch.exportSpritesheet()
+		click: () => nw.Window.get().window.api.showSpritesheetExportModal()
 	})
 	fileMenu.append(exports.exportSpritesheet)
 

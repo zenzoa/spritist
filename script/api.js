@@ -83,6 +83,7 @@ exports.api = {
 		menu.exportC16.enabled = value
 		menu.exportBLK.enabled = value
 		menu.exportGIF.enabled = value
+		menu.exportSpritesheet.enabled = value
 		menu.pasteFrame.enabled = value
 		menu.selectAllFrames.enabled = value
 		menu.insertImage.enabled = value
@@ -173,9 +174,11 @@ exports.api = {
 			) {
 				errorEl.className = 'modal-error'
 				actionsEl.className = 'modal-actions invisible'
+				return true
 			} else {
 				errorEl.className = 'modal-error invisible'
 				actionsEl.className = 'modal-actions'
+				return false
 			}
 		}
 
@@ -200,18 +203,22 @@ exports.api = {
 		}
 
 		openButton.onclick = () => {
+			if (checkForErrors()) return
 			callback('open', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
 		}
 
 		exportSPRButton.onclick = () => {
+			if (checkForErrors()) return
 			callback('export-spr', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
 		}
 
 		exportS16Button.onclick = () => {
+			if (checkForErrors()) return
 			callback('export-s16', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
 		}
 
 		exportC16Button.onclick = () => {
+			if (checkForErrors()) return
 			callback('export-c16', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
 		}
 
@@ -232,8 +239,50 @@ exports.api = {
 	},
 
 	'showSpritesheetExportModal': () => {
-		let spritesheetExportModal = nw.Window.get().window.document.getElementById('spritesheetExport')
+		let sprite = nw.Window.get().window.sketch.currentSprite
+
+		let document = nw.Window.get().window.document
+		let spritesheetExportModal = document.getElementById('spritesheetExport')
+		let columnsEl = document.getElementById('spritesheetExportColumns')
+		let rowsEl = document.getElementById('spritesheetExportRows')
+		let saveButton = document.getElementById('spritesheetSaveButton')
+		let errorEl = document.getElementById('spritesheetExportError')
+		let actionsEl = document.getElementById('spritesheetExportActions')
+
+		let checkForErrors = () => {
+			if (
+				parseFloat(columnsEl.value) !== parseInt(columnsEl.value) ||
+				parseFloat(rowsEl.value) !== parseInt(rowsEl.value) ||
+				parseInt(columnsEl.value) * parseInt(rowsEl.value) !== sprite.frames.length
+			) {
+				errorEl.className = 'modal-error'
+				actionsEl.className = 'modal-actions invisible'
+				return true
+			} else {
+				errorEl.className = 'modal-error invisible'
+				actionsEl.className = 'modal-actions'
+				return false
+			}
+		}
+
+		columnsEl.onchange = () => {
+			rowsEl.value = sprite.frames.length / parseInt(columnsEl.value)
+			checkForErrors()
+		}
+
+		rowsEl.onchange = () => {
+			columnsEl.value = sprite.frames.length / parseInt(rowsEl.value)
+			checkForErrors()
+		}
+
+		saveButton.onclick = () => {
+			if (checkForErrors()) return
+			nw.Window.get().window.sketch.exportAsSpritesheet(parseInt(columnsEl.value), parseInt(rowsEl.value))
+		}
+
 		spritesheetExportModal.className = 'modal'
+		columnsEl.value = sprite.frames.length
+		rowsEl.value = 1
 	},
 
 	'hideSpritesheetExportModal': () => {

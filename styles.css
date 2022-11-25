@@ -119,13 +119,15 @@ button:focus {
 	left: 0;
 	right: 0;
 	user-select: none;
+	padding: 24px;
 	background: rgba(128, 128, 128, 0.8);
 }
 
 .modal-content {
 	position: relative;
 	overflow: hidden;
-	margin: 12px 24px;
+	max-width: 800px;
+	margin: 0 auto;
 	border-radius: 6px;
 	background: #444;
 	color: white;

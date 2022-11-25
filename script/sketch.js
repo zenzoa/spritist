@@ -658,8 +658,13 @@ class Sketch {
 		this.askForSprite(f => loadFromFile(f))
 	}
 
-	exportSpritesheet() {
-		console.log('export spritesheet')
+	exportAsSpritesheet(cols, rows) {
+		let image = spritesheet.fromSprite(this.currentSprite, cols, rows)
+		if (image) {
+			let filename = this.currentSprite.filename ? this.currentSprite.filename + ' spritesheet' : 'spritesheet'
+			image.save(filename, 'png')
+		}
+		window.api.hideSpritesheetExportModal()
 	}
 
 	loadPalette() {
