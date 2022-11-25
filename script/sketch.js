@@ -375,7 +375,7 @@ class Sketch {
 		}
 	}
 
-	loadSprite(filePath, onSuccess) {
+	loadSprite(filePath, onSuccess, skipRecentFiles) {
 		let path = filePath.match(/^.*[\\\/]/)[0]
 		let filename = filePath.match(/([^\\//]+)\./)[1]
 		let extension = (filePath.match(/\.([\w\s]+)$/)[1]).toLowerCase()
@@ -400,7 +400,9 @@ class Sketch {
 		if (loader) {
 			try {
 				loader(filePath, sprite => onSuccess(sprite, path, filename, extension))
-				this.addRecentFile(filePath)
+				if (!skipRecentFiles) {
+					this.addRecentFile(filePath)
+				}
 			} catch (error) {
 				window.api.showErrorDialog('Unable to open sprite. Invalid data.')
 				console.log(error)
@@ -470,9 +472,9 @@ class Sketch {
 		}
 	}
 
-	insertImage() {
+	insertImage(filePath) {
 		if (this.currentSprite) {
-			this.askForSprite(filePath => {
+			let finishInsertingImage = (filePath) => {
 				this.loadSprite(filePath, sprite => {
 					if (this.currentSprite.extension === 'spr') {
 						sprite.frames.forEach(frame => {
@@ -487,7 +489,15 @@ class Sketch {
 					this.currentSprite.insertFrame(sprite.frames, index)
 					this.currentSprite.deselectAllFrames()
 				})
-			})
+			}
+
+			if (filePath) {
+				finishInsertingImage(filePath)
+			} else {
+				this.askForSprite(filePath => {
+					finishInsertingImage(filePath)
+				})
+			}
 		}
 	}
 
@@ -642,7 +652,7 @@ class Sketch {
 		let loadFromFile = filePath => {
 			this.loadSprite(filePath, (sprite, path, filename, extension) => {
 				window.api.showSpritesheetImportModal(sprite.frames[0], path, filename, extension, openSpritesheet)
-			})
+			}, true)
 		}
 
 		this.askForSprite(f => loadFromFile(f))
@@ -840,6 +850,18 @@ class Sketch {
 		}
 		window.api.updateRecentFiles(this.recentFiles, f => this.openSprite(f))
 		localStorage.setItem('recentFiles', JSON.stringify(this.recentFiles))
+	}
+
+	openDroppedFiles(files) {
+		if (files.length === 1 && files[0].path && (!this.currentSprite || files[0].type !== 'image/png')) {
+			this.openSprite(files[0].path)
+		} else if (files.length > 0 && this.currentSprite) {
+			files.forEach(file => {
+				if (file.path && file.type === 'image/png') {
+					this.insertImage(file.path)
+				}
+			})
+		}
 	}
 }
 

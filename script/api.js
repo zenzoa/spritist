@@ -239,5 +239,25 @@ exports.api = {
 	'hideSpritesheetExportModal': () => {
 		let spritesheetExportModal = nw.Window.get().window.document.getElementById('spritesheetExport')
 		spritesheetExportModal.className = 'invisible modal'
+	},
+
+	'onDrop': (event) => {
+		event.preventDefault()
+		let files = []
+		if (event.dataTransfer.items) {
+			[...event.dataTransfer.items].forEach((item, i) => {
+				if (item.kind === 'file') {
+					let file = item.getAsFile()
+					files.push(file)
+				}
+			})
+		}
+		if (files.length > 0) {
+			nw.Window.get().window.sketch.openDroppedFiles(files)
+		}
+	},
+
+	'onDragOver': (event) => {
+		event.preventDefault()
 	}
 }

@@ -17,7 +17,7 @@
 			<input id="bgHeight" type="number" min="1" value="1" onchange="window.sketch.setBgHeight(this.value)">
 		</div>
 
-		<main id="sketch"></main>
+		<main id="sketch" ondrop="window.api.onDrop(event)" ondragover="window.api.onDragOver(event)"></main>
 
 		<div id="spritesheetImport" class="invisible modal">
 			<div class="modal-content">
