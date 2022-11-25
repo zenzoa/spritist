@@ -147,5 +147,97 @@ exports.api = {
 				click: () => onOpen(filePath)
 			}))
 		})
+	},
+
+	'showSpritesheetImportModal': (image, path, filename, extension, callback) => {
+		let document = nw.Window.get().window.document
+		let spritesheetImportModal = document.getElementById('spritesheetImport')
+		let filenameEl = document.getElementById('spritesheetFilename')
+		let columnsEl = document.getElementById('spritesheetColumns')
+		let rowsEl = document.getElementById('spritesheetRows')
+		let tileWidthEl = document.getElementById('spritesheetTileWidth')
+		let tileHeightEl = document.getElementById('spritesheetTileHeight')
+		let openButton = document.getElementById('spritesheetOpenButton')
+		let exportSPRButton = document.getElementById('spritesheetExportSPRButton')
+		let exportS16Button = document.getElementById('spritesheetExportS16Button')
+		let exportC16Button = document.getElementById('spritesheetExportC16Button')
+		let errorEl = document.getElementById('spritesheetImportError')
+		let actionsEl = document.getElementById('spritesheetImportActions')
+
+		let checkForErrors = () => {
+			if (
+				parseFloat(columnsEl.value) !== parseInt(columnsEl.value) ||
+				parseFloat(rowsEl.value) !== parseInt(rowsEl.value) ||
+				parseFloat(tileWidthEl.value) !== parseInt(tileWidthEl.value) ||
+				parseFloat(tileHeightEl.value) !== parseInt(tileHeightEl.value)
+			) {
+				errorEl.className = 'modal-error'
+				actionsEl.className = 'modal-actions invisible'
+			} else {
+				errorEl.className = 'modal-error invisible'
+				actionsEl.className = 'modal-actions'
+			}
+		}
+
+		columnsEl.onchange = () => {
+			tileWidthEl.value = image.width / parseInt(columnsEl.value)
+			checkForErrors()
+		}
+
+		rowsEl.onchange = () => {
+			tileHeightEl.value = image.height / parseInt(rowsEl.value)
+			checkForErrors()
+		}
+
+		tileWidthEl.onchange = () => {
+			columnsEl.value = image.width / parseInt(tileWidthEl.value)
+			checkForErrors()
+		}
+
+		tileHeightEl.onchange = () => {
+			rowsEl.value = image.height / parseInt(tileHeightEl.value)
+			checkForErrors()
+		}
+
+		openButton.onclick = () => {
+			callback('open', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
+		}
+
+		exportSPRButton.onclick = () => {
+			callback('export-spr', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
+		}
+
+		exportS16Button.onclick = () => {
+			callback('export-s16', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
+		}
+
+		exportC16Button.onclick = () => {
+			callback('export-c16', image, path, filename, parseInt(columnsEl.value), parseInt(rowsEl.value))
+		}
+
+		spritesheetImportModal.className = 'modal'
+		filenameEl.textContent = filename + '.' + extension
+
+		let cols = parseInt(columnsEl.value)
+		let rows = parseInt(rowsEl.value)
+		tileWidthEl.value = image.width / cols
+		tileHeightEl.value = image.height / rows
+
+		checkForErrors()
+	},
+
+	'hideSpritesheetImportModal': () => {
+		let spritesheetImportModal = nw.Window.get().window.document.getElementById('spritesheetImport')
+		spritesheetImportModal.className = 'invisible modal'
+	},
+
+	'showSpritesheetExportModal': () => {
+		let spritesheetExportModal = nw.Window.get().window.document.getElementById('spritesheetExport')
+		spritesheetExportModal.className = 'modal'
+	},
+
+	'hideSpritesheetExportModal': () => {
+		let spritesheetExportModal = nw.Window.get().window.document.getElementById('spritesheetExport')
+		spritesheetExportModal.className = 'invisible modal'
 	}
 }

@@ -19,6 +19,52 @@
 
 		<main id="sketch"></main>
 
+		<div id="spritesheetImport" class="invisible modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1>Import Spritesheet</h1>
+					<button onclick="window.api.hideSpritesheetImportModal()">X</button>
+				</div>
+				<div class="modal-body">
+					<p>
+						Filename: <strong id="spritesheetFilename">[filename]</strong>
+					</p>
+					<p>
+						<label>
+							<span>Columns</span>
+							<input id="spritesheetColumns" type="number" value="10" tabindex="1">
+						</label>
+						<label>
+							<span>Tile width (px)</span>
+							<input id="spritesheetTileWidth" type="number" value="16" tabindex="3">
+						</label>
+					</p>
+					<p>
+						<label>
+							<span>Rows</span>
+							<input id="spritesheetRows" type="number" value="10" tabindex="2">
+						</label>
+						<label>
+							<span>Tile height (px)</span>
+							<input id="spritesheetTileHeight" type="number" value="16" tabindex="4">
+						</label>
+					</p>
+				</div>
+				<div id="spritesheetImportError" class="modal-error invisible">
+					Invalid dimensions
+				</div>
+				<div id="spritesheetImportActions" class="modal-actions">
+					<button id="spritesheetOpenButton" tabindex="5">Open</button>
+					<button id="spritesheetExportSPRButton" tabindex="6">Export SPR</button>
+					<button id="spritesheetExportS16Button" tabindex="7">Export S16</button>
+					<button id="spritesheetExportC16Button" tabindex="8">Export C16</button>
+				</div>
+			</div>
+		</div>
+
+		<div id="spritesheetExport" class="invisible modal">
+		</div>
+
 		<input id="fileOpen" type="file" />
 		<input id="fileSave" type="file" nwsaveas />
 
@@ -34,6 +80,7 @@
 		<script src="./script/gif.js"></script>
 		<script src="./script/charset.js"></script>
 		<script src="./script/photoalbum.js"></script>
+		<script src="./script/spritesheet.js"></script>
 		<script src="./script/sketch.js"></script>
 
 	</body>

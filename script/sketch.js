@@ -72,7 +72,7 @@ class Sketch {
 				this.currentSprite.draw(p, this.scale, this.xOffset, this.yOffset)
 			}
 			p.pop()
-			
+
 			if (this.showScrollbar) {
 				p.fill(100)
 				p.noStroke()
@@ -80,7 +80,7 @@ class Sketch {
 				p.fill(68)
 				p.rect(p.windowWidth - this.scrollbarWidth, this.scrollThumbTop, this.scrollbarWidth, this.scrollThumbHeight)
 			}
-			
+
 			if (this.showScrollbarHorizontal) {
 				p.fill(100)
 				p.noStroke()
@@ -202,7 +202,7 @@ class Sketch {
 			let firstSelection = sprite.selectedFrames.length > 0 ? sprite.selectedFrames[0] : 0
 			let lastSelection = sprite.selectedFrames.length > 0 ? sprite.selectedFrames[sprite.selectedFrames.length - 1] : -1
 			let framesPerRow = Math.floor((p.windowWidth / this.scale - sprite.hGap) / (sprite.maxFrameWidth + sprite.hGap))
-			
+
 			if (p.keyCode === p.UP_ARROW) {
 				let prevSelection = Math.max(firstSelection - framesPerRow, 0)
 				sprite.selectedFrames = [prevSelection]
@@ -243,7 +243,7 @@ class Sketch {
 				sprite.selectedFrames = [sprite.frames.length - 1]
 				this.scrollTo(null, -sprite.totalFramesHeight + (p.windowHeight - this.statusPanelHeight) / this.scale)
 			}
-			
+
 		} else if (this.currentSprite && this.currentSprite.isBackground) {
 			if (p.keyCode === p.UP_ARROW) {
 				this.scrollTo(null, this.yOffset + 100)
@@ -263,7 +263,7 @@ class Sketch {
 			if (sprite.isBackground) {
 				let bgWidth = sprite.bgWidth * sprite.maxFrameWidth + sprite.hGap * 2
 				let bgHeight = sprite.bgHeight * sprite.maxFrameHeight + sprite.vGap * 2
-				
+
 				this.showScrollbarHorizontal = bgWidth * this.scale > p.windowWidth
 				this.showScrollbar = bgHeight * this.scale > p.windowHeight - this.statusPanelHeight
 
@@ -480,10 +480,15 @@ class Sketch {
 		}
 	}
 
-	saveSprite(filePath, extension, isExporting) {
+	saveSprite(filePath, extension, isExporting, isSavingAs) {
 		if (this.currentSprite) {
 			filePath = filePath || this.currentSprite.path + this.currentSprite.filename + '.' + this.currentSprite.extension
 			extension = extension || this.currentSprite.extension
+			let fileExists = window.api.doesFileExist(filePath)
+			if (!isSavingAs && !fileExists) {
+				this.saveAsSprite(extension, isExporting)
+				return
+			}
 			try {
 				if (extension === 'c16') {
 					c16.save(filePath, this.currentSprite)
@@ -520,7 +525,7 @@ class Sketch {
 				{ name: 'All Files', extensions: ['*'] }
 			]).then(filePath => {
 				if (filePath) {
-					this.saveSprite(filePath, extension, isExporting)
+					this.saveSprite(filePath, extension, isExporting, true)
 					this.addRecentFile(filePath)
 				}
 			})
@@ -553,6 +558,87 @@ class Sketch {
 		if (this.currentSprite) {
 			gif.save(this.currentSprite)
 		}
+	}
+
+	importSpritesheet() {
+		let exportAsSprite = (sprite, path, filename, extension) => {
+			let filePath = path + filename + '.' + extension
+
+			let saveSpritesheetAsSprite = () => {
+				try {
+					if (extension === 'spr') {
+						spr.save(filePath, sprite)
+					} else if (extension === 's16') {
+						s16.save(filePath, sprite)
+					} else if (extension === 'c16') {
+						c16.save(filePath, sprite)
+					}
+					window.api.showErrorDialog(extension.toUpperCase() + ' file saved successfully!')
+				} catch (error) {
+					window.api.showErrorDialog('Unable to save ' + extension.toUpperCase() + ' file.')
+					console.log(error)
+				}
+			}
+
+			let fileExists = window.api.doesFileExist(filePath)
+			if (fileExists) {
+				window.api.showConfirmDialog(filename + '.' + extension + ' already exists. Do you want to overwrite it?').then(response => {
+					if (response === 0) {
+						saveSpritesheetAsSprite()
+					} else {
+						window.api.showErrorDialog(extension.toUpperCase() + ' file not saved.')
+					}
+				})
+			} else {
+				saveSpritesheetAsSprite()
+			}
+
+		}
+
+		let openSpritesheet = (action, image, path, filename, cols, rows) => {
+			let sprite = spritesheet.toSprite(image, cols, rows)
+
+			if (action === 'open') {
+				let finishOpeningSpreadsheet = () => {
+					window.api.hideSpritesheetImportModal()
+					this.currentSprite = sprite
+					this.currentSprite.path = path
+					this.currentSprite.filename = filename
+					this.currentSprite.isModified = true
+					this.viewAsSprite()
+					this.currentSprite.updateSelection()
+					this.updateTitle()
+					window.api.spriteIsOpen(true)
+				}
+				if (this.currentSprite && this.currentSprite.isModified) {
+					window.api.showConfirmDialog('Are you sure you want to open a new sprite?\nUnsaved changes will be lost.').then(response => {
+						if (response === 0) {
+							finishOpeningSpreadsheet()
+						}
+					})
+				} else {
+					finishOpeningSpreadsheet()
+				}
+			} else if (action === 'export-spr') {
+				exportAsSprite(sprite, path, filename, 'spr')
+			} else if (action === 'export-s16') {
+				exportAsSprite(sprite, path, filename, 's16')
+			} else if (action === 'export-c16') {
+				exportAsSprite(sprite, path, filename, 'c16')
+			}
+		}
+
+		let loadFromFile = filePath => {
+			this.loadSprite(filePath, (sprite, path, filename, extension) => {
+				window.api.showSpritesheetImportModal(sprite.frames[0], path, filename, extension, openSpritesheet)
+			})
+		}
+
+		this.askForSprite(f => loadFromFile(f))
+	}
+
+	exportSpritesheet() {
+		console.log('export spritesheet')
 	}
 
 	loadPalette() {

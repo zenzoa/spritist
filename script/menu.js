@@ -96,6 +96,25 @@ let buildFileMenu = () => {
 	})
 	fileMenu.append(exports.exportGIF)
 
+	fileMenu.append(new nw.MenuItem({ type: 'separator' }))
+
+	exports.importSpritesheet = new nw.MenuItem({
+		label: 'Import Spritesheet',
+		modifiers: isMac ? 'cmd' : 'ctrl',
+		key: 't',
+		click: () => nw.Window.get().window.sketch.importSpritesheet()
+	})
+	fileMenu.append(exports.importSpritesheet)
+
+	exports.exportSpritesheet = new nw.MenuItem({
+		label: 'Export As Spritesheet',
+		modifiers: isMac ? 'cmd' : 'ctrl+shift',
+		key: 't',
+		enabled: false,
+		click: () => nw.Window.get().window.sketch.exportSpritesheet()
+	})
+	fileMenu.append(exports.exportSpritesheet)
+
 	return fileMenu
 }
 

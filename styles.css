@@ -48,13 +48,13 @@ canvas {
 	user-select: none;
 }
 
-#imgDimensions.invisible,
-#bgDimensions.invisible {
-	display: none;
+.invisible {
+	display: none !important;
 }
 
 #imgDimensions.error,
-#bgDimensions.error {
+#bgDimensions.error,
+.modal-error {
 	background-image: repeating-linear-gradient(145deg, #444, #444 4px, #922 4px, #922 8px);
 }
 
@@ -108,4 +108,100 @@ button {
 
 button:focus {
 	outline: none;
+	box-shadow: 0 0 0 1px #999;
+}
+
+.modal {
+	z-index: 10;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	user-select: none;
+	background: rgba(128, 128, 128, 0.8);
+}
+
+.modal-content {
+	position: relative;
+	overflow: hidden;
+	margin: 12px 24px;
+	border-radius: 6px;
+	background: #444;
+	color: white;
+	box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+	padding: 12px 24px;
+	background: #222;
+}
+
+.modal-header button {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	width: 30px;
+	height: 30px;
+	border-radius: 1000px;
+	font-weight: bold;
+}
+
+.modal-body {
+	padding: 24px;
+}
+
+.modal-error {
+	padding: 24px;
+	background: rgb(169, 45, 17);
+}
+
+.modal-actions {
+	display: flex;
+	flex-direction: row;
+	padding: 24px;
+	background: #222;
+}
+
+.modal-actions * {
+	flex-grow: 1;
+}
+
+.modal-actions * + * {
+	margin-left: 12px;
+}
+
+.modal-actions button:first-of-type {
+	font-weight: bold;
+	box-shadow: 0 0 0 1px #999;
+	flex-grow: 4;
+}
+
+.modal-actions button:first-of-type:focus {
+	font-weight: bold;
+	box-shadow: 0 0 0 1px white;
+}
+
+h1 {
+	margin: 0;
+	font-size: 16px;
+}
+
+p {
+	margin: 0;
+}
+
+p + p {
+	margin-top: 24px;
+}
+
+label + label {
+	margin-left: 64px;
+}
+
+label > span {
+	display: inline-block;
+	width: 100px;
+	padding-right: 6px;
+	text-align: right;
 }
