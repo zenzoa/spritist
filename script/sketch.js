@@ -58,6 +58,17 @@ class Sketch {
 				nw.App.quit()
 			}
 		})
+
+		let recentFilesString = localStorage.getItem('recentFiles')
+		try {
+			let recentFiles = JSON.parse(recentFilesString)
+			if (recentFiles && recentFiles.length) {
+				this.recentFiles = recentFiles
+				window.api.updateRecentFiles(this.recentFiles, f => this.openSprite(f))
+			}
+		} catch (error) {
+			console.log(error)
+		}
 	}
 
 	draw(p) {
@@ -828,6 +839,7 @@ class Sketch {
 			this.recentFiles = this.recentFiles.slice(0, 10)
 		}
 		window.api.updateRecentFiles(this.recentFiles, f => this.openSprite(f))
+		localStorage.setItem('recentFiles', JSON.stringify(this.recentFiles))
 	}
 }
 
