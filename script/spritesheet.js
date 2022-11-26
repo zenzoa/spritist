@@ -52,8 +52,8 @@ spritesheet.fromSprite = (sprite, cols, rows) => {
 	image.loadPixels()
 
 	sprite.frames.forEach((frame, frameIndex) => {
-		let tileX = Math.floor(frameIndex / rows)
-		let tileY = Math.floor(frameIndex % rows)
+		let tileX = Math.floor(frameIndex % cols)
+		let tileY = Math.floor(frameIndex / cols)
 		frame.loadPixels()
 		for (let y = 0; y < frame.height; y++) {
 			for (let x = 0; x < frame.width; x++) {
