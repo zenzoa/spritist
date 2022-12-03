@@ -20,7 +20,7 @@ spritesheet.toSprite = (image, cols, rows) => {
 			let relY = y - (tileY * tileHeight)
 			let i = (y * image.width + x) * 4
 			let j = (relY * tileWidth + relX) * 4
-			let frame = frames[tileX * rows + tileY]
+			let frame = frames[tileY * cols + tileX]
 			frame.pixels[j] = image.pixels[i]
 			frame.pixels[j + 1] = image.pixels[i + 1]
 			frame.pixels[j + 2] = image.pixels[i + 2]
