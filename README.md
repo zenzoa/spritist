@@ -16,6 +16,7 @@ A sprite utility for the [Creatures game series](https://creatures.wiki/).
 * NeoDement for testing and troubleshooting, and help with CHARSET.DTA files
 * ligfx for their [openc2e CHARSET.DTA parser](https://github.com/openc2e/openc2e/blob/main/src/fileformats/charsetdta.cpp) that I referenced extensively
 * Verm, EemFoo, and the larger Creatures community for feedback and support
+* CosmicSynthetics for feedback and testing the spritesheet feature
 
 ## Libraries
 * [p5.js](https://p5js.org/)
