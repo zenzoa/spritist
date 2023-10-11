@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Spritist</title>
+		<link rel="stylesheet" href="./style/style.css">
+
+		<script src="./script/sprite.js"></script>
+		<script src="./script/selection.js"></script>
+		<script src="./script/drag.js"></script>
+		<script src="./script/theme.js"></script>
+		<script src="./script/main.js"></script>
+	</head>
+
+	<body>
+
+		<!-- MENU BAR -->
+		<div id="menubar">
+			<div id="menubar">
+				<button id="new-file-button" title="New">
+					<img src="library/mono-icons/svg/document-empty.svg" alt="New">
+				</button>
+				<button id="open-file-button" title="Open">
+					<img src="library/mono-icons/svg/folder.svg" alt="Open">
+				</button>
+				<button id="save-file-button" title="Save" disabled>
+					<img src="library/mono-icons/svg/save.svg" alt="Save">
+				</button>
+				<button id="save-as-file-button" title="Save As" disabled>
+					<img src="library/mono-icons/svg/document-add.svg" alt="Save As">
+				</button>
+
+				<span></span>
+
+				<button id="insert-button" title="Insert Image" disabled>
+					<img src="library/mono-icons/svg/image.svg" alt="Insert Image">
+				</button>
+
+				<span></span>
+
+				<button id="undo-button" title="Undo" disabled>
+					<img src="library/mono-icons/svg/undo.svg" alt="Undo">
+				</button>
+				<button id="redo-button" title="Redo" disabled>
+					<img src="library/mono-icons/svg/refresh.svg" alt="Redo">
+				</button>
+
+				<span></span>
+
+				<button id="copy-button" title="Copy" disabled>
+					<img src="library/mono-icons/svg/copy.svg" alt="Copy">
+				</button>
+				<button id="paste-button" title="Paste" disabled>
+					<img src="library/mono-icons/svg/clipboard.svg" alt="Paste">
+				</button>
+				<button id="delete-button" title="Delete" disabled>
+					<img src="library/mono-icons/svg/delete.svg" alt="Delete">
+				</button>
+			</div>
+		</div>
+
+
+		<!-- BACKGROUND BAR -->
+		<div id="bg-bar">
+			<span style="flex-grow:1;">Background Mode</span>
+			<label>
+				<span>Cols:</span>
+				<input id="bg-cols" type="number" min="0" step="1"></input>
+			</label>
+			<span>×</span>
+			<label>
+				<span>Rows:</span>
+				<input id="bg-rows" type="number" min="0" step="1"></input>
+			</label>
+			<label id="bg-invalid-dims">
+				<img src="library/mono-icons/svg/warning.svg">
+				<span>Invalid dims</span>
+			</label>
+			<span style="flex-grow:1;"></span>
+			<button id="exit-bg-mode" title="Exit Background Mode">
+				<img src="library/mono-icons/svg/close.svg" alt="Exit Background Mode">
+			</button>
+		</div>
+
+
+		<!-- FRAME LIST -->
+		<main>
+			<div id="frame-list">
+			</div>
+		</main>
+
+
+		<!-- EXPORT PNG -->
+		<div id="export-png-dialog" class="dialog closed">
+			<div class="dialog-content">
+				<div class="dialog-header">
+					<span class="dialog-title">
+						Export PNG
+					</span>
+					<button id="export-png-close-button" class="dialog-close-button" title="Close Dialog">
+						<img src="library/mono-icons/svg/close.svg" alt="Close Dialog">
+					</button>
+				</div>
+				<div class="dialog-body">
+					<span class="input-row">
+						<label>
+							<span>Base File Name:</span>
+							<input id="export-png-base" type="text"></input>
+						</label>
+						<button id="export-png-select-file-button">
+							<img src="library/mono-icons/svg/folder.svg" alt="Open">
+						</button>
+					</span>
+
+					<span class="input-row">
+						<label>
+							<span>Frames to Export:</span>
+							<select id="export-png-frames">
+								<option value="all">All Frames</option>
+								<option value="selected">Selected Only</option>
+							</select>
+							<div class="dropdown-arrow">
+								<img src="library/mono-icons/svg/chevron-down.svg">
+							</div>
+						</label>
+					</span>
+
+					<span class="input-row button-row">
+						<button id="export-png-cancel-button" class="text-button">
+							Cancel
+						</button>
+						<button id="export-png-confirm-button" class="text-button primary">
+							Export
+						</button>
+					</span>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- EXPORT GIF -->
+		<div id="export-gif-dialog" class="dialog closed">
+			<div class="dialog-content">
+				<div class="dialog-header">
+					<span class="dialog-title">
+						Export GIF
+					</span>
+					<button id="export-gif-close-button" class="dialog-close-button" title="Close Dialog">
+						<img src="library/mono-icons/svg/close.svg" alt="Close Dialog">
+					</button>
+				</div>
+				<div class="dialog-body">
+					<span class="input-row">
+						<label>
+							<span>File Path:</span>
+							<input id="export-gif-path" type="text"></input>
+						</label>
+						<button id="export-gif-select-file-button">
+							<img src="library/mono-icons/svg/folder.svg" alt="Open">
+						</button>
+					</span>
+
+					<span class="input-row">
+						<label>
+							<span>Frames to Export:</span>
+							<select id="export-gif-frames">
+								<option value="all">All Frames</option>
+								<option value="selected">Selected Only</option>
+							</select>
+							<div class="dropdown-arrow">
+								<img src="library/mono-icons/svg/chevron-down.svg">
+							</div>
+						</label>
+					</span>
+
+					<span class="input-row">
+						<label>
+							<span>Animation Speed:</span>
+							<input id="export-gif-speed" type="number" step="1" min="0" value="200"></input>
+							<span>ms/frame</span>
+						</label>
+					</span>
+
+					<span class="input-row button-row">
+						<button id="export-gif-cancel-button" class="text-button">
+							Cancel
+						</button>
+						<button id="export-gif-confirm-button" class="text-button primary">
+							Export
+						</button>
+					</span>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- EXPORT SPRITESHEET -->
+		<div id="export-spritesheet-dialog" class="dialog closed">
+			<div class="dialog-content">
+				<div class="dialog-header">
+					<span class="dialog-title">
+						Export Spritesheet
+					</span>
+					<button id="export-spritesheet-close-button" class="dialog-close-button" title="Close Dialog">
+						<img src="library/mono-icons/svg/close.svg" alt="Close Dialog">
+					</button>
+				</div>
+				<div class="dialog-body">
+					ask for name, cols OR tile width, and rows OR tile height
+				</div>
+			</div>
+		</div>
+
+
+		<!-- IMPORT SPRITESHEET -->
+		<div id="import-spritesheet-dialog" class="dialog closed">
+			<div class="dialog-content">
+				<div class="dialog-header">
+					<span class="dialog-title">
+						Import Spritesheet
+					</span>
+					<button id="import-spritesheet-close-button" class="dialog-close-button" title="Close Dialog">
+						<img src="library/mono-icons/svg/close.svg" alt="Close Dialog">
+					</button>
+				</div>
+				<div class="dialog-body">
+					ask for name, cols OR tile width, and rows OR tile height
+				</div>
+			</div>
+		</div>
+
+	</body>
+</html>
