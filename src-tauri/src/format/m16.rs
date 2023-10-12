@@ -42,8 +42,11 @@ fn read_image_data(contents: &[u8], header: &ImageHeader) -> Result<RgbaImage, B
 	for y in 0..header.height {
 		for x in 0..header.width {
 			if buffer.remaining() < 2 { return Err(image_error()); }
-			let pixel = parse_pixel_565_be(buffer.get_u16());
-			image.put_pixel(x.into(), y.into(), pixel);
+			let mut color = parse_pixel_565_be(buffer.get_u16());
+			if color[0] == 0 && color[1] == 0 && color[2] == 0 {
+				color[3] = 0;
+			}
+			image.put_pixel(x.into(), y.into(), color);
 		}
 	}
 	Ok(image)

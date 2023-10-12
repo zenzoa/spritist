@@ -44,10 +44,13 @@ fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: u32) -> 
 		for x in 0..header.width {
 			if buffer.remaining() < 2 { return Err(image_error()); }
 			let pixel_data = buffer.get_u16_le();
-			let color = match pixel_format {
+			let mut color = match pixel_format {
 				2 => parse_pixel_555(pixel_data),
 				_ => parse_pixel_565(pixel_data)
 			};
+			if color[0] == 0 && color[1] == 0 && color[2] == 0 {
+				color[3] = 0;
+			}
 			image.put_pixel(x.into(), y.into(), color);
 		}
 	}
