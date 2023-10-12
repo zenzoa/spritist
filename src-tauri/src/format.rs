@@ -7,7 +7,6 @@ pub mod m16;
 pub mod c16;
 pub mod blk;
 pub mod dta;
-// pub mod pal;
 pub mod photo_album;
 
 pub fn file_header_error() -> Box<dyn Error> {

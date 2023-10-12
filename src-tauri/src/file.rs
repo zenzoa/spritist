@@ -35,7 +35,6 @@ use crate::{
 		c16,
 		blk,
 		dta,
-		// pal,
 		photo_album
 	},
 	palette
@@ -281,7 +280,6 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<Sp
 		"n16" => m16::decode(&bytes),
 		"blk" => blk::decode(&bytes),
 		"dta" => dta::decode(&bytes),
-		// "pal" => pal::decode(&bytes),
 		"photo album" => {
 			photo_album::decode(&bytes, &palette)
 		},

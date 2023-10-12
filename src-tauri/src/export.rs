@@ -1,21 +1,23 @@
 use std::{
 	fs::File,
+	error::Error,
 	path::PathBuf
 };
 use tauri::{
 	AppHandle,
 	Manager,
 	State,
-	api::dialog::{ FileDialogBuilder, message },
+	api::dialog::{ FileDialogBuilder, message }
 };
 use image::{
-	Frame as GifFrame,
 	Delay,
+	RgbaImage,
+	Frame as GifFrame,
 	codecs::gif::{ GifEncoder, Repeat }
 };
 
 use crate::{
-	file::FileState,
+	file::{ FileState, Frame },
 	selection::SelectionState
 };
 
@@ -63,30 +65,50 @@ pub fn select_gif_path(app_handle: AppHandle, file_path: String) {
 
 #[tauri::command]
 pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, base_file_path: String, frames_to_export: String) {
-	match PathBuf::from(&base_file_path).parent() {
-		Some(base_dir) => {
-			match PathBuf::from(&base_file_path).file_stem() {
-				Some(file_stem) => {
-					let frames = file_state.frames.lock().unwrap();
-					let selected_frames = selection_state.selected_frames.lock().unwrap();
-					for (i, frame) in frames.iter().enumerate() {
-						if frames_to_export != "selected" || selected_frames.contains(&i) {
-							let file_path = base_dir.join(format!("{}-{}.png", file_stem.to_string_lossy(), i));
-							match frame.image.save(file_path) {
-								Ok(()) => {
-									message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported PNG file(s) succesfully");
-									app_handle.emit_all("successful_gif_export", "".to_string()).unwrap();
-								}
-								Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()
-							}
-						}
+	let frames = file_state.frames.lock().unwrap();
+	let selected_frames = selection_state.selected_frames.lock().unwrap();
+	match frames_to_export.as_str() {
+		"combined" => {
+			let cols = *file_state.cols.lock().unwrap();
+			let rows = *file_state.rows.lock().unwrap();
+			match combine_frames(&frames, cols, rows, false) {
+				Ok(image) => {
+					let file_path = PathBuf::from(&base_file_path);
+					if let Err(why) = image.save(file_path) {
+						app_handle.emit_all("error", why.to_string()).unwrap();
+						return
 					}
+				},
+				Err(why) => {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+					return
 				}
-				None => app_handle.emit_all("error", "Invalid file name".to_string()).unwrap()
 			}
 		}
-		None => app_handle.emit_all("error", "Invalid file path".to_string()).unwrap()
+		_ => {
+			match PathBuf::from(&base_file_path).parent() {
+				Some(base_dir) => {
+					match PathBuf::from(&base_file_path).file_stem() {
+						Some(file_stem) => {
+							for (i, frame) in frames.iter().enumerate() {
+								if frames_to_export != "selected" || selected_frames.contains(&i) {
+									let file_path = base_dir.join(format!("{}-{}.png", file_stem.to_string_lossy(), i));
+									if let Err(why) = frame.image.save(file_path) {
+										app_handle.emit_all("error", why.to_string()).unwrap();
+										return
+									}
+								}
+							}
+						}
+						None => app_handle.emit_all("error", "Invalid file name".to_string()).unwrap()
+					}
+				}
+				None => app_handle.emit_all("error", "Invalid file path".to_string()).unwrap()
+			}
+		}
 	}
+	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported PNG file(s) succesfully");
+	app_handle.emit_all("successful_png_export", "".to_string()).unwrap();
 }
 
 #[tauri::command]
@@ -117,4 +139,33 @@ pub fn export_gif(app_handle: AppHandle, file_state: State<FileState>, selection
 		}
 		Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()
 	}
+}
+
+fn combine_frames(frames: &Vec<Frame>, cols: usize, rows: usize, by_rows: bool) -> Result<RgbaImage, Box<dyn Error>> {
+	let mut tile_width = 0;
+	let mut tile_height = 0;
+	for frame in frames {
+		if frame.image.width() > tile_width { tile_width = frame.image.width(); }
+		if frame.image.height() > tile_height { tile_height = frame.image.height(); }
+	}
+
+	let image_width = tile_width * cols as u32;
+	let image_height = tile_height * rows as u32;
+	let mut output_image = RgbaImage::new(image_width, image_height);
+
+	for (i, frame) in frames.iter().enumerate() {
+		let tile_x = if by_rows { i % cols } else { i / rows };
+		let tile_y = if by_rows { i / cols } else { i % rows };
+
+		for y in 0..frame.image.height() {
+			for x in 0..frame.image.width() {
+				let image_x = (tile_x as u32 * tile_width) + x;
+				let image_y = (tile_y as u32 * tile_height) + y;
+				let pixel = *frame.image.get_pixel(x, y);
+				output_image.put_pixel(image_x, image_y, pixel);
+			}
+		}
+	}
+
+	Ok(output_image)
 }

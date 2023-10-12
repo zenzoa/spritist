@@ -80,13 +80,27 @@ window.addEventListener('load', () => {
 	})
 
 	Tauri.event.listen('export_png', () => {
+		let dropdown = document.getElementById('export-png-frames')
+		let bgOption = document.getElementById('export-png-bg-option')
 		Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
 			document.getElementById('export-png-base').value = filePath
 		})
 		if (Selection.frameIndexes.length > 0) {
-			document.getElementById('export-png-frames').value = "selected"
+			dropdown.value = 'selected'
 		} else {
-			document.getElementById('export-png-frames').value = "all"
+			dropdown.value = 'all'
+		}
+		if (Sprite.cols && Sprite.rows && Sprite.frame_count === Sprite.cols * Sprite.rows) {
+			if (!bgOption) {
+				bgOption = document.createElement('option')
+				bgOption.id = 'export-png-bg-option'
+				bgOption.value = 'combined'
+				bgOption.innerText = 'Combined As One Image'
+				dropdown.append(bgOption)
+				dropdown.value = "combined"
+			}
+		} else if (bgOption) {
+			bgOption.remove()
 		}
 		document.getElementById('export-png-dialog').classList.remove('closed')
 		document.getElementById('export-png-confirm-button').focus()

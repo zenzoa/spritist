@@ -83,23 +83,6 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 	})
 }
 
-// pub fn combine_tiles(images: Vec<RgbaImage>, cols: u32, rows: u32) -> RgbaImage {
-// 	let mut output_image = RgbaImage::new(cols * 128, rows * 128);
-// 	for (i, image) in images.iter().enumerate() {
-// 		let image_x = (i as u32) / rows;
-// 		let image_y = (i as u32) % rows;
-// 		for x in 0..image.width() {
-// 			for y in 0..image.height() {
-// 				let pixel_x = (image_x * 128) + x;
-// 				let pixel_y = (image_y * 128) + y;
-// 				let color = image.get_pixel(x, y);
-// 				output_image.put_pixel(pixel_x, pixel_y, *color);
-// 			}
-// 		}
-// 	}
-// 	output_image
-// }
-
 fn write_file_header(buffer: &mut BytesMut, cols: u16, rows: u16) {
 	buffer.put_u32_le(3); // 565 format
 	buffer.put_u16_le(cols);
