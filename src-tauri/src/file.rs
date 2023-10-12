@@ -33,7 +33,8 @@ use crate::{
 		s16,
 		m16,
 		c16,
-		blk
+		blk,
+		photo_album
 	},
 	palette
 };
@@ -278,7 +279,11 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<Sp
 		"blk" => blk::decode(&bytes),
 		// "dta" => dta::decode(&bytes),
 		// "pal" => pal::decode(&bytes),
-		// "photo album" => photo_album::decode(&bytes),
+		"photo album" => {
+			let file_state: State<FileState> = app_handle.state();
+			let pal = file_state.palette.lock().unwrap();
+			photo_album::decode(&bytes, &pal)
+		},
 		"png" => {
 			let image = ImageReader::new(Cursor::new(bytes)).with_guessed_format()?.decode()?.to_rgba8();
 			let frame = Frame{ image, color_indexes: Vec::new() };
@@ -374,9 +379,6 @@ pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<
 		"m16" => Some(m16::encode(sprite_info)?),
 		"n16" => Some(m16::encode(sprite_info)?),
 		"blk" => Some(blk::encode(sprite_info)?),
-		// "dta" => Some(dta::encode(sprite_info)?),
-		// "pal" => Some(pal::encode(sprite_info)?),
-		// "photo album" => Some(photo_album::encode(sprite_info)?)
 		_ => None
 	}.ok_or(extension_err)?;
 

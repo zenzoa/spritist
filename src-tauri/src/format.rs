@@ -6,6 +6,7 @@ pub mod s16;
 pub mod m16;
 pub mod c16;
 pub mod blk;
+pub mod photo_album;
 
 pub fn file_header_error() -> Box<dyn Error> {
 	"Invalid data. File ends in the middle of file header.".into()
