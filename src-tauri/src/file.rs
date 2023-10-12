@@ -34,6 +34,8 @@ use crate::{
 		m16,
 		c16,
 		blk,
+		dta,
+		// pal,
 		photo_album
 	},
 	palette
@@ -245,26 +247,27 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<SpriteInfo, Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 
+	let file_state: State<FileState> = app_handle.state();
+	let palette = file_state.palette.lock().unwrap();
+
 	let extension_err = "File does not have a valid file extension (\".spr\", \".s16\", \".c16\", \".blk\", etc.)";
 	let extension = file_path.extension().ok_or(extension_err)?;
 	let extension_str = extension.to_str().ok_or(extension_err)?;
 	match extension_str.to_lowercase().as_str() {
 		"spr" => {
-			let file_state: State<FileState> = app_handle.state();
-			let pal = file_state.palette.lock().unwrap();
-			match spr::decode(&bytes, &pal.clone()) {
+			match spr::decode(&bytes, &palette) {
 				Ok(result) => Ok(result),
 				Err(_) => {
 					println!("trying single-width SPR");
-					match spr::decode_single_width(&bytes, &pal.clone()) {
+					match spr::decode_single_width(&bytes, &palette) {
 						Ok(result) => Ok(result),
 						Err(_) => {
 							println!("trying double-width SPR");
-							match spr::decode_double_width(&bytes, &pal.clone()) {
+							match spr::decode_double_width(&bytes, &palette) {
 								Ok(result) => Ok(result),
 								Err(_) => {
 									println!("trying multi-sprite SPR");
-									spr::decode_multi_sprite(&bytes, &pal.clone())
+									spr::decode_multi_sprite(&bytes, &palette)
 								}
 							}
 						}
@@ -277,12 +280,10 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<Sp
 		"m16" => m16::decode(&bytes),
 		"n16" => m16::decode(&bytes),
 		"blk" => blk::decode(&bytes),
-		// "dta" => dta::decode(&bytes),
+		"dta" => dta::decode(&bytes),
 		// "pal" => pal::decode(&bytes),
 		"photo album" => {
-			let file_state: State<FileState> = app_handle.state();
-			let pal = file_state.palette.lock().unwrap();
-			photo_album::decode(&bytes, &pal)
+			photo_album::decode(&bytes, &palette)
 		},
 		"png" => {
 			let image = ImageReader::new(Cursor::new(bytes)).with_guessed_format()?.decode()?.to_rgba8();
