@@ -51,8 +51,8 @@ fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> R
 	let mut frames: Vec<Frame> = Vec::new();
 	for col in 0..cols {
 		for row in 0..rows {
-			let tile_x = col * 128 as u32;
-			let tile_y = row * 128 as u32;
+			let tile_x = col * 128_u32;
+			let tile_y = row * 128_u32;
 			let mut tile_image = RgbaImage::new(128, 128);
 			for y in 0..128 {
 				for x in 0..128 {

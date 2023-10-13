@@ -55,7 +55,7 @@ pub fn decode(contents: &[u8], palette: &Palette) -> Result<SpriteInfo, Box<dyn 
 
 		let mut image = RgbaImage::new(width, height);
 		let mut color_indexes: Vec<u8> = Vec::new();
-		let mut last_byte = 0 as u8;
+		let mut last_byte = 0_u8;
 
 		for i in 0..(width * height) {
 			if buffer.remaining() < 1 { return Err(image_error()); }
@@ -65,7 +65,7 @@ pub fn decode(contents: &[u8], palette: &Palette) -> Result<SpriteInfo, Box<dyn 
 			let pixel = palette.get_color(color_index);
 			let x = i % width;
 			let y = (height - 1) - (i / width);
-			image.put_pixel(x.into(), y.into(), pixel);
+			image.put_pixel(x, y, pixel);
 		}
 
 		frames.push(Frame{ image, color_indexes });
