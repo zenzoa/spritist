@@ -15,10 +15,11 @@ pub fn build_menu() -> Menu {
 		.add_item(CustomMenuItem::new("export_png".to_string(), "Export PNG").accelerator("CmdOrCtrl+E").disabled())
 		.add_item(CustomMenuItem::new("export_gif".to_string(), "Export GIF").disabled())
 		.add_item(CustomMenuItem::new("export_spritesheet".to_string(), "Export Spritesheet").disabled())
-		);
+	);
 	let import_menu = Submenu::new("Import", Menu::new()
+		.add_item(CustomMenuItem::new("import_png_as_blk".to_string(), "Import PNG as BLK"))
 		.add_item(CustomMenuItem::new("import_spritesheet".to_string(), "Import Spritesheet"))
-		);
+	);
 	let file_menu = Submenu::new("File", Menu::new()
 		.add_item(new_file)
 		.add_item(open_file)

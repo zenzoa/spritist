@@ -383,13 +383,14 @@ pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<
 
 	fs::write(file_path, &data)?;
 
-	*file_state.file_is_modified.lock().unwrap() = false;
 	if let Some(file_title) = file_path.file_name() {
 		if let Some(file_title_str) = file_title.to_str() {
 			*file_state.file_title.lock().unwrap() = file_title_str.to_string();
 		}
 	}
 	*file_state.file_path.lock().unwrap() = Some(file_path.to_owned());
+	*file_state.file_is_modified.lock().unwrap() = false;
+	*file_state.read_only.lock().unwrap() = false;
 
 	update_window_title(app_handle);
 

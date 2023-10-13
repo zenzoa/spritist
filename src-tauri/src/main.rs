@@ -26,6 +26,7 @@ mod config;
 mod format;
 mod palette;
 mod export;
+mod import;
 
 fn main() {
 	tauri::Builder::default()
@@ -87,6 +88,9 @@ fn main() {
 				}
 				"export_spritesheet" => {
 					app_handle.emit_all("export_spritesheet", "").unwrap();
+				}
+				"import_png_as_blk" => {
+					import::activate_import_png_as_blk(app_handle);
 				}
 				"import_spritesheet" => {
 					app_handle.emit_all("import_spritesheet", "").unwrap();
