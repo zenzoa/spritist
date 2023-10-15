@@ -7,8 +7,8 @@
 		"withGlobalTauri": true
 	},
 	"package": {
-		"productName": "spritist",
-		"version": "0.1.0"
+		"productName": "Spritist",
+		"version": "1.9.3"
 	},
 	"tauri": {
 		"allowlist": {
@@ -50,9 +50,7 @@
 			}
 		},
 		"security": {
-			"csp": {
-				"img-src": "getframe:"
-			}
+			"csp": "default-src 'self' img-src: getframe:"
 		},
 		"updater": {
 			"active": false
