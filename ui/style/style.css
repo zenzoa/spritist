@@ -71,8 +71,7 @@ h1, h2, h3, h4 {
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-#menubar > * + *,
-#bg-bar > * + * {
+#menubar > * + * {
 	margin-left: 6px;
 }
 
@@ -184,9 +183,6 @@ main {
 
 #bg-bar {
 	display: none;
-}
-
-.bg-mode #bg-bar {
 	z-index: 100;
 	position: absolute;
 	top: var(--toolbar-height);
@@ -194,10 +190,14 @@ main {
 	right: 0;
 	height: var(--toolbar-height);
 	padding: 0 12px;
-	display: flex;
 	align-items: center;
+	gap: 12px;
 	background-color: var(--bg-bar-bg);
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.bg-mode #bg-bar {
+	display: flex;
 }
 
 .bg-mode main {
@@ -237,24 +237,25 @@ main {
 }
 
 .dialog {
+	display: none;
 	z-index: 200;
 	position: absolute;
 	top: 0;
 	left: 0;
 	bottom: 0;
 	right: 0;
-	display: flex;
 	align-items: center;
 	justify-content: center;
 	background-color: rgba(0, 0, 0, 0.5);
 }
 
-.dialog.closed {
-	display: none;
+.dialog.open {
+	display: flex;
 }
 
 .dialog-content {
 	width: 100%;
+	min-width: 300px;
 	max-width: 600px;
 	margin: 50px;
 	background-color: var(--main-bg);
@@ -367,15 +368,17 @@ input:focus {
 	outline-offset: 1px;
 }
 
+input:disabled {
+	opacity: 0.5;
+	box-shadow: none;
+}
+
 label {
 	position: relative;
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-}
-
-label > * + * {
-	margin-left: 6px;
+	gap: 12px;
 }
 
 select {
@@ -408,14 +411,11 @@ select:active + .dropdown-arrow {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
+	gap: 12px;
 }
 
 .input-row + .input-row {
 	margin-top: 16px;
-}
-
-.input-row * + * {
-	margin-left: 12px;
 }
 
 .input-row label {
@@ -423,23 +423,32 @@ select:active + .dropdown-arrow {
 }
 
 .input-row label > span:first-child {
-	min-width: 150px;
 	text-align: right;
+	flex-basis: 150px;
 }
 
 .input-row label > input, .input-row label > select {
 	flex-grow: 1;
-	min-width: 120px;
+	flex-basis: 150px;
 }
 
 .input-row + .button-row {
 	margin-top: 24px;
 }
 
-.button-row > button {
-	min-width: 150px;
+.button-row button {
+	flex-basis: 150px;
 }
 
-.button-row > button.primary {
+.button-row button.primary {
 	flex-grow: 1;
+}
+
+#import-spritesheet-dialog .input-row label {
+	width: 50%;
+}
+
+#import-spritesheet-dialog .input-row label > span:first-child,
+#import-spritesheet-dialog .input-row label > input {
+	flex-basis: 80px;
 }

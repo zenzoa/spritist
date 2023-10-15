@@ -8,6 +8,10 @@
 		<title>Spritist</title>
 		<link rel="stylesheet" href="./style/style.css">
 
+		<script src="./script/export-png.js"></script>
+		<script src="./script/export-gif.js"></script>
+		<script src="./script/export-spritesheet.js"></script>
+		<script src="./script/import-spritesheet.js"></script>
 		<script src="./script/sprite.js"></script>
 		<script src="./script/selection.js"></script>
 		<script src="./script/drag.js"></script>
@@ -94,7 +98,7 @@
 
 
 		<!-- EXPORT PNG -->
-		<div id="export-png-dialog" class="dialog closed">
+		<div id="export-png-dialog" class="dialog">
 			<div class="dialog-content">
 				<div class="dialog-header">
 					<span class="dialog-title">
@@ -105,7 +109,7 @@
 					</button>
 				</div>
 				<div class="dialog-body">
-					<span class="input-row">
+					<div class="input-row">
 						<label>
 							<span>Base File Name:</span>
 							<input id="export-png-base" type="text"></input>
@@ -113,9 +117,9 @@
 						<button id="export-png-select-file-button">
 							<img src="library/mono-icons/svg/folder.svg" alt="Open">
 						</button>
-					</span>
+					</div>
 
-					<span class="input-row">
+					<div class="input-row">
 						<label>
 							<span>Frames to Export:</span>
 							<select id="export-png-frames">
@@ -126,23 +130,23 @@
 								<img src="library/mono-icons/svg/chevron-down.svg">
 							</div>
 						</label>
-					</span>
+					</div>
 
-					<span class="input-row button-row">
+					<div class="input-row button-row">
 						<button id="export-png-cancel-button" class="text-button">
 							Cancel
 						</button>
 						<button id="export-png-confirm-button" class="text-button primary">
 							Export
 						</button>
-					</span>
+					</div>
 				</div>
 			</div>
 		</div>
 
 
 		<!-- EXPORT GIF -->
-		<div id="export-gif-dialog" class="dialog closed">
+		<div id="export-gif-dialog" class="dialog">
 			<div class="dialog-content">
 				<div class="dialog-header">
 					<span class="dialog-title">
@@ -153,7 +157,7 @@
 					</button>
 				</div>
 				<div class="dialog-body">
-					<span class="input-row">
+					<div class="input-row">
 						<label>
 							<span>File Path:</span>
 							<input id="export-gif-path" type="text"></input>
@@ -161,9 +165,9 @@
 						<button id="export-gif-select-file-button">
 							<img src="library/mono-icons/svg/folder.svg" alt="Open">
 						</button>
-					</span>
+					</div>
 
-					<span class="input-row">
+					<div class="input-row">
 						<label>
 							<span>Frames to Export:</span>
 							<select id="export-gif-frames">
@@ -174,31 +178,31 @@
 								<img src="library/mono-icons/svg/chevron-down.svg">
 							</div>
 						</label>
-					</span>
+					</div>
 
-					<span class="input-row">
+					<div class="input-row">
 						<label>
 							<span>Animation Speed:</span>
 							<input id="export-gif-speed" type="number" step="1" min="0" value="200"></input>
 							<span>ms/frame</span>
 						</label>
-					</span>
+					</div>
 
-					<span class="input-row button-row">
+					<div class="input-row button-row">
 						<button id="export-gif-cancel-button" class="text-button">
 							Cancel
 						</button>
 						<button id="export-gif-confirm-button" class="text-button primary">
 							Export
 						</button>
-					</span>
+					</div>
 				</div>
 			</div>
 		</div>
 
 
 		<!-- EXPORT SPRITESHEET -->
-		<div id="export-spritesheet-dialog" class="dialog closed">
+		<div id="export-spritesheet-dialog" class="dialog">
 			<div class="dialog-content">
 				<div class="dialog-header">
 					<span class="dialog-title">
@@ -216,7 +220,7 @@
 
 
 		<!-- IMPORT SPRITESHEET -->
-		<div id="import-spritesheet-dialog" class="dialog closed">
+		<div id="import-spritesheet-dialog" class="dialog">
 			<div class="dialog-content">
 				<div class="dialog-header">
 					<span class="dialog-title">
@@ -227,7 +231,56 @@
 					</button>
 				</div>
 				<div class="dialog-body">
-					ask for name, cols OR tile width, and rows OR tile height
+					<div class="input-row">
+						<label>
+							<span>File Path:</span>
+							<input id="import-spritesheet-path" type="text" disabled></input>
+						</label>
+					</div>
+					<div class="input-row">
+						<label>
+							<span>Width:</span>
+							<input id="import-spritesheet-width" type="text" disabled></input>
+							<span>px</span>
+						</label>
+						<label>
+							<span>Height:</span>
+							<input id="import-spritesheet-height" type="text" disabled></input>
+							<span>px</span>
+						</label>
+					</div>
+					<div class="input-row">
+						<label>
+							<span>Tile Width:</span>
+							<input id="import-spritesheet-tile-width" type="number" step="1" min="1"></input>
+							<span>px</span>
+						</label>
+						<label>
+							<span>Tile Height:</span>
+							<input id="import-spritesheet-tile-height" type="number" step="1" min="1"></input>
+							<span>px</span>
+						</label>
+					</div>
+					<div class="input-row">
+						<label>
+							<span>Columns:</span>
+							<input id="import-spritesheet-cols" type="number" step="1" min="1"></input>
+							<span style="opacity:0;">px</span>
+						</label>
+						<label>
+							<span>Rows:</span>
+							<input id="import-spritesheet-rows" type="number" step="1" min="1"></input>
+							<span style="opacity:0;">px</span>
+						</label>
+					</div>
+					<div class="input-row button-row">
+						<button id="import-spritesheet-cancel-button" class="text-button">
+							Cancel
+						</button>
+						<button id="import-spritesheet-confirm-button" class="text-button primary">
+							Import
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

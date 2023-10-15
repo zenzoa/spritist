@@ -79,78 +79,6 @@ window.addEventListener('load', () => {
 		}
 	})
 
-	Tauri.event.listen('export_png', () => {
-		let dropdown = document.getElementById('export-png-frames')
-		let bgOption = document.getElementById('export-png-bg-option')
-		Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
-			document.getElementById('export-png-base').value = filePath
-		})
-		if (Selection.frameIndexes.length > 0) {
-			dropdown.value = 'selected'
-		} else {
-			dropdown.value = 'all'
-		}
-		if (Sprite.cols && Sprite.rows && Sprite.frame_count === Sprite.cols * Sprite.rows) {
-			if (!bgOption) {
-				bgOption = document.createElement('option')
-				bgOption.id = 'export-png-bg-option'
-				bgOption.value = 'combined'
-				bgOption.innerText = 'Combined As One Image'
-				dropdown.append(bgOption)
-				dropdown.value = "combined"
-			}
-		} else if (bgOption) {
-			bgOption.remove()
-		}
-		document.getElementById('export-png-dialog').classList.remove('closed')
-		document.getElementById('export-png-confirm-button').focus()
-	})
-	Tauri.event.listen('update_export_png_path', (event) => {
-		document.getElementById('export-png-base').value = event.payload
-	})
-	Tauri.event.listen('successful_png_export', (event) => {
-		document.getElementById('export-png-dialog').classList.add('closed')
-	})
-
-	Tauri.event.listen('export_gif', () => {
-		Tauri.invoke('get_file_path', { extension: 'gif' }).then((filePath) => {
-			document.getElementById('export-gif-path').value = filePath
-		})
-		if (Selection.frameIndexes.length > 0) {
-			document.getElementById('export-gif-frames').value = "selected"
-		} else {
-			document.getElementById('export-gif-frames').value = "all"
-		}
-		Tauri.invoke('get_file_path', { extension: 'gif' })
-		document.getElementById('export-gif-dialog').classList.remove('closed')
-	})
-	Tauri.event.listen('update_export_gif_path', (event) => {
-		document.getElementById('export-gif-path').value = event.payload
-	})
-	Tauri.event.listen('successful_gif_export', (event) => {
-		document.getElementById('export-gif-dialog').classList.add('closed')
-	})
-
-	Tauri.event.listen('export_spritesheet', () => {
-		// Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
-		// 	document.getElementById('export-spritesheet-path').value = filePath
-		// })
-		document.getElementById('export-spritesheet-dialog').classList.remove('closed')
-	})
-	Tauri.event.listen('update_export_spritesheet_path', (event) => {
-		// document.getElementById('export-spritesheet-path').value = event.payload
-	})
-
-	Tauri.event.listen('import_spritesheet', () => {
-		// Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
-		// 	document.getElementById('import-spritesheet-path').value = filePath
-		// })
-		document.getElementById('import-spritesheet-dialog').classList.remove('closed')
-	})
-	Tauri.event.listen('update_import_spritesheet_path', (event) => {
-		// document.getElementById('import-spritesheet-path').value = event.payload
-	})
-
 	Tauri.event.listen('view_as_sprite', viewAsSprite)
 	Tauri.event.listen('view_as_bg', viewAsBg)
 
@@ -202,55 +130,6 @@ window.addEventListener('load', () => {
 		Tauri.invoke('view_as_sprite')
 	})
 
-	document.getElementById('export-png-close-button').addEventListener('click', () => {
-		document.getElementById('export-png-dialog').classList.add('closed')
-	})
-	document.getElementById('export-png-cancel-button').addEventListener('click', () => {
-		document.getElementById('export-png-dialog').classList.add('closed')
-	})
-	document.getElementById('export-png-select-file-button').addEventListener('click', () => {
-		const baseFilePath = document.getElementById('export-png-base').value
-		Tauri.invoke('select_png_path', { baseFilePath }).then((filePath) => {
-			document.getElementById('export-png-base').value = filePath
-		})
-	})
-	document.getElementById('export-png-confirm-button').addEventListener('click', () => {
-		const baseFilePath = document.getElementById('export-png-base').value
-		const framesToExport = document.getElementById('export-png-frames').value
-		Tauri.invoke('export_png', { baseFilePath, framesToExport })
-	})
-
-	document.getElementById('export-gif-close-button').addEventListener('click', () => {
-		document.getElementById('export-gif-dialog').classList.add('closed')
-	})
-	document.getElementById('export-gif-cancel-button').addEventListener('click', () => {
-		document.getElementById('export-gif-dialog').classList.add('closed')
-	})
-	document.getElementById('export-gif-select-file-button').addEventListener('click', () => {
-		const filePath = document.getElementById('export-gif-path').value
-		Tauri.invoke('select-gif-path', { filePath }).then((filePath) => {
-			document.getElementById('export-gif-path').value = filePath
-		})
-	})
-	document.getElementById('export-gif-confirm-button').addEventListener('click', () => {
-		const filePath = document.getElementById('export-gif-path').value
-		const framesToExport = document.getElementById('export-gif-frames').value
-		const frameDelay = parseInt(document.getElementById('export-gif-speed').value)
-		if (isNaN(frameDelay) || frameDelay <= 0) {
-			Tauri.invoke('show_error_message', { why: "Invalid animation speed. Must be an integer greater than 0." })
-		} else {
-			Tauri.invoke('export_gif', { filePath, framesToExport, frameDelay })
-		}
-	})
-
-	document.getElementById('export-spritesheet-close-button').addEventListener('click', () => {
-		document.getElementById('export-spritesheet-dialog').classList.add('closed')
-	})
-
-	document.getElementById('import-spritesheet-close-button').addEventListener('click', () => {
-		document.getElementById('import-spritesheet-dialog').classList.add('closed')
-	})
-
 	document.body.addEventListener('keydown', (event) => {
 		if (event.key === 'ArrowLeft') {
 			Selection.selectLeft(event.shiftKey, event.ctrlKey)
@@ -258,10 +137,10 @@ window.addEventListener('load', () => {
 			Selection.selectRight(event.shiftKey, event.ctrlKey)
 		} else if (event.key === 'Escape') {
 			console.log('close dialog or clear selection')
-			document.getElementById('export-png-dialog').classList.add('closed')
-			document.getElementById('export-gif-dialog').classList.add('closed')
-			document.getElementById('export-spritesheet-dialog').classList.add('closed')
-			document.getElementById('import-spritesheet-dialog').classList.add('closed')
+			document.getElementById('export-png-dialog').classList.remove('open')
+			document.getElementById('export-gif-dialog').classList.remove('open')
+			document.getElementById('export-spritesheet-dialog').classList.remove('open')
+			document.getElementById('import-spritesheet-dialog').classList.remove('open')
 		}
 	})
 
@@ -270,6 +149,11 @@ window.addEventListener('load', () => {
 		setTransparentColor({ payload: config.transparent_color })
 		setTheme({ payload: config.theme })
 	})
+
+	ExportPng.setup()
+	ExportGif.setup()
+	ExportSpritesheet.setup()
+	ImportSpritesheet.setup()
 })
 
 const viewAsSprite = () => {

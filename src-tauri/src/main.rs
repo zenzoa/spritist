@@ -93,7 +93,7 @@ fn main() {
 					import::activate_import_png_as_blk(app_handle);
 				}
 				"import_spritesheet" => {
-					app_handle.emit_all("import_spritesheet", "").unwrap();
+					import::activate_import_spritesheet(app_handle);
 				}
 
 				// EDIT MENU
@@ -196,6 +196,7 @@ fn main() {
 			export::select_gif_path,
 			export::export_png,
 			export::export_gif,
+			import::import_spritesheet,
 			show_error_message,
 		])
 		.on_page_load(|window, _| {
