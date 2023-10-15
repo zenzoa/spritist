@@ -44,7 +44,9 @@ class ImportSpritesheet {
 			tileHeightInput.value = event.payload.height
 			colsInput.value = 1
 			rowsInput.value = 1
+			update(true)
 			dialogEl.classList.add('open')
+			confirmButton.focus()
 		})
 
 		const update = (changedTileSize) => {

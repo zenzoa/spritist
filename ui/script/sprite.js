@@ -1,5 +1,5 @@
 class Sprite {
-	static frame_count = 0
+	static frameCount = 0
 	static cols = 0
 	static rows = 0
 	static frameElements = []
@@ -76,7 +76,7 @@ class Sprite {
 		Sprite.timestamp = Date.now()
 
 		Sprite.frameElements.forEach(frameElement => frameElement.remove())
-		Sprite.frameElements = [...Array(Sprite.frame_count).keys()].map(i => Sprite.createFrameElement(i))
+		Sprite.frameElements = [...Array(Sprite.frameCount).keys()].map(i => Sprite.createFrameElement(i))
 		const frameList = document.getElementById('frame-list')
 		Sprite.frameElements.forEach(frameElement => {
 			frameList.append(frameElement)
@@ -128,7 +128,7 @@ class Sprite {
 		if (rows != null) Sprite.rows = rows
 		document.getElementById('bg-cols').value = Sprite.cols
 		document.getElementById('bg-rows').value = Sprite.rows
-		if (Sprite.frame_count === Sprite.cols * Sprite.rows) {
+		if (Sprite.frameCount === Sprite.cols * Sprite.rows) {
 			document.getElementById('bg-bar').classList.remove('bg-invalid-dims')
 		} else {
 			document.getElementById('bg-bar').classList.add('bg-invalid-dims')

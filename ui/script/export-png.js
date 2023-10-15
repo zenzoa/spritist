@@ -9,30 +9,32 @@ class ExportPng {
 		})
 
 		document.getElementById('export-png-select-file-button').addEventListener('click', () => {
-			const baseFilePath = document.getElementById('export-png-base').value
-			Tauri.invoke('select_png_path', { baseFilePath }).then((filePath) => {
-				document.getElementById('export-png-base').value = filePath
+			const filePath = document.getElementById('export-png-path').value
+			Tauri.invoke('select_png_path', { filePath }).then((filePath) => {
+				if (filePath) {
+					document.getElementById('export-png-path').value = filePath
+				}
 			})
 		})
 
 		document.getElementById('export-png-confirm-button').addEventListener('click', () => {
-			const baseFilePath = document.getElementById('export-png-base').value
+			const filePath = document.getElementById('export-png-path').value
 			const framesToExport = document.getElementById('export-png-frames').value
-			Tauri.invoke('export_png', { baseFilePath, framesToExport })
+			Tauri.invoke('export_png', { filePath, framesToExport })
 		})
 
 		Tauri.event.listen('export_png', () => {
 			let dropdown = document.getElementById('export-png-frames')
 			let bgOption = document.getElementById('export-png-bg-option')
 			Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
-				document.getElementById('export-png-base').value = filePath
+				document.getElementById('export-png-path').value = filePath
 			})
 			if (Selection.frameIndexes.length > 0) {
 				dropdown.value = 'selected'
 			} else {
 				dropdown.value = 'all'
 			}
-			if (Sprite.cols && Sprite.rows && Sprite.frame_count === Sprite.cols * Sprite.rows) {
+			if (Sprite.cols && Sprite.rows && Sprite.frameCount === Sprite.cols * Sprite.rows) {
 				if (!bgOption) {
 					bgOption = document.createElement('option')
 					bgOption.id = 'export-png-bg-option'
@@ -49,10 +51,10 @@ class ExportPng {
 		})
 
 		Tauri.event.listen('update_export_png_path', (event) => {
-			document.getElementById('export-png-base').value = event.payload
+			document.getElementById('export-png-path').value = event.payload
 		})
 
-		Tauri.event.listen('successful_png_export', (event) => {
+		Tauri.event.listen('successful_png_export', () => {
 			document.getElementById('export-png-dialog').classList.remove('open')
 		})
 	}

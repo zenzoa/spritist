@@ -18,11 +18,11 @@ class Selection {
 	static selectRight(shiftKey, ctrlKey) {
 		if (Selection.frameIndexes.length > 0) {
 			const lastIndex = Math.max(...Selection.frameIndexes)
-			if (lastIndex + 1 < Sprite.frame_count) {
+			if (lastIndex + 1 < Sprite.frameCount) {
 				Selection.frameIndexes = [lastIndex + 1]
 			}
 		} else {
-			Selection.frameIndexes = [Sprite.frame_count - 1]
+			Selection.frameIndexes = [Sprite.frameCount - 1]
 		}
 		Tauri.invoke('update_selection', { newSelectedFrames: Selection.frameIndexes })
 		Sprite.updateSelectedFrames()

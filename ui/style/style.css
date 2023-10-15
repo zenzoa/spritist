@@ -444,11 +444,11 @@ select:active + .dropdown-arrow {
 	flex-grow: 1;
 }
 
-#import-spritesheet-dialog .input-row label {
+.input-row.two-columns label {
 	width: 50%;
 }
 
-#import-spritesheet-dialog .input-row label > span:first-child,
-#import-spritesheet-dialog .input-row label > input {
+.input-row.two-columns label > span:first-child,
+.input-row.two-columns label > input {
 	flex-basis: 80px;
 }

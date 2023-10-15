@@ -112,7 +112,7 @@
 					<div class="input-row">
 						<label>
 							<span>Base File Name:</span>
-							<input id="export-png-base" type="text"></input>
+							<input id="export-png-path" type="text"></input>
 						</label>
 						<button id="export-png-select-file-button">
 							<img src="library/mono-icons/svg/folder.svg" alt="Open">
@@ -213,7 +213,33 @@
 					</button>
 				</div>
 				<div class="dialog-body">
-					ask for name, cols OR tile width, and rows OR tile height
+					<div class="input-row two-columns">
+						<label>
+							<span>File Path:</span>
+							<input id="export-spritesheet-path" type="text"></input>
+						</label>
+						<button id="export-spritesheet-select-file-button">
+							<img src="library/mono-icons/svg/folder.svg" alt="Open">
+						</button>
+					</div>
+					<div class="input-row two-columns">
+						<label>
+							<span>Columns:</span>
+							<input id="export-spritesheet-cols" type="number" step="1" min="1"></input>
+						</label>
+						<label>
+							<span>Rows:</span>
+							<input id="export-spritesheet-rows" type="number" step="1" min="1"></input>
+						</label>
+					</div>
+					<div class="input-row button-row">
+						<button id="export-spritesheet-cancel-button" class="text-button">
+							Cancel
+						</button>
+						<button id="export-spritesheet-confirm-button" class="text-button primary">
+							Export
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -231,13 +257,13 @@
 					</button>
 				</div>
 				<div class="dialog-body">
-					<div class="input-row">
+					<div class="input-row two-columns">
 						<label>
 							<span>File Path:</span>
 							<input id="import-spritesheet-path" type="text" disabled></input>
 						</label>
 					</div>
-					<div class="input-row">
+					<div class="input-row two-columns">
 						<label>
 							<span>Width:</span>
 							<input id="import-spritesheet-width" type="text" disabled></input>
@@ -249,7 +275,7 @@
 							<span>px</span>
 						</label>
 					</div>
-					<div class="input-row">
+					<div class="input-row two-columns">
 						<label>
 							<span>Tile Width:</span>
 							<input id="import-spritesheet-tile-width" type="number" step="1" min="1"></input>
@@ -261,7 +287,7 @@
 							<span>px</span>
 						</label>
 					</div>
-					<div class="input-row">
+					<div class="input-row two-columns">
 						<label>
 							<span>Columns:</span>
 							<input id="import-spritesheet-cols" type="number" step="1" min="1"></input>

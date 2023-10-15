@@ -11,7 +11,7 @@ window.addEventListener('load', () => {
 	Sprite.drawFrames()
 
 	Tauri.event.listen('redraw', (event) => {
-		Sprite.frame_count = event.payload.frame_count
+		Sprite.frameCount = event.payload.frame_count
 		Selection.frameIndexes = event.payload.selected_frames
 		Sprite.setBackgroundSize(event.payload.cols, event.payload.rows)
 		Sprite.drawFrames()

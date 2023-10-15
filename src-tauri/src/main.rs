@@ -196,6 +196,7 @@ fn main() {
 			export::select_gif_path,
 			export::export_png,
 			export::export_gif,
+			export::export_spritesheet,
 			import::import_spritesheet,
 			show_error_message,
 		])
