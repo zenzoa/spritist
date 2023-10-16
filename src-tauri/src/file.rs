@@ -338,9 +338,14 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 
 #[tauri::command]
 pub fn activate_save_as(app_handle: AppHandle, file_state: State<FileState>) {
+	let mut file_name = file_state.file_title.lock().unwrap().clone();
+	if file_name.is_empty() {
+		file_name = "untitled.c16".to_string();
+	}
+
 	let mut file_dialog = FileDialogBuilder::new()
 		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
-		.set_file_name(&file_state.file_title.lock().unwrap());
+		.set_file_name(&file_name);
 
 	if let Some(file_path) = file_state.file_path.lock().unwrap().clone() {
 		if let Some(parent_dir) = file_path.parent() {
