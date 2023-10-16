@@ -50,7 +50,7 @@
 			}
 		},
 		"security": {
-			"csp": "default-src 'self' img-src: getframe:"
+			"csp": "default-src 'self'; img-src: 'self' getframe: https://getframe.localhost"
 		},
 		"updater": {
 			"active": false

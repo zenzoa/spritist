@@ -224,15 +224,11 @@ fn main() {
 			let not_found = ResponseBuilder::new().body(Vec::new());
 
 			let uri = request.uri();
-			let start_pos = match uri.find("?i=") {
-				Some(pos) => pos + 3,
+			let start_pos = match uri.find("-") {
+				Some(pos) => pos + 1,
 				None => return not_found
 			};
-			let end_pos = match uri.find('&') {
-				Some(pos) => pos,
-				None => return not_found
-			};
-			let frame_index: usize = match uri[start_pos..end_pos].parse() {
+			let frame_index: usize = match uri[start_pos..].parse() {
 				Ok(i) => i,
 				Err(_) => return not_found
 			};

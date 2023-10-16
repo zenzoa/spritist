@@ -34,7 +34,7 @@ class Sprite {
 		frameElement.append(frameImage)
 
 		const img = document.createElement('img')
-		img.src = `getframe://localhost?i=${index}&t=${Sprite.timestamp}`
+		img.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
 		img.addEventListener('load', () => {
 			const frameElement = document.getElementById(`frame-${index}`)
 			if (frameElement) frameElement.classList.remove('unloaded')
