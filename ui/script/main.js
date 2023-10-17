@@ -130,13 +130,19 @@ window.addEventListener('load', () => {
 		Tauri.invoke('view_as_sprite')
 	})
 
+	document.body.addEventListener('mouseup', Drag.end)
+	document.body.addEventListener('mouseenter', (event) => {
+		if (!event.buttons) {
+			Drag.cancel()
+		}
+	})
+
 	document.body.addEventListener('keydown', (event) => {
 		if (event.key === 'ArrowLeft') {
 			Selection.selectLeft(event.shiftKey, event.ctrlKey)
 		} else if (event.key === 'ArrowRight') {
 			Selection.selectRight(event.shiftKey, event.ctrlKey)
 		} else if (event.key === 'Escape') {
-			console.log('close dialog or clear selection')
 			document.getElementById('export-png-dialog').classList.remove('open')
 			document.getElementById('export-gif-dialog').classList.remove('open')
 			document.getElementById('export-spritesheet-dialog').classList.remove('open')

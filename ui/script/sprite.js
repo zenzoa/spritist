@@ -5,29 +5,31 @@ class Sprite {
 	static frameElements = []
 	static maxItemWidth = 0
 	static timestamp = 0
+	static imagesLoaded = 0
 
 	static createFrameElement(index) {
 		const frameElement = document.createElement('div')
 		frameElement.id = `frame-${index}`
 		frameElement.className = 'frame unloaded'
-		frameElement.draggable = 'true'
 
-		frameElement.addEventListener('click', event => {
+		frameElement.addEventListener('click', (event) => {
 			Sprite.selectFrame(index, event)
-		})
+		}, { capture: false, passive: true })
 
-		frameElement.addEventListener('dragover', event => {
-			event.preventDefault()
+		frameElement.addEventListener('mousedown', (event) => {
+			Drag.isMouseDown = true
+			Drag.mouseDownIndex = index
+		}, { capture: false, passive: true })
+
+		frameElement.addEventListener('mouseleave', (event) => {
+			if (Drag.isMouseDown && Drag.mouseDownIndex === index) {
+				Drag.start(index, event)
+			}
+		}, { capture: false, passive: true })
+
+		frameElement.addEventListener('mouseover', (event) => {
 			Drag.overFrame(index, event)
-		})
-
-		frameElement.addEventListener('dragstart', event => {
-			Drag.start(index, event)
-		})
-
-		frameElement.addEventListener('dragend', () => {
-			Drag.end()
-		})
+		}, { capture: false, passive: true })
 
 		const frameImage = document.createElement('div')
 		frameImage.className = 'frame-image'
@@ -35,19 +37,7 @@ class Sprite {
 
 		const img = document.createElement('img')
 		img.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
-		img.addEventListener('load', () => {
-			const frameElement = document.getElementById(`frame-${index}`)
-			if (frameElement) frameElement.classList.remove('unloaded')
-			const frameIndex = document.getElementById(`frame-index-${index}`)
-			if (frameIndex) frameIndex.innerText = index
-			const frameSize = document.getElementById(`frame-size-${index}`)
-			if (frameSize) frameSize.innerText = ` (${img.naturalWidth} × ${img.naturalHeight})`
-			if (Sprite.maxItemWidth < img.naturalWidth) {
-				Sprite.maxItemWidth = img.naturalWidth
-				const root = document.querySelector(':root')
-				root.style.setProperty('--max-item-width', `${Sprite.maxItemWidth}px`)
-			}
-		})
+		img.addEventListener('load', () => Sprite.onImageLoad(img, index))
 		frameImage.append(img)
 
 		const frameInfo = document.createElement('div')
@@ -72,12 +62,15 @@ class Sprite {
 	}
 
 	static drawFrames() {
+		const frameList = document.getElementById('frame-list')
+		const originalHeight = frameList.getBoundingClientRect().height
+		frameList.style.minHeight = originalHeight + 'px'
+
 		Sprite.maxItemWidth = 0
 		Sprite.timestamp = Date.now()
 
 		Sprite.frameElements.forEach(frameElement => frameElement.remove())
 		Sprite.frameElements = [...Array(Sprite.frameCount).keys()].map(i => Sprite.createFrameElement(i))
-		const frameList = document.getElementById('frame-list')
 		Sprite.frameElements.forEach(frameElement => {
 			frameList.append(frameElement)
 		})
@@ -86,6 +79,34 @@ class Sprite {
 
 		const root = document.querySelector(':root')
 		root.style.setProperty('--max-item-width', `${Sprite.maxItemWidth}px`)
+	}
+
+	static onImageLoad(img, index) {
+		const frameElement = document.getElementById(`frame-${index}`)
+		if (frameElement) frameElement.classList.remove('unloaded')
+
+		const frameIndex = document.getElementById(`frame-index-${index}`)
+		if (frameIndex) frameIndex.innerText = index
+
+		const frameSize = document.getElementById(`frame-size-${index}`)
+		if (frameSize) frameSize.innerText = ` (${img.naturalWidth} × ${img.naturalHeight})`
+
+		if (Sprite.maxItemWidth < img.naturalWidth) {
+			Sprite.maxItemWidth = img.naturalWidth
+			const root = document.querySelector(':root')
+			root.style.setProperty('--max-item-width', `${Sprite.maxItemWidth}px`)
+		}
+
+		Sprite.imagesLoaded++
+		if (Sprite.imagesLoaded >= Sprite.frameCount) {
+			Sprite.onImagesDoneLoading()
+		}
+	}
+
+	static onImagesDoneLoading() {
+		const frameList = document.getElementById('frame-list')
+		frameList.style.minHeight = 'unset'
+		Sprite.imagesLoaded = 0
 	}
 
 	static updateSelectedFrames() {
