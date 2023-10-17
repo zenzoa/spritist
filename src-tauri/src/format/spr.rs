@@ -12,6 +12,10 @@ struct ImageHeader {
 	width: u16,
 	height: u16
 }
+struct ImageHeaderPrototype {
+	width: u8,
+	height: u8
+}
 
 pub fn decode(contents: &[u8], palette: &Palette) -> Result<SpriteInfo, Box<dyn Error>> {
 	let mut frames: Vec<Frame> = Vec::new();
@@ -89,7 +93,7 @@ pub fn decode_single_width(contents: &[u8], palette: &Palette) -> Result<SpriteI
 		frames,
 		cols: 0,
 		rows: 0,
-		read_only: false
+		read_only: true
 	})
 }
 
@@ -108,6 +112,10 @@ pub fn decode_double_width(contents: &[u8], palette: &Palette) -> Result<SpriteI
 		let padded_width = buffer.get_u32_le();
 		let height = buffer.get_u32_le();
 		let width = buffer.get_u16_le();
+
+		if height > 65535 {
+			return Err("Invalid height".into());
+		}
 
 		let mut image = RgbaImage::new(width.into(), height);
 		let mut color_indexes: Vec<u8> = Vec::new();
@@ -129,7 +137,7 @@ pub fn decode_double_width(contents: &[u8], palette: &Palette) -> Result<SpriteI
 		frames,
 		cols: 0,
 		rows: 0,
-		read_only: false
+		read_only: true
 	})
 }
 
@@ -154,7 +162,50 @@ pub fn decode_multi_sprite(contents: &[u8], palette: &Palette) -> Result<SpriteI
 		frames,
 		cols: 0,
 		rows: 0,
-		read_only: false
+		read_only: true
+	})
+}
+
+pub fn decode_prototype(contents: &[u8], palette: &Palette) -> Result<SpriteInfo, Box<dyn Error>> {
+	let mut frames: Vec<Frame> = Vec::new();
+	let mut buffer = Bytes::copy_from_slice(contents);
+
+	// file header
+	if buffer.remaining() < 2 { return Err(file_header_error()); }
+	let image_count = buffer.get_u16_le();
+
+	// image headers
+	let mut image_headers: Vec<ImageHeaderPrototype> = Vec::new();
+	for _ in 0..image_count {
+		if buffer.remaining() < 8 { return Err(image_header_error()); }
+		let _offset = buffer.get_u16_le();
+		image_headers.push(ImageHeaderPrototype {
+			width: buffer.get_u8(),
+			height: buffer.get_u8()
+		})
+	}
+
+	// image data
+	for image_header in image_headers {
+		let mut image = RgbaImage::new(image_header.width.into(), image_header.height.into());
+		let mut color_indexes: Vec<u8> = Vec::new();
+		for y in 0..image_header.height {
+			for x in 0..image_header.width {
+				if buffer.remaining() < 1 { return Err(image_error()); }
+				let color_index = buffer.get_u8();
+				color_indexes.push(color_index);
+				let pixel = palette.get_color(color_index);
+				image.put_pixel(x.into(), y.into(), pixel);
+			}
+		}
+		frames.push(Frame{ image, color_indexes });
+	}
+
+	Ok(SpriteInfo{
+		frames,
+		cols: 0,
+		rows: 0,
+		read_only: true
 	})
 }
 

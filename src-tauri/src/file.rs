@@ -254,19 +254,26 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<Sp
 	let extension_str = extension.to_str().ok_or(extension_err)?;
 	match extension_str.to_lowercase().as_str() {
 		"spr" => {
+			// try regular SPR
 			match spr::decode(&bytes, &palette) {
 				Ok(result) => Ok(result),
 				Err(_) => {
-					println!("trying single-width SPR");
+					// try single-width SPR
 					match spr::decode_single_width(&bytes, &palette) {
 						Ok(result) => Ok(result),
 						Err(_) => {
-							println!("trying double-width SPR");
+							// try double-width SPR
 							match spr::decode_double_width(&bytes, &palette) {
 								Ok(result) => Ok(result),
 								Err(_) => {
-									println!("trying multi-sprite SPR");
-									spr::decode_multi_sprite(&bytes, &palette)
+									// try multi-sprite SPR
+									match spr::decode_multi_sprite(&bytes, &palette) {
+										Ok(result) => Ok(result),
+										Err(_) => {
+											// try prototype SPR
+											spr::decode_prototype(&bytes, &palette)
+										}
+									}
 								}
 							}
 						}
