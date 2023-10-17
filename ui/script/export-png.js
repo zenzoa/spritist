@@ -52,6 +52,7 @@ class ExportPng {
 
 		Tauri.event.listen('update_export_png_path', (event) => {
 			document.getElementById('export-png-path').value = event.payload
+			document.getElementById('export-spritesheet-path').value = event.payload
 		})
 
 		Tauri.event.listen('successful_png_export', () => {
