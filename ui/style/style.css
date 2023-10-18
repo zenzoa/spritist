@@ -95,7 +95,7 @@ main {
 
 #frame-list {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(100px, var(--max-item-width)));
+	grid-template-columns: repeat(auto-fill, minmax(100px, calc(var(--max-item-width) + 24px)));
 }
 
 .frame {
