@@ -138,7 +138,39 @@ window.addEventListener('load', () => {
 	})
 
 	document.body.addEventListener('keydown', (event) => {
-		if (event.key === 'ArrowLeft') {
+		if (event.key === 'n' && event.ctrlKey) {
+			Tauri.invoke('activate_new_file')
+		} else if (event.key === 'o' && event.ctrlKey) {
+			Tauri.invoke('activate_open_file')
+		} else if (event.key === 's' && event.shiftKey && event.ctrlKey) {
+			Tauri.invoke('activate_save_as')
+		} else if (event.key === 's' && event.ctrlKey) {
+			Tauri.invoke('activate_save_file')
+		} else if (event.key === 'e' && event.ctrlKey) {
+			Tauri.invoke('export_png')
+		} else if (event.key === 'q' && event.ctrlKey) {
+			Tauri.invoke('try_quit')
+
+		} else if (event.key === 'z' && event.ctrlKey) {
+			Tauri.invoke('undo')
+		} else if (event.key === 'y' && event.ctrlKey) {
+			Tauri.invoke('redo')
+		} else if (event.key === 'x' && event.ctrlKey) {
+			Tauri.invoke('cut')
+		} else if (event.key === 'c' && event.ctrlKey) {
+			Tauri.invoke('copy')
+		} else if (event.key === 'v' && event.ctrlKey) {
+			Tauri.invoke('paste')
+		} else if (event.key === 'Delete') {
+			Tauri.invoke('delete_frames')
+		} else if (event.key === 'a' && event.ctrlKey) {
+			Tauri.invoke('select_all')
+		} else if (event.key === 'd' && event.ctrlKey) {
+			Tauri.invoke('deselect_all')
+		} else if (event.key === 'i' && event.ctrlKey) {
+			Tauri.invoke('activate_insert_image')
+
+		} else if (event.key === 'ArrowLeft') {
 			Selection.selectLeft(event.shiftKey, event.ctrlKey)
 		} else if (event.key === 'ArrowRight') {
 			Selection.selectRight(event.shiftKey, event.ctrlKey)

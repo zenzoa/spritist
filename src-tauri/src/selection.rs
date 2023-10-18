@@ -22,6 +22,7 @@ pub fn update_selection(app_handle: AppHandle, selection_state: State<SelectionS
 	update_selection_items(&app_handle, selected_frames.len());
 }
 
+#[tauri::command]
 pub fn select_all(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
 	let selection_state: State<SelectionState> = app_handle.state();
@@ -32,6 +33,7 @@ pub fn select_all(app_handle: AppHandle) {
 	update_selection_items(&app_handle, selected_frames.len());
 }
 
+#[tauri::command]
 pub fn deselect_all(app_handle: AppHandle) {
 	let selection_state: State<SelectionState> = app_handle.state();
 	let mut selected_frames = selection_state.selected_frames.lock().unwrap();

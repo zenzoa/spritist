@@ -9,6 +9,7 @@ use tauri::{
 	AppHandle,
 	Manager,
 	State,
+	Window,
 	WindowEvent,
 	FileDropEvent,
 	api::dialog::{ ask, message },
@@ -40,20 +41,11 @@ fn main() {
 					}
 				},
 				WindowEvent::CloseRequested { api, .. } => {
+					api.prevent_close();
 					let app_handle = event.window().app_handle();
 					let file_state: State<file::FileState> = app_handle.state();
-					let file_is_modified = *file_state.file_is_modified.lock().unwrap();
-					if file_is_modified {
-						api.prevent_close();
-						let file_state: State<file::FileState> = app_handle.state();
-						if *file_state.file_is_modified.lock().unwrap() {
-							let window = event.window().clone();
-							ask(Some(event.window()),
-								"File modified",
-								"Do you want to continue anyway and lose any unsaved work?",
-								move |answer| { if answer { window.close().unwrap(); } });
-						}
-					}
+					let window = event.window().clone();
+					try_quit(window, file_state);
 				}
 				_ => {}
 			}
@@ -187,8 +179,12 @@ fn main() {
 			selection::update_selection,
 			selection::move_frames,
 			selection::delete_frames,
+			selection::select_all,
+			selection::deselect_all,
+			selection::delete_frames,
 			history::undo,
 			history::redo,
+			clipboard::cut,
 			clipboard::copy,
 			clipboard::paste,
 			export::get_file_path,
@@ -199,6 +195,7 @@ fn main() {
 			export::export_spritesheet,
 			import::import_spritesheet,
 			show_error_message,
+			try_quit
 		])
 		.on_page_load(|window, _| {
 			config::load_config_file(window.app_handle());
@@ -224,7 +221,7 @@ fn main() {
 			let not_found = ResponseBuilder::new().body(Vec::new());
 
 			let uri = request.uri();
-			let start_pos = match uri.find("-") {
+			let start_pos = match uri.find('-') {
 				Some(pos) => pos + 1,
 				None => return not_found
 			};
@@ -253,4 +250,19 @@ fn main() {
 #[tauri::command]
 fn show_error_message(app_handle: AppHandle, why: String) {
 	message(Some(&app_handle.get_window("main").unwrap()), "Error", why);
+}
+
+#[tauri::command]
+fn try_quit(window: Window, file_state: State<file::FileState>) {
+	let file_is_modified = *file_state.file_is_modified.lock().unwrap();
+	if file_is_modified {
+		if *file_state.file_is_modified.lock().unwrap() {
+			ask(Some(&window.clone()),
+				"File modified",
+				"Do you want to continue anyway and lose any unsaved work?",
+				move |answer| { if answer { window.close().unwrap(); } });
+		}
+	} else {
+		window.close().unwrap();
+	}
 }
