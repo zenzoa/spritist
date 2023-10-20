@@ -59,6 +59,7 @@ fn main() {
 			let selection_state: State<selection::SelectionState> = app_handle.state();
 			let history_state: State<history::HistoryState> = app_handle.state();
 			let clipboard_state: State<clipboard::ClipboardState> = app_handle.state();
+			let view_state: State<view::ViewState> = app_handle.state();
 			match event.menu_item_id() {
 				// FILE MENU
 				"new_file" => {
@@ -120,13 +121,13 @@ fn main() {
 
 				// VIEW MENU
 				"reset_zoom" => {
-					view::reset_zoom(app_handle);
+					view::reset_zoom(app_handle.clone(), view_state);
 				}
 				"zoom_in" => {
-					view::zoom_in(app_handle);
+					view::zoom_in(app_handle.clone(), view_state);
 				}
 				"zoom_out" => {
-					view::zoom_out(app_handle);
+					view::zoom_out(app_handle.clone(), view_state);
 				}
 				"load_palette" => {
 					palette::activate_load_palette(app_handle);

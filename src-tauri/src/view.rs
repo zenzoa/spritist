@@ -10,32 +10,29 @@ pub struct ViewState {
 }
 
 #[tauri::command]
-pub fn reset_zoom(app_handle: AppHandle) {
-	set_zoom_scale(&app_handle, 1);
+pub fn reset_zoom(app_handle: AppHandle, view_state: State<ViewState>) {
+	set_zoom_scale(&app_handle, &view_state, 1);
 }
 
 #[tauri::command]
-pub fn zoom_in(app_handle: AppHandle) {
-	let view_state: State<ViewState> = app_handle.state();
+pub fn zoom_in(app_handle: AppHandle, view_state: State<ViewState>) {
 	let zoom_scale = *view_state.zoom_scale.lock().unwrap();
-	set_zoom_scale(&app_handle, zoom_scale + 1);
+	set_zoom_scale(&app_handle, &view_state, zoom_scale + 1);
 }
 
 #[tauri::command]
-pub fn zoom_out(app_handle: AppHandle) {
-	let view_state: State<ViewState> = app_handle.state();
+pub fn zoom_out(app_handle: AppHandle, view_state: State<ViewState>) {
 	let zoom_scale = *view_state.zoom_scale.lock().unwrap();
-	set_zoom_scale(&app_handle, zoom_scale - 1);
+	set_zoom_scale(&app_handle, &view_state, zoom_scale - 1);
 }
 
-fn set_zoom_scale(app_handle: &AppHandle, new_zoom_scale: u32) {
+fn set_zoom_scale(app_handle: &AppHandle, view_state: &State<ViewState>, new_zoom_scale: u32) {
 	let mut zoom_scale = new_zoom_scale;
 	if zoom_scale < 1 { zoom_scale = 1; }
 	if zoom_scale > 4 { zoom_scale = 4; }
 
 	update_zoom_menu(app_handle, zoom_scale);
 
-	let view_state: State<ViewState> = app_handle.state();
 	*view_state.zoom_scale.lock().unwrap() = zoom_scale;
 
 	app_handle.emit_all("set_scale", zoom_scale).unwrap();

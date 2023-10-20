@@ -176,11 +176,11 @@ window.addEventListener('load', () => {
 			Tauri.invoke('activate_insert_image')
 
 		} else if (event.key === '0' && event.ctrlKey) {
-			Tauri.invoke('reset_zoom')
+			if (Sprite.scale > 1) Tauri.invoke('reset_zoom')
 		} else if (event.key === '=' && event.ctrlKey) {
-			Tauri.invoke('zoom_in')
+			if (Sprite.scale < 4) Tauri.invoke('zoom_in')
 		} else if (event.key === '-' && event.ctrlKey) {
-			Tauri.invoke('zoom_out')
+			if (Sprite.scale > 1) Tauri.invoke('zoom_out')
 
 		} else if (event.key === 'ArrowLeft') {
 			Selection.selectLeft(event.shiftKey, event.ctrlKey)
