@@ -7,6 +7,7 @@ use tauri::{
 use crate::{
 	palette,
 	file::FileState,
+	view::ViewState,
 	selection::{ SelectionState, update_selection_items },
 	history::{ HistoryState, update_undo_redo_items }
 };
@@ -39,6 +40,9 @@ pub fn reset_state(app_handle: &AppHandle) {
 	*history_state.undo_stack.lock().unwrap() = Vec::new();
 	*history_state.redo_stack.lock().unwrap() = Vec::new();
 	update_undo_redo_items(app_handle, &history_state);
+
+	let view_state: State<ViewState> = app_handle.state();
+	*view_state.zoom_scale.lock().unwrap() = 1;
 }
 
 pub fn redraw(app_handle: &AppHandle) {

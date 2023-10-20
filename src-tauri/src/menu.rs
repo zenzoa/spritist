@@ -58,9 +58,9 @@ pub fn build_menu() -> Menu {
 		.add_item(insert_image)
 	);
 
-	// let reset_zoom = CustomMenuItem::new("reset_zoom".to_string(), "100%").accelerator("CmdOrCtrl+0"); //.disabled();
-	// let zoom_in = CustomMenuItem::new("zoom_in".to_string(), "Zoom In").accelerator("CmdOrCtrl+=");
-	// let zoom_out = CustomMenuItem::new("zoom_out".to_string(), "Zoom Out").accelerator("CmdOrCtrl+-");
+	let reset_zoom = CustomMenuItem::new("reset_zoom".to_string(), "100%").accelerator("CmdOrCtrl+0").disabled();
+	let zoom_in = CustomMenuItem::new("zoom_in".to_string(), "Zoom In").accelerator("CmdOrCtrl+=");
+	let zoom_out = CustomMenuItem::new("zoom_out".to_string(), "Zoom Out").accelerator("CmdOrCtrl+-").disabled();
 	let palette_menu = Submenu::new("SPR Palette", Menu::new()
 		.add_item(CustomMenuItem::new("load_original".to_string(), "✔ Original Palette"))
 		.add_item(CustomMenuItem::new("load_reversed".to_string(), "- Reversed Palette"))
@@ -84,10 +84,10 @@ pub fn build_menu() -> Menu {
 		.add_item(CustomMenuItem::new("theme_purple".to_string(), "- Purple"))
 	);
 	let view_menu = Submenu::new("View", Menu::new()
-		// .add_item(reset_zoom)
-		// .add_item(zoom_in)
-		// .add_item(zoom_out)
-		// .add_native_item(MenuItem::Separator)
+		.add_item(reset_zoom)
+		.add_item(zoom_in)
+		.add_item(zoom_out)
+		.add_native_item(MenuItem::Separator)
 		.add_submenu(palette_menu)
 		.add_native_item(MenuItem::Separator)
 		.add_item(view_as_sprite)

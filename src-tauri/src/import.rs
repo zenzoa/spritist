@@ -12,7 +12,7 @@ use image::{ Rgba, RgbaImage };
 use image::io::Reader as ImageReader;
 
 use crate::{
-	config::{ view_as_bg, view_as_sprite },
+	view::{ view_as_bg, view_as_sprite },
 	state::{ RedrawPayload, reset_state, update_window_title },
 	file::{ FileState, Frame, enable_file_only_items }
 };

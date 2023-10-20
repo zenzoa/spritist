@@ -23,6 +23,7 @@ mod state;
 mod history;
 mod selection;
 mod clipboard;
+mod view;
 mod config;
 mod format;
 mod palette;
@@ -118,6 +119,15 @@ fn main() {
 				}
 
 				// VIEW MENU
+				"reset_zoom" => {
+					view::reset_zoom(app_handle);
+				}
+				"zoom_in" => {
+					view::zoom_in(app_handle);
+				}
+				"zoom_out" => {
+					view::zoom_out(app_handle);
+				}
 				"load_palette" => {
 					palette::activate_load_palette(app_handle);
 				}
@@ -137,10 +147,10 @@ fn main() {
 					palette::convert_to_reversed(app_handle);
 				}
 				"view_as_sprite" => {
-					config::view_as_sprite(app_handle);
+					view::view_as_sprite(app_handle);
 				}
 				"view_as_bg" => {
-					config::view_as_bg(app_handle);
+					view::view_as_bg(app_handle);
 				}
 				"show_image_info" => {
 					let current_value = config_state.show_image_info.lock().unwrap().to_owned();
@@ -169,7 +179,6 @@ fn main() {
 		})
 		.invoke_handler(tauri::generate_handler![
 			config::get_config,
-			config::view_as_sprite,
 			file::activate_new_file,
 			file::activate_open_file,
 			file::activate_save_file,
@@ -187,6 +196,10 @@ fn main() {
 			clipboard::cut,
 			clipboard::copy,
 			clipboard::paste,
+			view::reset_zoom,
+			view::zoom_in,
+			view::zoom_out,
+			view::view_as_sprite,
 			export::get_file_path,
 			export::select_png_path,
 			export::select_gif_path,
@@ -216,6 +229,9 @@ fn main() {
 		})
 		.manage(clipboard::ClipboardState {
 			copied_frames: Mutex::new(Vec::new())
+		})
+		.manage(view::ViewState {
+			zoom_scale: Mutex::new(1)
 		})
 		.register_uri_scheme_protocol("getframe", |app, request| {
 			let not_found = ResponseBuilder::new().body(Vec::new());

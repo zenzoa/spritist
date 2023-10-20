@@ -79,6 +79,11 @@ window.addEventListener('load', () => {
 		}
 	})
 
+	Tauri.event.listen('set_scale', (event) => {
+		Sprite.scale = event.payload
+		Sprite.drawFrames()
+	})
+
 	Tauri.event.listen('view_as_sprite', viewAsSprite)
 	Tauri.event.listen('view_as_bg', viewAsBg)
 
@@ -169,6 +174,13 @@ window.addEventListener('load', () => {
 			Tauri.invoke('deselect_all')
 		} else if (event.key === 'i' && event.ctrlKey) {
 			Tauri.invoke('activate_insert_image')
+
+		} else if (event.key === '0' && event.ctrlKey) {
+			Tauri.invoke('reset_zoom')
+		} else if (event.key === '=' && event.ctrlKey) {
+			Tauri.invoke('zoom_in')
+		} else if (event.key === '-' && event.ctrlKey) {
+			Tauri.invoke('zoom_out')
 
 		} else if (event.key === 'ArrowLeft') {
 			Selection.selectLeft(event.shiftKey, event.ctrlKey)

@@ -6,6 +6,7 @@ class Sprite {
 	static maxItemWidth = 0
 	static timestamp = 0
 	static imagesLoaded = 0
+	static scale = 1
 
 	static createFrameElement(index) {
 		const frameElement = document.createElement('div')
@@ -36,6 +37,7 @@ class Sprite {
 		frameElement.append(frameImage)
 
 		const img = document.createElement('img')
+		img.id = `frame-img-${index}`
 		img.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
 		img.addEventListener('load', () => Sprite.onImageLoad(img, index))
 		frameImage.append(img)
@@ -54,10 +56,6 @@ class Sprite {
 		frameSize.className = 'frame-size'
 		frameInfo.append(frameSize)
 
-		if (Sprite.maxItemWidth < img.naturalWidth) {
-			Sprite.maxItemWidth = img.naturalWidth
-		}
-
 		return frameElement
 	}
 
@@ -69,6 +67,8 @@ class Sprite {
 		Sprite.maxItemWidth = 0
 		Sprite.timestamp = Date.now()
 
+		document.documentElement.style.setProperty('--img-scale', `${Sprite.scale}00%`)
+
 		Sprite.frameElements.forEach(frameElement => frameElement.remove())
 		Sprite.frameElements = [...Array(Sprite.frameCount).keys()].map(i => Sprite.createFrameElement(i))
 		Sprite.frameElements.forEach(frameElement => {
@@ -76,12 +76,18 @@ class Sprite {
 		})
 
 		Sprite.updateSelectedFrames()
-
-		const root = document.querySelector(':root')
-		root.style.setProperty('--max-item-width', `${Sprite.maxItemWidth}px`)
 	}
 
 	static onImageLoad(img, index) {
+		let scaledWidth = img.naturalWidth * Sprite.scale
+		let scaledHeight = img.naturalHeight * Sprite.scale
+
+		const frameImage = document.getElementById(`frame-img-${index}`)
+		if (frameImage) {
+			frameImage.style.width = `${scaledWidth}px`
+			frameImage.style.height = `${scaledHeight}px`
+		}
+
 		const frameElement = document.getElementById(`frame-${index}`)
 		if (frameElement) frameElement.classList.remove('unloaded')
 
@@ -91,10 +97,8 @@ class Sprite {
 		const frameSize = document.getElementById(`frame-size-${index}`)
 		if (frameSize) frameSize.innerText = ` (${img.naturalWidth} × ${img.naturalHeight})`
 
-		if (Sprite.maxItemWidth < img.naturalWidth) {
-			Sprite.maxItemWidth = img.naturalWidth
-			const root = document.querySelector(':root')
-			root.style.setProperty('--max-item-width', `${Sprite.maxItemWidth}px`)
+		if (Sprite.maxItemWidth < scaledWidth) {
+			Sprite.maxItemWidth = scaledWidth
 		}
 
 		Sprite.imagesLoaded++
@@ -107,6 +111,7 @@ class Sprite {
 		const frameList = document.getElementById('frame-list')
 		frameList.style.minHeight = 'unset'
 		Sprite.imagesLoaded = 0
+		document.documentElement.style.setProperty('--max-item-width', `${Sprite.maxItemWidth}px`)
 	}
 
 	static updateSelectedFrames() {

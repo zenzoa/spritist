@@ -27,7 +27,6 @@ use crate::{
 	},
 	selection::SelectionState,
 	history::add_state_to_history,
-	config,
 	format::{
 		spr,
 		s16,
@@ -36,6 +35,10 @@ use crate::{
 		blk,
 		dta,
 		photo_album
+	},
+	view::{
+		view_as_sprite,
+		view_as_bg
 	},
 	palette
 };
@@ -168,9 +171,9 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Resul
 		}
 	}
 	if is_background {
-		config::view_as_bg(app_handle.clone());
+		view_as_bg(app_handle.clone());
 	} else {
-		config::view_as_sprite(app_handle.clone());
+		view_as_sprite(app_handle.clone());
 	}
 
 	enable_file_only_items(app_handle, sprite_info.read_only);

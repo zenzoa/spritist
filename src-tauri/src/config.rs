@@ -195,18 +195,3 @@ pub fn set_theme(app_handle: &AppHandle, new_theme: Theme, init: bool) {
 	*config_state.theme.lock().unwrap() = new_theme.clone();
 	if !init { save_config_file(app_handle); }
 }
-
-#[tauri::command]
-pub fn view_as_sprite(app_handle: AppHandle) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("view_as_sprite").set_title("✔ View As Sprite").unwrap();
-	menu_handle.get_item("view_as_bg").set_title("- View As Background").unwrap();
-	app_handle.emit_all("view_as_sprite", "").unwrap();
-}
-
-pub fn view_as_bg(app_handle: AppHandle) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("view_as_sprite").set_title("- View As Sprite").unwrap();
-	menu_handle.get_item("view_as_bg").set_title("✔ View As Background").unwrap();
-	app_handle.emit_all("view_as_bg", "").unwrap();
-}
