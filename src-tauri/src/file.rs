@@ -246,6 +246,54 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 	Ok(())
 }
 
+#[tauri::command]
+pub fn activate_replace_frame(app_handle: AppHandle) {
+	FileDialogBuilder::new()
+		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM", "png", "PNG", "gif", "GIF"])
+		.pick_file(move |file_path| {
+			if let Some(file_path_str) = file_path {
+				if let Err(why) = replace_frame_from_path(&app_handle, &file_path_str) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
+			}
+		});
+}
+
+pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+	let sprite_info = get_sprite_info(app_handle, file_path)?;
+	add_state_to_history(app_handle);
+
+	let new_frames = sprite_info.frames;
+
+	let file_state: State<FileState> = app_handle.state();
+	let selection_state: State<SelectionState> = app_handle.state();
+
+	let mut frames = file_state.frames.lock().unwrap();
+	let mut selected_frames = selection_state.selected_frames.lock().unwrap();
+
+	let insert_point = match selected_frames.iter().min() {
+		Some(index) => *index,
+		None => frames.len()
+	};
+
+	for selected_frame_index in selected_frames.iter().rev() {
+		frames.remove(*selected_frame_index);
+	}
+
+	frames.splice(insert_point..insert_point, new_frames.iter().cloned());
+
+	*selected_frames = (insert_point..(insert_point + new_frames.len())).map(usize::from).collect();
+
+	app_handle.emit_all("redraw", RedrawPayload{
+		frame_count: frames.len(),
+		selected_frames: selected_frames.clone(),
+		cols: *file_state.cols.lock().unwrap(),
+		rows: *file_state.rows.lock().unwrap(),
+	}).unwrap();
+
+	Ok(())
+}
+
 pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<SpriteInfo, Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 
@@ -426,6 +474,7 @@ pub fn enable_file_only_items(app_handle: &AppHandle, read_only: bool) {
 	menu_handle.get_item("export_gif").set_enabled(true).unwrap();
 	menu_handle.get_item("export_spritesheet").set_enabled(true).unwrap();
 	menu_handle.get_item("insert_image").set_enabled(true).unwrap();
+	menu_handle.get_item("replace_frame").set_enabled(true).unwrap();
 	menu_handle.get_item("convert_to_palette").set_enabled(true).unwrap();
 	menu_handle.get_item("convert_to_original").set_enabled(true).unwrap();
 	menu_handle.get_item("convert_to_reversed").set_enabled(true).unwrap();

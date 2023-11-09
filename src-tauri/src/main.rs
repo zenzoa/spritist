@@ -118,6 +118,9 @@ fn main() {
 				"insert_image" => {
 					file::activate_insert_image(app_handle);
 				}
+				"replace_frame" => {
+					file::activate_replace_frame(app_handle);
+				}
 
 				// VIEW MENU
 				"reset_zoom" => {
@@ -185,6 +188,7 @@ fn main() {
 			file::activate_save_file,
 			file::activate_save_as,
 			file::activate_insert_image,
+			file::activate_replace_frame,
 			file::set_bg_size,
 			selection::update_selection,
 			selection::move_frames,

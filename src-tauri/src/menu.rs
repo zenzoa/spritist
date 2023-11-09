@@ -43,6 +43,7 @@ pub fn build_menu() -> Menu {
 	let select_all = CustomMenuItem::new("select_all".to_string(), "Select All").accelerator("CmdOrCtrl+A");
 	let deselect_all = CustomMenuItem::new("deselect_all".to_string(), "Deselect All").accelerator("CmdOrCtrl+D").disabled();
 	let insert_image = CustomMenuItem::new("insert_image".to_string(), "Insert Image...").accelerator("CmdOrCtrl+I").disabled();
+	let replace_frame = CustomMenuItem::new("replace_frame".to_string(), "Replace Frame...").accelerator("CmdOrCtrl+Shift+I").disabled();
 	let edit_menu = Submenu::new("Edit", Menu::new()
 		.add_item(undo)
 		.add_item(redo)
@@ -56,6 +57,7 @@ pub fn build_menu() -> Menu {
 		.add_item(deselect_all)
 		.add_native_item(MenuItem::Separator)
 		.add_item(insert_image)
+		.add_item(replace_frame)
 	);
 
 	let reset_zoom = CustomMenuItem::new("reset_zoom".to_string(), "100%").accelerator("CmdOrCtrl+0").disabled();

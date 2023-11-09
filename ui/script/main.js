@@ -180,6 +180,8 @@ window.addEventListener('load', () => {
 			Tauri.invoke('select_all')
 		} else if (event.key === 'd' && event.ctrlKey) {
 			Tauri.invoke('deselect_all')
+		} else if (event.key === 'i' && event.shiftKey && event.ctrlKey) {
+			Tauri.invoke('activate_replace_frame')
 		} else if (event.key === 'i' && event.ctrlKey) {
 			Tauri.invoke('activate_insert_image')
 
