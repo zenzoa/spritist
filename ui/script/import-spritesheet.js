@@ -1,4 +1,7 @@
 class ImportSpritesheet {
+	static cols = 1
+	static rows = 1
+
 	static setup() {
 		const dialogEl = document.getElementById('import-spritesheet-dialog')
 
@@ -42,9 +45,9 @@ class ImportSpritesheet {
 			heightInput.value = event.payload.height
 			tileWidthInput.value = event.payload.width
 			tileHeightInput.value = event.payload.height
-			colsInput.value = 1
-			rowsInput.value = 1
-			update(true)
+			colsInput.value = ImportSpritesheet.cols
+			rowsInput.value = ImportSpritesheet.rows
+			update(false)
 			dialogEl.classList.add('open')
 			confirmButton.focus()
 		})
@@ -56,6 +59,11 @@ class ImportSpritesheet {
 			let tileHeight = parseInt(tileHeightInput.value)
 			let cols = parseInt(colsInput.value)
 			let rows = parseInt(rowsInput.value)
+
+			if (!isNaN(cols) && !isNaN(rows)) {
+				ImportSpritesheet.cols = cols
+				ImportSpritesheet.rows = rows
+			}
 
 			if (changedTileSize && !isNaN(tileWidth) && !isNaN(tileHeight)) {
 				cols = Math.floor(width / tileWidth)
