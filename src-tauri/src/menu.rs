@@ -8,7 +8,6 @@ use tauri::{
 pub fn build_menu() -> Menu {
 	let new_file = CustomMenuItem::new("new_file".to_string(), "New").accelerator("CmdOrCtrl+N");
 	let open_file = CustomMenuItem::new("open_file".to_string(), "Open...").accelerator("CmdOrCtrl+O");
-	// let open_recent = Submenu::new("Open Recent", Menu::new());
 	let save_file = CustomMenuItem::new("save_file".to_string(), "Save").accelerator("CmdOrCtrl+S").disabled();
 	let save_as = CustomMenuItem::new("save_as".to_string(), "Save As...").accelerator("CmdOrCtrl+Shift+S").disabled();
 	let import_menu = Submenu::new("Import", Menu::new()
@@ -23,7 +22,6 @@ pub fn build_menu() -> Menu {
 	let file_menu = Submenu::new("File", Menu::new()
 		.add_item(new_file)
 		.add_item(open_file)
-		// .add_submenu(open_recent)
 		.add_native_item(MenuItem::Separator)
 		.add_item(save_file)
 		.add_item(save_as)
@@ -42,6 +40,12 @@ pub fn build_menu() -> Menu {
 	let delete = CustomMenuItem::new("delete".to_string(), "Delete").accelerator("Delete").disabled();
 	let select_all = CustomMenuItem::new("select_all".to_string(), "Select All").accelerator("CmdOrCtrl+A");
 	let deselect_all = CustomMenuItem::new("deselect_all".to_string(), "Deselect All").accelerator("CmdOrCtrl+D").disabled();
+	let shift_menu = Submenu::new("Shift Pixels", Menu::new()
+		.add_item(CustomMenuItem::new("shift_left".to_string(), "Shift Left").accelerator("CmdOrCtrl+Shift+Left"))
+		.add_item(CustomMenuItem::new("shift_right".to_string(), "Shift Right").accelerator("CmdOrCtrl+Shift+Right"))
+		.add_item(CustomMenuItem::new("shift_up".to_string(), "Shift Up").accelerator("CmdOrCtrl+Shift+Up"))
+		.add_item(CustomMenuItem::new("shift_down".to_string(), "Shift Down").accelerator("CmdOrCtrl+Shift+Down"))
+	);
 	let insert_image = CustomMenuItem::new("insert_image".to_string(), "Insert Image...").accelerator("CmdOrCtrl+I").disabled();
 	let replace_frame = CustomMenuItem::new("replace_frame".to_string(), "Replace Frame...").accelerator("CmdOrCtrl+Shift+I").disabled();
 	let edit_menu = Submenu::new("Edit", Menu::new()
@@ -55,6 +59,8 @@ pub fn build_menu() -> Menu {
 		.add_native_item(MenuItem::Separator)
 		.add_item(select_all)
 		.add_item(deselect_all)
+		.add_native_item(MenuItem::Separator)
+		.add_submenu(shift_menu)
 		.add_native_item(MenuItem::Separator)
 		.add_item(insert_image)
 		.add_item(replace_frame)

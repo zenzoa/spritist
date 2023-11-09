@@ -78,6 +78,14 @@ class Sprite {
 		Sprite.updateSelectedFrames()
 	}
 
+	static reloadSelectedFrames() {
+		Sprite.timestamp = Date.now()
+		Selection.frameIndexes.forEach(index => {
+			const frameImage = document.getElementById(`frame-img-${index}`)
+			frameImage.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
+		})
+	}
+
 	static onImageLoad(img, index) {
 		let scaledWidth = img.naturalWidth * Sprite.scale
 		let scaledHeight = img.naturalHeight * Sprite.scale

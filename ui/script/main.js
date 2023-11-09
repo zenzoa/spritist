@@ -17,6 +17,10 @@ window.addEventListener('load', () => {
 		Sprite.drawFrames()
 	})
 
+	Tauri.event.listen('reload_selection', () => {
+		Sprite.reloadSelectedFrames()
+	})
+
 	Tauri.event.listen('update_selection', (event) => {
 		Selection.frameIndexes = event.payload
 		Sprite.updateSelectedFrames()
@@ -192,10 +196,21 @@ window.addEventListener('load', () => {
 		} else if (event.key === '-' && event.ctrlKey) {
 			if (Sprite.scale > 1) Tauri.invoke('zoom_out')
 
+		} else if (event.key === 'ArrowLeft' && event.shiftKey && event.ctrlKey) {
+			Tauri.invoke('shift_selection', { xShift: -1, yShift: 0 })
+		} else if (event.key === 'ArrowRight' && event.shiftKey && event.ctrlKey) {
+			Tauri.invoke('shift_selection', { xShift: 1, yShift: 0 })
+		} else if (event.key === 'ArrowUp' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
+			Tauri.invoke('shift_selection', { xShift: 0, yShift: -1 })
+		} else if (event.key === 'ArrowDown' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
+			Tauri.invoke('shift_selection', { xShift: 0, yShift: 1 })
+
 		} else if (event.key === 'ArrowLeft') {
-			Selection.selectLeft(event.shiftKey, event.ctrlKey)
+			Selection.selectLeft()
 		} else if (event.key === 'ArrowRight') {
-			Selection.selectRight(event.shiftKey, event.ctrlKey)
+			Selection.selectRight()
 		} else if (event.key === 'Escape') {
 			document.getElementById('export-png-dialog').classList.remove('open')
 			document.getElementById('export-gif-dialog').classList.remove('open')

@@ -24,6 +24,7 @@ mod history;
 mod selection;
 mod clipboard;
 mod view;
+mod edit;
 mod config;
 mod format;
 mod palette;
@@ -115,6 +116,18 @@ fn main() {
 				"deselect_all" => {
 					selection::deselect_all(app_handle);
 				}
+				"shift_left" => {
+					edit::shift_selection(app_handle.clone(), file_state, selection_state, -1, 0);
+				}
+				"shift_right" => {
+					edit::shift_selection(app_handle.clone(), file_state, selection_state, 1, 0);
+				}
+				"shift_up" => {
+					edit::shift_selection(app_handle.clone(), file_state, selection_state, 0, -1);
+				}
+				"shift_down" => {
+					edit::shift_selection(app_handle.clone(), file_state, selection_state, 0, 1);
+				}
 				"insert_image" => {
 					file::activate_insert_image(app_handle);
 				}
@@ -205,6 +218,7 @@ fn main() {
 			view::zoom_in,
 			view::zoom_out,
 			view::view_as_sprite,
+			edit::shift_selection,
 			export::get_file_path,
 			export::select_png_path,
 			export::select_gif_path,

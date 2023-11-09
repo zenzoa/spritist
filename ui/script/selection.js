@@ -2,7 +2,7 @@ class Selection {
 	static frameIndexes = []
 	static insertPoint = -1
 
-	static selectLeft(shiftKey, ctrlKey) {
+	static selectLeft() {
 		if (Selection.frameIndexes.length > 0) {
 			const firstIndex = Math.min(...Selection.frameIndexes)
 			if (firstIndex - 1 >= 0) {
@@ -15,7 +15,7 @@ class Selection {
 		Sprite.updateSelectedFrames()
 	}
 
-	static selectRight(shiftKey, ctrlKey) {
+	static selectRight() {
 		if (Selection.frameIndexes.length > 0) {
 			const lastIndex = Math.max(...Selection.frameIndexes)
 			if (lastIndex + 1 < Sprite.frameCount) {
