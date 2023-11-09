@@ -204,10 +204,12 @@ fn main() {
 			export::get_file_path,
 			export::select_png_path,
 			export::select_gif_path,
+			import::activate_import_png_as_blk,
+			import::activate_import_spritesheet,
+			import::import_spritesheet,
 			export::export_png,
 			export::export_gif,
 			export::export_spritesheet,
-			import::import_spritesheet,
 			show_error_message,
 			try_quit
 		])

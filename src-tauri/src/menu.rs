@@ -12,13 +12,13 @@ pub fn build_menu() -> Menu {
 	let save_file = CustomMenuItem::new("save_file".to_string(), "Save").accelerator("CmdOrCtrl+S").disabled();
 	let save_as = CustomMenuItem::new("save_as".to_string(), "Save As...").accelerator("CmdOrCtrl+Shift+S").disabled();
 	let import_menu = Submenu::new("Import", Menu::new()
-		.add_item(CustomMenuItem::new("import_png_as_blk".to_string(), "Import PNG as BLK"))
-		.add_item(CustomMenuItem::new("import_spritesheet".to_string(), "Import Spritesheet"))
+		.add_item(CustomMenuItem::new("import_png_as_blk".to_string(), "Import PNG as BLK").accelerator("CmdOrCtrl+Shift+B"))
+		.add_item(CustomMenuItem::new("import_spritesheet".to_string(), "Import Spritesheet").accelerator("CmdOrCtrl+Shift+T"))
 	);
 	let export_menu = Submenu::new("Export", Menu::new()
 		.add_item(CustomMenuItem::new("export_png".to_string(), "Export PNG").accelerator("CmdOrCtrl+E").disabled())
-		.add_item(CustomMenuItem::new("export_gif".to_string(), "Export GIF").disabled())
-		.add_item(CustomMenuItem::new("export_spritesheet".to_string(), "Export Spritesheet").disabled())
+		.add_item(CustomMenuItem::new("export_gif".to_string(), "Export GIF").accelerator("CmdOrCtrl+G").disabled())
+		.add_item(CustomMenuItem::new("export_spritesheet".to_string(), "Export Spritesheet").accelerator("CmdOrCtrl+T").disabled())
 	);
 	let file_menu = Submenu::new("File", Menu::new()
 		.add_item(new_file)

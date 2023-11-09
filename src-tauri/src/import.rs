@@ -21,10 +21,12 @@ struct Callback {
 	func: fn(&AppHandle, &PathBuf) -> Result<(), Box<dyn Error>>
 }
 
+#[tauri::command]
 pub fn activate_import_png_as_blk(app_handle: AppHandle) {
 	activate_import(app_handle, Callback{ func: import_png_as_blk_from_path });
 }
 
+#[tauri::command]
 pub fn activate_import_spritesheet(app_handle: AppHandle) {
 	activate_import(app_handle, Callback{ func: open_import_spritesheet_dialog });
 }

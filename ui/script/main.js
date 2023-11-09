@@ -151,8 +151,16 @@ window.addEventListener('load', () => {
 			Tauri.invoke('activate_save_as')
 		} else if (event.key === 's' && event.ctrlKey) {
 			Tauri.invoke('activate_save_file')
+		} else if (event.key === 'b' && event.shiftKey && event.ctrlKey) {
+			Tauri.invoke('activate_import_png_as_blk')
+		} else if (event.key === 't' && event.shiftKey && event.ctrlKey) {
+			Tauri.invoke('activate_import_spritesheet')
 		} else if (event.key === 'e' && event.ctrlKey) {
 			Tauri.invoke('export_png')
+		} else if (event.key === 'g' && event.ctrlKey) {
+			Tauri.invoke('export_gif')
+		} else if (event.key === 't' && event.ctrlKey) {
+			Tauri.invoke('export_spritesheet')
 		} else if (event.key === 'q' && event.ctrlKey) {
 			Tauri.invoke('try_quit')
 
