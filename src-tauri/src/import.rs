@@ -6,7 +6,7 @@ use tauri::{
 	AppHandle,
 	Manager,
 	State,
-	api::dialog::{ FileDialogBuilder, ask }
+	api::dialog::ask
 };
 use image::{ Rgba, RgbaImage };
 use image::io::Reader as ImageReader;
@@ -14,7 +14,7 @@ use image::io::Reader as ImageReader;
 use crate::{
 	view::{ view_as_bg, view_as_sprite },
 	state::{ RedrawPayload, reset_state, update_window_title },
-	file::{ FileState, Frame, enable_file_only_items }
+	file::{ FileState, Frame, create_open_dialog, enable_file_only_items }
 };
 
 struct Callback {
@@ -44,15 +44,15 @@ fn activate_import(app_handle: AppHandle, callback: Callback) {
 }
 
 fn open_png_dialog(app_handle: AppHandle, callback: Callback) {
-	FileDialogBuilder::new()
-	.add_filter("PNG Images", &["png", "PNG"])
-	.pick_file(move |file_path| {
-		if let Some(file_path_str) = file_path {
-			if let Err(why) = (callback.func)(&app_handle, &file_path_str) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
+	create_open_dialog(&app_handle, false)
+		.add_filter("PNG Images", &["png", "PNG"])
+		.pick_file(move |file_path| {
+			if let Some(file_path_str) = file_path {
+				if let Err(why) = (callback.func)(&app_handle, &file_path_str) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
 			}
-		}
-	});
+		});
 }
 
 fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {

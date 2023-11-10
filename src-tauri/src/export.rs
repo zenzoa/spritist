@@ -7,7 +7,7 @@ use tauri::{
 	AppHandle,
 	Manager,
 	State,
-	api::dialog::{ FileDialogBuilder, message }
+	api::dialog::message
 };
 use image::{
 	Delay,
@@ -17,7 +17,7 @@ use image::{
 };
 
 use crate::{
-	file::{ FileState, Frame },
+	file::{ FileState, Frame, create_save_dialog },
 	selection::SelectionState
 };
 
@@ -35,15 +35,7 @@ pub fn get_file_path(file_state: State<FileState>, extension: String) -> String 
 
 #[tauri::command]
 pub fn select_png_path(app_handle: AppHandle, file_path: String) {
-	let file_path = PathBuf::from(&file_path);
-	let mut file_dialog = FileDialogBuilder::new();
-	if let Some(file_name) = file_path.file_name() {
-		file_dialog = file_dialog.set_file_name(&file_name.to_string_lossy());
-	}
-	if let Some(directory) = file_path.parent() {
-		file_dialog = file_dialog.set_directory(directory);
-	}
-	file_dialog
+	create_save_dialog(&app_handle, Some("png"), Some(&file_path))
 		.add_filter("PNG Images", &["png", "PNG"])
 		.save_file(move |new_file_path| {
 			if let Some(file_path_str) = new_file_path {
@@ -54,11 +46,7 @@ pub fn select_png_path(app_handle: AppHandle, file_path: String) {
 
 #[tauri::command]
 pub fn select_gif_path(app_handle: AppHandle, file_path: String) {
-	let mut file_dialog = FileDialogBuilder::new();
-	if !file_path.is_empty() {
-		file_dialog = file_dialog.set_file_name(&file_path);
-	}
-	file_dialog
+	create_save_dialog(&app_handle, Some("gif"), Some(&file_path))
 		.add_filter("GIF Images", &["gif", "GIF"])
 		.save_file(move |file_path| {
 			if let Some(file_path_str) = file_path {

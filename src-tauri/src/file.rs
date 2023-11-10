@@ -84,6 +84,65 @@ pub struct Frame {
 	pub color_indexes: Vec<u8>
 }
 
+pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> FileDialogBuilder {
+	let mut file_dialog = FileDialogBuilder::new();
+
+	if use_default_filter {
+		file_dialog = file_dialog.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "png", "PNG", "gif", "GIF"]);
+	}
+
+	let file_state: State<FileState> = app_handle.state();
+	if let Some(file_path) = file_state.file_path.lock().unwrap().clone() {
+		if let Some(parent_dir) = file_path.parent() {
+			file_dialog = file_dialog.set_directory(parent_dir);
+		}
+	}
+
+	file_dialog
+}
+
+pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, new_file_path: Option<&str>) -> FileDialogBuilder {
+	let file_state: State<FileState> = app_handle.state();
+
+	let mut file_name = file_state.file_title.lock().unwrap().clone();
+	if let Some(file_path) = new_file_path {
+		if let Some(new_file_name) = PathBuf::from(file_path).file_name() {
+			if let Some(new_file_name) = new_file_name.to_str() {
+				file_name = new_file_name.to_string();
+			}
+		}
+	}
+
+ 	if file_name.is_empty() {
+		let ext = match new_extension {
+			Some(ext) => ext,
+			None => "c16"
+		};
+		file_name = format!("untitled.{}", ext).to_string();
+	} else {
+		if let Some(ext) = new_extension {
+			if let Some(new_file_name) = PathBuf::from(&file_name).with_extension(ext).to_str() {
+				file_name = new_file_name.to_string();
+			}
+		}
+	}
+
+	let mut file_dialog = FileDialogBuilder::new()
+		.set_file_name(&file_name);
+
+	if let Some(file_path) = new_file_path {
+		if let Some(parent_dir) = PathBuf::from(file_path).parent() {
+			file_dialog = file_dialog.set_directory(parent_dir);
+		}
+	} else if let Some(file_path) = file_state.file_path.lock().unwrap().clone() {
+		if let Some(parent_dir) = file_path.parent() {
+			file_dialog = file_dialog.set_directory(parent_dir);
+		}
+	}
+
+	file_dialog
+}
+
 #[tauri::command]
 pub fn activate_new_file(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
@@ -121,15 +180,13 @@ pub fn activate_open_file(app_handle: AppHandle) {
 }
 
 pub fn open_file_dialog(app_handle: AppHandle) {
-	FileDialogBuilder::new()
-		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "png", "PNG", "gif", "GIF"])
-		.pick_file(move |file_path| {
-			if let Some(file_path_str) = file_path {
-				if let Err(why) = open_file_from_path(&app_handle, &file_path_str) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
+	create_open_dialog(&app_handle, true).pick_file(move |file_path| {
+		if let Some(file_path_str) = file_path {
+			if let Err(why) = open_file_from_path(&app_handle, &file_path_str) {
+				app_handle.emit_all("error", why.to_string()).unwrap();
 			}
-		});
+		}
+	});
 }
 
 pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -204,15 +261,13 @@ pub fn drop_files(app_handle: &AppHandle, file_paths: &Vec<PathBuf>) -> Result<(
 
 #[tauri::command]
 pub fn activate_insert_image(app_handle: AppHandle) {
-	FileDialogBuilder::new()
-		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM", "png", "PNG", "gif", "GIF"])
-		.pick_file(move |file_path| {
-			if let Some(file_path_str) = file_path {
-				if let Err(why) = insert_image_from_path(&app_handle, &file_path_str) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
+	create_open_dialog(&app_handle, true).pick_file(move |file_path| {
+		if let Some(file_path_str) = file_path {
+			if let Err(why) = insert_image_from_path(&app_handle, &file_path_str) {
+				app_handle.emit_all("error", why.to_string()).unwrap();
 			}
-		});
+		}
+	});
 }
 
 pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -248,15 +303,13 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 
 #[tauri::command]
 pub fn activate_replace_frame(app_handle: AppHandle) {
-	FileDialogBuilder::new()
-		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM", "png", "PNG", "gif", "GIF"])
-		.pick_file(move |file_path| {
-			if let Some(file_path_str) = file_path {
-				if let Err(why) = replace_frame_from_path(&app_handle, &file_path_str) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
+	create_open_dialog(&app_handle, true).pick_file(move |file_path| {
+		if let Some(file_path_str) = file_path {
+			if let Err(why) = replace_frame_from_path(&app_handle, &file_path_str) {
+				app_handle.emit_all("error", why.to_string()).unwrap();
 			}
-		});
+		}
+	});
 }
 
 pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -389,35 +442,22 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 			}
 		}
 		_ => {
-			activate_save_as(app_handle, file_state);
+			activate_save_as(app_handle);
 		}
 	}
 }
 
 #[tauri::command]
-pub fn activate_save_as(app_handle: AppHandle, file_state: State<FileState>) {
-	let mut file_name = file_state.file_title.lock().unwrap().clone();
-	if file_name.is_empty() {
-		file_name = "untitled.c16".to_string();
-	}
-
-	let mut file_dialog = FileDialogBuilder::new()
+pub fn activate_save_as(app_handle: AppHandle) {
+	create_save_dialog(&app_handle, None, None)
 		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
-		.set_file_name(&file_name);
-
-	if let Some(file_path) = file_state.file_path.lock().unwrap().clone() {
-		if let Some(parent_dir) = file_path.parent() {
-			file_dialog = file_dialog.set_directory(parent_dir);
-		}
-	}
-
-	file_dialog.save_file(move |file_path| {
-		if let Some(file_path_str) = file_path {
-			if let Err(why) = save_file_to_path(&app_handle, &file_path_str) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
+		.save_file(move |file_path| {
+			if let Some(file_path_str) = file_path {
+				if let Err(why) = save_file_to_path(&app_handle, &file_path_str) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
 			}
-		}
-	});
+		});
 }
 
 pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {

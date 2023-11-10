@@ -6,14 +6,13 @@ use std::{
 use tauri::{
 	AppHandle,
 	Manager,
-	State,
-	api::dialog::FileDialogBuilder
+	State
 };
 use bytes::{ Bytes, Buf };
 use image::{ Rgba, RgbaImage };
 
 use crate::{
-	file::{ FileState, Frame },
+	file::{ FileState, Frame, create_open_dialog },
 	state::{ redraw, update_window_title },
 	history::add_state_to_history
 };
@@ -81,15 +80,15 @@ impl Palette {
 }
 
 pub fn activate_load_palette(app_handle: AppHandle) {
-	FileDialogBuilder::new()
-	.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
-	.pick_file(move |file_path| {
-		if let Some(file_path) = file_path {
-			if let Err(why) = load_palette_from_path(&app_handle, &file_path) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
+	create_open_dialog(&app_handle, false)
+		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
+		.pick_file(move |file_path| {
+			if let Some(file_path) = file_path {
+				if let Err(why) = load_palette_from_path(&app_handle, &file_path) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
 			}
-		}
-	});
+		});
 }
 
 fn load_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -139,15 +138,15 @@ fn load_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: P
 }
 
 pub fn activate_convert_to_palette(app_handle: AppHandle) {
-	FileDialogBuilder::new()
-	.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
-	.pick_file(move |file_path| {
-		if let Some(file_path) = file_path {
-			if let Err(why) = convert_to_palette_from_path(&app_handle, &file_path) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
+	create_open_dialog(&app_handle, false)
+		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
+		.pick_file(move |file_path| {
+			if let Some(file_path) = file_path {
+				if let Err(why) = convert_to_palette_from_path(&app_handle, &file_path) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
 			}
-		}
-	});
+		});
 }
 
 fn convert_to_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {

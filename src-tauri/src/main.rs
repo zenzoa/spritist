@@ -73,7 +73,7 @@ fn main() {
 					file::activate_save_file(app_handle.clone(), file_state);
 				}
 				"save_as" => {
-					file::activate_save_as(app_handle.clone(), file_state);
+					file::activate_save_as(app_handle.clone());
 				}
 				"export_png" => {
 					app_handle.emit_all("export_png", "").unwrap();

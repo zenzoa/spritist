@@ -10,7 +10,7 @@ class ExportGif {
 
 		document.getElementById('export-gif-select-file-button').addEventListener('click', () => {
 			const filePath = document.getElementById('export-gif-path').value
-			Tauri.invoke('select-gif-path', { filePath }).then((filePath) => {
+			Tauri.invoke('select_gif_path', { filePath }).then((filePath) => {
 				if (filePath) {
 					document.getElementById('export-gif-path').value = filePath
 				}
