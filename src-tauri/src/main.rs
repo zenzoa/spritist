@@ -102,7 +102,7 @@ fn main() {
 					clipboard::cut(app_handle.clone(), file_state, selection_state, clipboard_state);
 				}
 				"copy" => {
-					clipboard::copy(app_handle.clone(), file_state, selection_state, clipboard_state);
+					clipboard::copy(file_state, selection_state, clipboard_state);
 				}
 				"paste" => {
 					clipboard::paste(app_handle.clone(), file_state, selection_state, clipboard_state);

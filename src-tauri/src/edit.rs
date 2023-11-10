@@ -19,10 +19,10 @@ pub fn shift_selection(app_handle: AppHandle, file_state: State<FileState>, sele
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
 	for (i, frame) in frames.iter_mut().enumerate() {
 		if selected_frames.contains(&i) {
-			*frame = shift_pixels(&frame, x_shift, y_shift);
+			*frame = shift_pixels(frame, x_shift, y_shift);
 		}
 	}
-	app_handle.emit_all("reload_selection", {}).unwrap();
+	app_handle.emit_all("reload_selection", ()).unwrap();
 }
 
 fn shift_pixels(frame: &Frame, x_shift:i32, y_shift:i32) -> Frame {

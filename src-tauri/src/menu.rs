@@ -36,7 +36,7 @@ pub fn build_menu() -> Menu {
 	let redo = CustomMenuItem::new("redo".to_string(), "Redo").accelerator("CmdOrCtrl+Y").disabled();
 	let cut = CustomMenuItem::new("cut".to_string(), "Cut").accelerator("CmdOrCtrl+X").disabled();
 	let copy = CustomMenuItem::new("copy".to_string(), "Copy").accelerator("CmdOrCtrl+C").disabled();
-	let paste = CustomMenuItem::new("paste".to_string(), "Paste").accelerator("CmdOrCtrl+V").disabled();
+	let paste = CustomMenuItem::new("paste".to_string(), "Paste").accelerator("CmdOrCtrl+V");
 	let delete = CustomMenuItem::new("delete".to_string(), "Delete").accelerator("Delete").disabled();
 	let select_all = CustomMenuItem::new("select_all".to_string(), "Select All").accelerator("CmdOrCtrl+A");
 	let deselect_all = CustomMenuItem::new("deselect_all".to_string(), "Deselect All").accelerator("CmdOrCtrl+D").disabled();
