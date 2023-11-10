@@ -26,10 +26,14 @@ class ImportSpritesheet {
 		})
 
 		tileWidthInput.addEventListener('input', () => update(true))
+		tileWidthInput.addEventListener('click', () => update(true))
 		tileHeightInput.addEventListener('input', () => update(true))
+		tileHeightInput.addEventListener('click', () => update(true))
 
 		colsInput.addEventListener('input', () => update(false))
+		colsInput.addEventListener('click', () => update(false))
 		rowsInput.addEventListener('input', () => update(false))
+		rowsInput.addEventListener('click', () => update(false))
 
 		confirmButton.addEventListener('click', () => {
 			const filePath = pathInput.value

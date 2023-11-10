@@ -35,19 +35,23 @@ class ExportSpritesheet {
 			dialogEl.classList.remove('open')
 		})
 
-		colsInput.addEventListener('input', () => {
+		let onUpdateColsInput = () => {
 			const cols = parseInt(colsInput.value)
 			const rows = Math.ceil(Sprite.frameCount / cols)
 			rowsInput.value = rows
 			update(cols, rows)
-		})
+		}
+		colsInput.addEventListener('input', onUpdateColsInput)
+		colsInput.addEventListener('click', onUpdateColsInput)
 
-		rowsInput.addEventListener('input', () => {
+		let onUpdateRowsInput = () => {
 			const rows = parseInt(rowsInput.value)
 			const cols = Math.ceil(Sprite.frameCount / rows)
 			colsInput.value = cols
 			update(cols, rows)
-		})
+		}
+		rowsInput.addEventListener('input', onUpdateRowsInput)
+		rowsInput.addEventListener('click', onUpdateRowsInput)
 
 		Tauri.event.listen('export_spritesheet', () => {
 			Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
