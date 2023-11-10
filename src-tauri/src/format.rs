@@ -1,6 +1,7 @@
 use std::error::Error;
 use image::Rgba;
 
+pub mod png;
 pub mod spr;
 pub mod s16;
 pub mod m16;

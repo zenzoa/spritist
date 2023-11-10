@@ -69,6 +69,7 @@ dependencies = [
  "arboard",
  "bytes",
  "image",
+ "png",
  "serde",
  "serde_json",
  "tauri",

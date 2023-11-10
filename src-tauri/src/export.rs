@@ -18,7 +18,8 @@ use image::{
 
 use crate::{
 	file::{ FileState, Frame, create_save_dialog },
-	selection::SelectionState
+	selection::SelectionState,
+	format::png::encode as encode_png
 };
 
 #[tauri::command]
@@ -66,7 +67,7 @@ pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection
 			let rows = *file_state.rows.lock().unwrap();
 			match combine_frames(&frames, cols, rows, false) {
 				Ok(image) => {
-					if let Err(why) = image.save(file_path) {
+					if let Err(why) = encode_png(&image, file_path) {
 						app_handle.emit_all("error", why.to_string()).unwrap();
 						return
 					}
@@ -85,7 +86,7 @@ pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection
 							for (i, frame) in frames.iter().enumerate() {
 								if frames_to_export != "selected" || selected_frames.contains(&i) {
 									let file_path = base_dir.join(format!("{}-{}.png", file_stem.to_string_lossy(), i));
-									if let Err(why) = frame.image.save(file_path) {
+									if let Err(why) = encode_png(&frame.image, file_path) {
 										app_handle.emit_all("error", why.to_string()).unwrap();
 										return
 									}
@@ -138,7 +139,7 @@ pub fn export_spritesheet(app_handle: AppHandle, file_state: State<FileState>, f
 	let frames = file_state.frames.lock().unwrap();
 	match combine_frames(&frames, cols as usize, rows as usize, true) {
 		Ok(image) => {
-			if let Err(why) = image.save(file_path) {
+			if let Err(why) = encode_png(&image, PathBuf::from(file_path)) {
 				app_handle.emit_all("error", why.to_string()).unwrap();
 			}
 		},
