@@ -148,57 +148,82 @@ window.addEventListener('load', () => {
 
 	document.body.addEventListener('keydown', (event) => {
 		if (event.key === 'n' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_new_file')
 		} else if (event.key === 'o' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_open_file')
 		} else if (event.key === 's' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_save_as')
 		} else if (event.key === 's' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_save_file')
 		} else if (event.key === 'b' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_import_png_as_blk')
 		} else if (event.key === 't' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_import_spritesheet')
 		} else if (event.key === 'e' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('export_png')
 		} else if (event.key === 'g' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('export_gif')
 		} else if (event.key === 't' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('export_spritesheet')
 		} else if (event.key === 'q' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('try_quit')
 
 		} else if (event.key === 'z' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('undo')
 		} else if (event.key === 'y' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('redo')
 		} else if (event.key === 'x' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('cut')
 		} else if (event.key === 'c' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('copy')
 		} else if (event.key === 'v' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('paste')
 		} else if (event.key === 'Delete') {
+			event.preventDefault()
 			Tauri.invoke('delete_frames')
 		} else if (event.key === 'a' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('select_all')
 		} else if (event.key === 'd' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('deselect_all')
 		} else if (event.key === 'i' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_replace_frame')
 		} else if (event.key === 'i' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_insert_image')
 
 		} else if (event.key === '0' && event.ctrlKey) {
+			event.preventDefault()
 			if (Sprite.scale > 1) Tauri.invoke('reset_zoom')
 		} else if (event.key === '=' && event.ctrlKey) {
+			event.preventDefault()
 			if (Sprite.scale < 4) Tauri.invoke('zoom_in')
 		} else if (event.key === '-' && event.ctrlKey) {
+			event.preventDefault()
 			if (Sprite.scale > 1) Tauri.invoke('zoom_out')
 
 		} else if (event.key === 'ArrowLeft' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('shift_selection', { xShift: -1, yShift: 0 })
 		} else if (event.key === 'ArrowRight' && event.shiftKey && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('shift_selection', { xShift: 1, yShift: 0 })
 		} else if (event.key === 'ArrowUp' && event.shiftKey && event.ctrlKey) {
 			event.preventDefault()
@@ -208,8 +233,10 @@ window.addEventListener('load', () => {
 			Tauri.invoke('shift_selection', { xShift: 0, yShift: 1 })
 
 		} else if (event.key === 'ArrowLeft') {
+			event.preventDefault()
 			Selection.selectLeft()
 		} else if (event.key === 'ArrowRight') {
+			event.preventDefault()
 			Selection.selectRight()
 		} else if (event.key === 'Escape') {
 			document.getElementById('export-png-dialog').classList.remove('open')
