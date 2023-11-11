@@ -81,6 +81,7 @@ impl Palette {
 
 pub fn activate_load_palette(app_handle: AppHandle) {
 	create_open_dialog(&app_handle, false)
+		.set_title("Load Palette")
 		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
 		.pick_file(move |file_path| {
 			if let Some(file_path) = file_path {
@@ -139,6 +140,7 @@ fn load_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: P
 
 pub fn activate_convert_to_palette(app_handle: AppHandle) {
 	create_open_dialog(&app_handle, false)
+		.set_title("Convert to Palette")
 		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
 		.pick_file(move |file_path| {
 			if let Some(file_path) = file_path {

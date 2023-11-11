@@ -180,13 +180,15 @@ pub fn activate_open_file(app_handle: AppHandle) {
 }
 
 pub fn open_file_dialog(app_handle: AppHandle) {
-	create_open_dialog(&app_handle, true).pick_file(move |file_path| {
-		if let Some(file_path_str) = file_path {
-			if let Err(why) = open_file_from_path(&app_handle, &file_path_str) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
+	create_open_dialog(&app_handle, true)
+		.set_title("Open Sprite")
+		.pick_file(move |file_path| {
+			if let Some(file_path_str) = file_path {
+				if let Err(why) = open_file_from_path(&app_handle, &file_path_str) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
 			}
-		}
-	});
+		});
 }
 
 pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -261,13 +263,15 @@ pub fn drop_files(app_handle: &AppHandle, file_paths: &Vec<PathBuf>) -> Result<(
 
 #[tauri::command]
 pub fn activate_insert_image(app_handle: AppHandle) {
-	create_open_dialog(&app_handle, true).pick_file(move |file_path| {
-		if let Some(file_path_str) = file_path {
-			if let Err(why) = insert_image_from_path(&app_handle, &file_path_str) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
+	create_open_dialog(&app_handle, true)
+		.set_title("Insert Image")
+		.pick_file(move |file_path| {
+			if let Some(file_path_str) = file_path {
+				if let Err(why) = insert_image_from_path(&app_handle, &file_path_str) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
 			}
-		}
-	});
+		});
 }
 
 pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -302,14 +306,19 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 }
 
 #[tauri::command]
-pub fn activate_replace_frame(app_handle: AppHandle) {
-	create_open_dialog(&app_handle, true).pick_file(move |file_path| {
-		if let Some(file_path_str) = file_path {
-			if let Err(why) = replace_frame_from_path(&app_handle, &file_path_str) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
-			}
-		}
-	});
+pub fn activate_replace_frame(app_handle: AppHandle, selection_state: State<SelectionState>) {
+	let selected_frames = selection_state.selected_frames.lock().unwrap();
+	if !selected_frames.is_empty() {
+		create_open_dialog(&app_handle, true)
+			.set_title("Replace Frame")
+			.pick_file(move |file_path| {
+				if let Some(file_path_str) = file_path {
+					if let Err(why) = replace_frame_from_path(&app_handle, &file_path_str) {
+						app_handle.emit_all("error", why.to_string()).unwrap();
+					}
+				}
+			});
+	}
 }
 
 pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -450,6 +459,7 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 #[tauri::command]
 pub fn activate_save_as(app_handle: AppHandle) {
 	create_save_dialog(&app_handle, None, None)
+		.set_title("Save As")
 		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
 		.save_file(move |file_path| {
 			if let Some(file_path_str) = file_path {
@@ -514,7 +524,6 @@ pub fn enable_file_only_items(app_handle: &AppHandle, read_only: bool) {
 	menu_handle.get_item("export_gif").set_enabled(true).unwrap();
 	menu_handle.get_item("export_spritesheet").set_enabled(true).unwrap();
 	menu_handle.get_item("insert_image").set_enabled(true).unwrap();
-	menu_handle.get_item("replace_frame").set_enabled(true).unwrap();
 	menu_handle.get_item("convert_to_palette").set_enabled(true).unwrap();
 	menu_handle.get_item("convert_to_original").set_enabled(true).unwrap();
 	menu_handle.get_item("convert_to_reversed").set_enabled(true).unwrap();

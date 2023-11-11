@@ -132,7 +132,7 @@ fn main() {
 					file::activate_insert_image(app_handle);
 				}
 				"replace_frame" => {
-					file::activate_replace_frame(app_handle);
+					file::activate_replace_frame(app_handle.clone(), selection_state);
 				}
 
 				// VIEW MENU

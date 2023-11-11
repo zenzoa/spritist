@@ -37,6 +37,7 @@ pub fn get_file_path(file_state: State<FileState>, extension: String) -> String 
 #[tauri::command]
 pub fn select_png_path(app_handle: AppHandle, file_path: String) {
 	create_save_dialog(&app_handle, Some("png"), Some(&file_path))
+		.set_title("Export PNG")
 		.add_filter("PNG Images", &["png", "PNG"])
 		.save_file(move |new_file_path| {
 			if let Some(file_path_str) = new_file_path {
@@ -48,6 +49,7 @@ pub fn select_png_path(app_handle: AppHandle, file_path: String) {
 #[tauri::command]
 pub fn select_gif_path(app_handle: AppHandle, file_path: String) {
 	create_save_dialog(&app_handle, Some("gif"), Some(&file_path))
+		.set_title("Export GIF")
 		.add_filter("GIF Images", &["gif", "GIF"])
 		.save_file(move |file_path| {
 			if let Some(file_path_str) = file_path {

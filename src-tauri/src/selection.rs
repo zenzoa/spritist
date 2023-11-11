@@ -111,6 +111,7 @@ pub fn update_selection_items(app_handle: &AppHandle, selection_len: usize) {
 	menu_handle.get_item("copy").set_enabled(has_selection).unwrap();
 	menu_handle.get_item("delete").set_enabled(has_selection).unwrap();
 	menu_handle.get_item("deselect_all").set_enabled(has_selection).unwrap();
+	menu_handle.get_item("replace_frame").set_enabled(has_selection).unwrap();
 	app_handle.emit_all("update_copy_button", has_selection).unwrap();
 	app_handle.emit_all("update_delete_button", has_selection).unwrap();
 }

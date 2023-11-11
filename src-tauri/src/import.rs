@@ -23,28 +23,29 @@ struct Callback {
 
 #[tauri::command]
 pub fn activate_import_png_as_blk(app_handle: AppHandle) {
-	activate_import(app_handle, Callback{ func: import_png_as_blk_from_path });
+	activate_import(app_handle, "Import PNG as BLK".to_string(), Callback{ func: import_png_as_blk_from_path });
 }
 
 #[tauri::command]
 pub fn activate_import_spritesheet(app_handle: AppHandle) {
-	activate_import(app_handle, Callback{ func: open_import_spritesheet_dialog });
+	activate_import(app_handle, "Import Spritesheet".to_string(), Callback{ func: open_import_spritesheet_dialog });
 }
 
-fn activate_import(app_handle: AppHandle, callback: Callback) {
+fn activate_import(app_handle: AppHandle, title: String, callback: Callback) {
 	let file_state: State<FileState> = app_handle.state();
 	if *file_state.file_is_modified.lock().unwrap() {
 		ask(Some(&app_handle.get_window("main").unwrap()),
 			"File modified",
 			"Do you want to continue anyway and lose any unsaved work?",
-			|answer| { if answer { open_png_dialog(app_handle, callback); } });
+			|answer| { if answer { open_png_dialog(app_handle, title, callback); } });
 	} else {
-		open_png_dialog(app_handle, callback);
+		open_png_dialog(app_handle, title, callback);
 	}
 }
 
-fn open_png_dialog(app_handle: AppHandle, callback: Callback) {
+fn open_png_dialog(app_handle: AppHandle, title: String, callback: Callback) {
 	create_open_dialog(&app_handle, false)
+		.set_title(&title)
 		.add_filter("PNG Images", &["png", "PNG"])
 		.pick_file(move |file_path| {
 			if let Some(file_path_str) = file_path {
