@@ -1,6 +1,6 @@
 class ImportSpritesheet {
-	static cols = 1
-	static rows = 1
+	static cols = 10
+	static rows = 10
 
 	static setup() {
 		const dialogEl = document.getElementById('import-spritesheet-dialog')
@@ -64,30 +64,58 @@ class ImportSpritesheet {
 			let cols = parseInt(colsInput.value)
 			let rows = parseInt(rowsInput.value)
 
-			if (!isNaN(cols) && !isNaN(rows)) {
-				ImportSpritesheet.cols = cols
-				ImportSpritesheet.rows = rows
-			}
-
 			if (changedTileSize && !isNaN(tileWidth) && !isNaN(tileHeight)) {
-				cols = Math.floor(width / tileWidth)
-				rows = Math.floor(height / tileHeight)
-				colsInput.value = cols
-				rowsInput.value = rows
+				cols = width / tileWidth
+				rows = height / tileHeight
+				colsInput.value = Number.isInteger(cols) ? cols : Number(cols).toFixed(2)
+				rowsInput.value = Number.isInteger(rows) ? rows : Number(rows).toFixed(2)
 			} else if (!changedTileSize && !isNaN(cols) && !isNaN(rows)) {
-				tileWidth = Math.floor(width / cols)
-				tileHeight = Math.floor(height / rows)
-				tileWidthInput.value = tileWidth
-				tileHeightInput.value = tileHeight
+				tileWidth = width / cols
+				tileHeight = height / rows
+				tileWidthInput.value = Number.isInteger(tileWidth) ? tileWidth : Number(tileWidth).toFixed(2)
+				tileHeightInput.value = Number.isInteger(tileHeight) ? tileHeight : Number(tileHeight).toFixed(2)
 			}
 
-			if (width === tileWidth * cols && height === tileHeight * rows) {
+			let isError = false
+
+			if (Number.isInteger(tileWidth)) {
+				tileWidthInput.classList.remove('error')
+			} else {
+				tileWidthInput.classList.add('error')
+				isError = true
+			}
+
+			if (Number.isInteger(tileHeight)) {
+				tileHeightInput.classList.remove('error')
+			} else {
+				tileHeightInput.classList.add('error')
+				isError = true
+			}
+
+			if (Number.isInteger(cols)) {
+				ImportSpritesheet.cols = cols
+				colsInput.classList.remove('error')
+			} else {
+				colsInput.classList.add('error')
+				isError = true
+			}
+
+			if (Number.isInteger(rows)) {
+				ImportSpritesheet.rows = rows
+				rowsInput.classList.remove('error')
+			} else {
+				rowsInput.classList.add('error')
+				isError = true
+			}
+
+			if (!isError && width === tileWidth * cols && height === tileHeight * rows) {
 				confirmButton.innerText = 'Import'
 				confirmButton.removeAttribute('disabled')
 			} else {
-				confirmButton.innerText = '[ Invalid Values ]'
+				confirmButton.innerText = '[ Invalid Dimensions ]'
 				confirmButton.setAttribute('disabled', '')
 			}
+
 		}
 	}
 }

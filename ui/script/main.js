@@ -148,7 +148,29 @@ window.addEventListener('load', () => {
 
 	document.body.addEventListener('keydown', (event) => {
 		const key = event.key.toLowerCase();
-		if (key === 'n' && event.ctrlKey) {
+
+		if (key === 'q' && event.ctrlKey) {
+			event.preventDefault()
+			Tauri.invoke('try_quit')
+			return
+		}
+
+		const dialogIsOpen =
+		document.getElementById('export-png-dialog').classList.contains('open') ||
+		document.getElementById('export-gif-dialog').classList.contains('open') ||
+		document.getElementById('export-spritesheet-dialog').classList.contains('open') ||
+		document.getElementById('import-spritesheet-dialog').classList.contains('open')
+
+		if (dialogIsOpen) {
+			if (event.key === 'Escape') {
+				document.getElementById('export-png-dialog').classList.remove('open')
+				document.getElementById('export-gif-dialog').classList.remove('open')
+				document.getElementById('export-spritesheet-dialog').classList.remove('open')
+				document.getElementById('import-spritesheet-dialog').classList.remove('open')
+			}
+			return
+
+		} else if (key === 'n' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_new_file')
 		} else if (key === 'o' && event.ctrlKey) {
@@ -165,6 +187,9 @@ window.addEventListener('load', () => {
 			Tauri.invoke('activate_import_png_as_blk')
 		} else if (key === 't' && event.shiftKey && event.ctrlKey) {
 			event.preventDefault()
+			Tauri.invoke('export_spritesheet')
+		} else if (key === 't' && event.ctrlKey) {
+			event.preventDefault()
 			Tauri.invoke('activate_import_spritesheet')
 		} else if (key === 'e' && event.ctrlKey) {
 			event.preventDefault()
@@ -172,12 +197,6 @@ window.addEventListener('load', () => {
 		} else if (key === 'g' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('export_gif')
-		} else if (key === 't' && event.ctrlKey) {
-			event.preventDefault()
-			Tauri.invoke('export_spritesheet')
-		} else if (key === 'q' && event.ctrlKey) {
-			event.preventDefault()
-			Tauri.invoke('try_quit')
 
 		} else if (key === 'z' && event.ctrlKey) {
 			event.preventDefault()
@@ -239,11 +258,6 @@ window.addEventListener('load', () => {
 		} else if (event.key === 'ArrowRight') {
 			event.preventDefault()
 			Selection.selectRight()
-		} else if (event.key === 'Escape') {
-			document.getElementById('export-png-dialog').classList.remove('open')
-			document.getElementById('export-gif-dialog').classList.remove('open')
-			document.getElementById('export-spritesheet-dialog').classList.remove('open')
-			document.getElementById('import-spritesheet-dialog').classList.remove('open')
 		}
 	})
 

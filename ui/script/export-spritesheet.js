@@ -57,9 +57,19 @@ class ExportSpritesheet {
 			Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
 				pathInput.value = filePath.replace('.png', '_spritesheet.png')
 			})
-			colsInput.value = Sprite.frameCount
-			rowsInput.value = 1
-			update(Sprite.frameCount, 1)
+			const frameCount = Sprite.frameCount
+			let squarestFactor = 1
+			let squarestRowColDiff = frameCount - 1
+			for (let i = 0; i <= Sprite.frameCount / 2; i++) {
+				const rowColDiff = (frameCount / i) - i
+				if (frameCount % i === 0 && rowColDiff < squarestRowColDiff) {
+					squarestFactor = i
+					squarestRowColDiff = rowColDiff
+				}
+			}
+			colsInput.value = squarestFactor
+			rowsInput.value = Math.ceil(frameCount / squarestFactor)
+			update(frameCount, 1)
 			dialogEl.classList.add('open')
 			confirmButton.focus()
 		})
@@ -77,7 +87,7 @@ class ExportSpritesheet {
 				confirmButton.innerText = 'Export'
 				confirmButton.removeAttribute('disabled')
 			} else {
-				confirmButton.innerText = '[ Invalid Values ]'
+				confirmButton.innerText = '[ Invalid Dimensions ]'
 				confirmButton.setAttribute('disabled', '')
 			}
 		}

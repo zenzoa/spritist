@@ -374,6 +374,10 @@ input:disabled {
 	box-shadow: none;
 }
 
+input.error {
+	background: var(--invalid-dims-bg);
+}
+
 label {
 	position: relative;
 	display: flex;
