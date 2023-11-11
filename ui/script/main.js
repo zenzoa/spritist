@@ -222,7 +222,7 @@ window.addEventListener('load', () => {
 		} else if (key === 'd' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('deselect_all')
-		} else if (key === 'i' && event.shiftKey && event.ctrlKey) {
+		} else if (key === 'r' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_replace_frame')
 		} else if (key === 'i' && event.ctrlKey) {

@@ -47,7 +47,7 @@ pub fn build_menu() -> Menu {
 		.add_item(CustomMenuItem::new("shift_down".to_string(), "Shift Down").accelerator("CmdOrCtrl+Shift+Down"))
 	);
 	let insert_image = CustomMenuItem::new("insert_image".to_string(), "Insert Image...").accelerator("CmdOrCtrl+I").disabled();
-	let replace_frame = CustomMenuItem::new("replace_frame".to_string(), "Replace Frame...").accelerator("CmdOrCtrl+Shift+I").disabled();
+	let replace_frame = CustomMenuItem::new("replace_frame".to_string(), "Replace Frame...").accelerator("CmdOrCtrl+R").disabled();
 	let edit_menu = Submenu::new("Edit", Menu::new()
 		.add_item(undo)
 		.add_item(redo)
