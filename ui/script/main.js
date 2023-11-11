@@ -180,18 +180,18 @@ window.addEventListener('load', () => {
 		} else if (CTRL && KEY === 'B') {
 			event.preventDefault()
 			Tauri.invoke('activate_import_png_as_blk')
-		} else if (CTRL_SHIFT && KEY === 'T') {
-			event.preventDefault()
-			Tauri.invoke('export_spritesheet')
 		} else if (CTRL && KEY === 'T') {
 			event.preventDefault()
 			Tauri.invoke('activate_import_spritesheet')
 		} else if (CTRL && KEY === 'E') {
 			event.preventDefault()
-			Tauri.invoke('export_png')
+			Tauri.event.emit('export_png')
 		} else if (CTRL && KEY === 'G') {
 			event.preventDefault()
-			Tauri.invoke('export_gif')
+			Tauri.event.emit('export_gif')
+		} else if (CTRL_SHIFT && KEY === 'T') {
+			event.preventDefault()
+			Tauri.event.emit('export_spritesheet')
 
 		} else if (CTRL && KEY === 'Z') {
 			event.preventDefault()
