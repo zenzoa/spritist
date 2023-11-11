@@ -1,10 +1,25 @@
 class ImportSpritesheet {
 	static cols = 10
 	static rows = 10
+	static lastButtonId = 'import-spritesheet-confirm-button'
+
+	static isOpen() {
+		return document.getElementById('import-spritesheet-dialog').classList.contains('open')
+	}
+
+	static open() {
+		document.getElementById('import-spritesheet-dialog').classList.add('open')
+	}
+
+	static close() {
+		document.getElementById('import-spritesheet-dialog').classList.remove('open')
+	}
+
+	static focusConfirmButton() {
+		document.getElementById(ImportSpritesheet.lastButtonId).focus()
+	}
 
 	static setup() {
-		const dialogEl = document.getElementById('import-spritesheet-dialog')
-
 		const pathInput = document.getElementById('import-spritesheet-path')
 
 		const widthInput = document.getElementById('import-spritesheet-width')
@@ -16,13 +31,17 @@ class ImportSpritesheet {
 		const colsInput = document.getElementById('import-spritesheet-cols')
 		const rowsInput = document.getElementById('import-spritesheet-rows')
 
+		const exportSprButton = document.getElementById('import-spritesheet-export-spr-button')
+		const exportS16Button = document.getElementById('import-spritesheet-export-s16-button')
+		const exportC16Button = document.getElementById('import-spritesheet-export-c16-button')
+
 		const confirmButton = document.getElementById('import-spritesheet-confirm-button')
 
 		document.getElementById('import-spritesheet-close-button').addEventListener('click', () => {
-			dialogEl.classList.remove('open')
+			ImportSpritesheet.close()
 		})
 		document.getElementById('import-spritesheet-cancel-button').addEventListener('click', () => {
-			dialogEl.classList.remove('open')
+			ImportSpritesheet.close()
 		})
 
 		tileWidthInput.addEventListener('input', () => update(true))
@@ -35,13 +54,30 @@ class ImportSpritesheet {
 		rowsInput.addEventListener('input', () => update(false))
 		rowsInput.addEventListener('click', () => update(false))
 
-		confirmButton.addEventListener('click', () => {
+		const onConfirm = (lastButtonId, tauriAction) => {
 			const filePath = pathInput.value
 			const cols = parseInt(colsInput.value)
 			const rows = parseInt(rowsInput.value)
-			Tauri.invoke('import_spritesheet', { filePath, cols, rows })
-			dialogEl.classList.remove('open')
-		})
+			Tauri.invoke('import_spritesheet' + tauriAction, { filePath, cols, rows })
+			ImportSpritesheet.lastButtonId = 'import-spritesheet-' + lastButtonId + '-button'
+			ImportSpritesheet.close()
+		}
+
+		confirmButton.addEventListener('click', () => onConfirm('confirm', ''))
+		exportSprButton.addEventListener('click', () => onConfirm('export-spr', '_export_spr'))
+		exportS16Button.addEventListener('click', () => onConfirm('export-s16', '_export_s16'))
+		exportC16Button.addEventListener('click', () => onConfirm('export-c16', '_export_c16'))
+
+		let onKeydown = (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault()
+				ImportSpritesheet.focusConfirmButton()
+			}
+		}
+		tileWidthInput.addEventListener('keydown', onKeydown)
+		tileHeightInput.addEventListener('keydown', onKeydown)
+		colsInput.addEventListener('keydown', onKeydown)
+		rowsInput.addEventListener('keydown', onKeydown)
 
 		Tauri.event.listen('import_spritesheet', (event) => {
 			pathInput.value = event.payload.file_path
@@ -52,8 +88,8 @@ class ImportSpritesheet {
 			colsInput.value = ImportSpritesheet.cols
 			rowsInput.value = ImportSpritesheet.rows
 			update(false)
-			dialogEl.classList.add('open')
-			confirmButton.focus()
+			ImportSpritesheet.open()
+			ImportSpritesheet.focusConfirmButton()
 		})
 
 		const update = (changedTileSize) => {
@@ -111,9 +147,15 @@ class ImportSpritesheet {
 			if (!isError && width === tileWidth * cols && height === tileHeight * rows) {
 				confirmButton.innerText = 'Import'
 				confirmButton.removeAttribute('disabled')
+				exportSprButton.removeAttribute('disabled')
+				exportS16Button.removeAttribute('disabled')
+				exportC16Button.removeAttribute('disabled')
 			} else {
 				confirmButton.innerText = '[ Invalid Dimensions ]'
 				confirmButton.setAttribute('disabled', '')
+				exportSprButton.setAttribute('disabled', '')
+				exportS16Button.setAttribute('disabled', '')
+				exportC16Button.setAttribute('disabled', '')
 			}
 
 		}

@@ -1,4 +1,5 @@
 use std::{
+	fs,
 	error::Error,
 	path::PathBuf
 };
@@ -6,19 +7,24 @@ use tauri::{
 	AppHandle,
 	Manager,
 	State,
-	api::dialog::ask
+	api::dialog::{ ask, message }
 };
 use image::{ Rgba, RgbaImage };
 use image::io::Reader as ImageReader;
 
 use crate::{
+	format::{ spr, s16, c16 },
 	view::{ view_as_bg, view_as_sprite },
 	state::{ RedrawPayload, reset_state, update_window_title },
-	file::{ FileState, Frame, create_open_dialog, enable_file_only_items }
+	file::{ FileState, Frame, SpriteInfo, create_open_dialog, enable_file_only_items }
 };
 
 struct Callback {
 	func: fn(&AppHandle, &PathBuf) -> Result<(), Box<dyn Error>>
+}
+
+struct SpritesheetCallback {
+	func: fn(&AppHandle, &PathBuf, Vec<Frame>, u16, u16) -> Result<(), Box<dyn Error>>
 }
 
 #[tauri::command]
@@ -137,36 +143,40 @@ fn open_import_spritesheet_dialog(app_handle: &AppHandle, file_path: &PathBuf) -
 	Ok(())
 }
 
+fn import_spritesheet_as_frames(file_path: &PathBuf, cols: u32, rows: u32) -> Result<Vec<Frame>, Box<dyn Error>> {
+	let png_image = get_image(file_path)?;
+	let tile_width = png_image.width() / cols;
+	let tile_height = png_image.height() / rows;
+
+	let mut frames: Vec<Frame> = Vec::new();
+
+	for tile_y in 0..rows {
+		for tile_x in 0..cols {
+			let image_x = tile_x * tile_width;
+			let image_y = tile_y * tile_height;
+			let mut image = RgbaImage::new(tile_width, tile_height);
+			for y in 0..tile_height {
+				for x in 0..tile_width {
+					if image_x + x < png_image.width() && image_y + y < png_image.height() {
+						let pixel = *png_image.get_pixel(image_x + x, image_y + y);
+						image.put_pixel(x, y, pixel);
+					} else {
+						return Err("Invalid spritesheet dimensions".into());
+					}
+				}
+			}
+			frames.push(Frame{ image, color_indexes: Vec::new() })
+		}
+	}
+
+	Ok(frames)
+}
+
 #[tauri::command]
 pub fn import_spritesheet(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
 	let file_path = PathBuf::from(file_path);
-	match get_image(&file_path) {
-		Ok(png_image) => {
-			let tile_width = png_image.width() / cols;
-			let tile_height = png_image.height() / rows;
-
-			let mut frames: Vec<Frame> = Vec::new();
-
-			for tile_y in 0..rows {
-				for tile_x in 0..cols {
-					let image_x = tile_x * tile_width;
-					let image_y = tile_y * tile_height;
-					let mut image = RgbaImage::new(tile_width, tile_height);
-					for y in 0..tile_height {
-						for x in 0..tile_width {
-							if image_x + x < png_image.width() && image_y + y < png_image.height() {
-								let pixel = *png_image.get_pixel(image_x + x, image_y + y);
-								image.put_pixel(x, y, pixel);
-							} else {
-								app_handle.emit_all("error", "Invalid spritesheet dimensions".to_string()).unwrap();
-								return
-							}
-						}
-					}
-					frames.push(Frame{ image, color_indexes: Vec::new() })
-				}
-			}
-
+	match import_spritesheet_as_frames(&file_path, cols, rows) {
+		Ok(frames) => {
 			reset_state(&app_handle);
 
 			let c16_file_path = file_path.with_extension("c16");
@@ -194,10 +204,75 @@ pub fn import_spritesheet(app_handle: AppHandle, file_path: String, cols: u32, r
 				cols: *file_state.cols.lock().unwrap(),
 				rows: *file_state.rows.lock().unwrap(),
 			}).unwrap();
+		}
 
-		},
 		Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()
 	}
+}
+
+fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+	let file_state: State<FileState> = app_handle.state();
+	let palette = file_state.palette.lock().unwrap().clone();
+	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
+	let data = spr::encode(sprite_info, &palette)?;
+	fs::write(file_path, &data)?;
+	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported SPR file succesfully");
+	Ok(())
+}
+
+fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
+	let data = s16::encode(sprite_info)?;
+	fs::write(file_path, &data)?;
+	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported S16 file succesfully");
+	Ok(())
+}
+
+fn encode_spritesheet_as_c16(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
+	let data = c16::encode(sprite_info)?;
+	fs::write(file_path, &data)?;
+	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported C16 file succesfully");
+	Ok(())
+}
+
+fn import_spritesheet_for_export(app_handle: AppHandle, file_path: String, cols: u32, rows: u32, extension: &str, callback: SpritesheetCallback) {
+	let file_path = PathBuf::from(file_path);
+	match import_spritesheet_as_frames(&file_path, cols, rows) {
+		Ok(frames) => {
+			let new_path = file_path.with_extension(extension);
+			if new_path.is_file() {
+				ask(Some(&app_handle.get_window("main").unwrap()),
+					"File exists",
+					&format!("Do you want to overwrite {}?", new_path.to_string_lossy()),
+					move |answer| { if answer {
+						if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
+							app_handle.emit_all("error", why.to_string()).unwrap();
+						}
+					}});
+			} else {
+				if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
+					app_handle.emit_all("error", why.to_string()).unwrap();
+				}
+			}
+		}
+		Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()
+	}
+}
+
+#[tauri::command]
+pub fn import_spritesheet_export_spr(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
+	import_spritesheet_for_export(app_handle, file_path, cols, rows, "spr", SpritesheetCallback{ func: encode_spritesheet_as_spr });
+}
+
+#[tauri::command]
+pub fn import_spritesheet_export_s16(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
+	import_spritesheet_for_export(app_handle, file_path, cols, rows, "s16", SpritesheetCallback{ func: encode_spritesheet_as_s16 });
+}
+
+#[tauri::command]
+pub fn import_spritesheet_export_c16(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
+	import_spritesheet_for_export(app_handle, file_path, cols, rows, "c16", SpritesheetCallback{ func: encode_spritesheet_as_c16 });
 }
 
 fn get_image(file_path: &PathBuf) -> Result<RgbaImage, Box<dyn Error>> {

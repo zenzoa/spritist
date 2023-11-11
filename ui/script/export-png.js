@@ -1,11 +1,27 @@
 class ExportPng {
+	static isOpen() {
+		return document.getElementById('export-png-dialog').classList.contains('open')
+	}
+
+	static open() {
+		document.getElementById('export-png-dialog').classList.add('open')
+	}
+
+	static close() {
+		document.getElementById('export-png-dialog').classList.remove('open')
+	}
+
+	static focusConfirmButton() {
+		document.getElementById('export-png-confirm-button').focus()
+	}
+
 	static setup() {
 		document.getElementById('export-png-close-button').addEventListener('click', () => {
-			document.getElementById('export-png-dialog').classList.remove('open')
+			ExportPng.close()
 		})
 
 		document.getElementById('export-png-cancel-button').addEventListener('click', () => {
-			document.getElementById('export-png-dialog').classList.remove('open')
+			ExportPng.close()
 		})
 
 		document.getElementById('export-png-select-file-button').addEventListener('click', () => {
@@ -15,6 +31,13 @@ class ExportPng {
 					document.getElementById('export-png-path').value = filePath
 				}
 			})
+		})
+
+		document.getElementById('export-png-path').addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault()
+				ExportPng.focusConfirmButton()
+			}
 		})
 
 		document.getElementById('export-png-confirm-button').addEventListener('click', () => {
@@ -46,8 +69,9 @@ class ExportPng {
 			} else if (bgOption) {
 				bgOption.remove()
 			}
-			document.getElementById('export-png-dialog').classList.add('open')
-			document.getElementById('export-png-confirm-button').focus()
+
+			ExportPng.open()
+			ExportPng.focusConfirmButton()
 		})
 
 		Tauri.event.listen('update_export_png_path', (event) => {
@@ -56,7 +80,7 @@ class ExportPng {
 		})
 
 		Tauri.event.listen('successful_png_export', () => {
-			document.getElementById('export-png-dialog').classList.remove('open')
+			ExportPng.close()
 		})
 	}
 }

@@ -251,7 +251,9 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Resul
 
 pub fn drop_files(app_handle: &AppHandle, file_paths: &Vec<PathBuf>) -> Result<(), Box<dyn Error>> {
 	let file_state: State<FileState> = app_handle.state();
-	if *file_state.file_is_open.lock().unwrap() || file_paths.len() > 1 {
+	let file_is_open = *file_state.file_is_open.lock().unwrap();
+	let frames = file_state.frames.lock().unwrap().clone();
+	if (file_is_open && !frames.is_empty()) || file_paths.len() > 1 {
 		for file_path in file_paths.iter() {
 			insert_image_from_path(app_handle, file_path)?;
 		}

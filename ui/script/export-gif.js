@@ -1,11 +1,27 @@
 class ExportGif {
+	static isOpen() {
+		return document.getElementById('export-gif-dialog').classList.contains('open')
+	}
+
+	static open() {
+		document.getElementById('export-gif-dialog').classList.add('open')
+	}
+
+	static close() {
+		document.getElementById('export-gif-dialog').classList.remove('open')
+	}
+
+	static focusConfirmButton() {
+		document.getElementById('export-gif-confirm-button').focus()
+	}
+
 	static setup() {
 		document.getElementById('export-gif-close-button').addEventListener('click', () => {
-			document.getElementById('export-gif-dialog').classList.remove('open')
+			ExportGif.close()
 		})
 
 		document.getElementById('export-gif-cancel-button').addEventListener('click', () => {
-			document.getElementById('export-gif-dialog').classList.remove('open')
+			ExportGif.close()
 		})
 
 		document.getElementById('export-gif-select-file-button').addEventListener('click', () => {
@@ -16,6 +32,15 @@ class ExportGif {
 				}
 			})
 		})
+
+		let onKeydown = (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault()
+				ExportGif.focusConfirmButton()
+			}
+		}
+		document.getElementById('export-gif-path').addEventListener('keydown', onKeydown)
+		document.getElementById('export-gif-speed').addEventListener('keydown', onKeydown)
 
 		document.getElementById('export-gif-confirm-button').addEventListener('click', () => {
 			const filePath = document.getElementById('export-gif-path').value
@@ -37,7 +62,9 @@ class ExportGif {
 			} else {
 				document.getElementById('export-gif-frames').value = "all"
 			}
-			document.getElementById('export-gif-dialog').classList.add('open')
+
+			ExportGif.open()
+			ExportGif.focusConfirmButton()
 		})
 
 		Tauri.event.listen('update_export_gif_path', (event) => {
@@ -45,7 +72,7 @@ class ExportGif {
 		})
 
 		Tauri.event.listen('successful_gif_export', (event) => {
-			document.getElementById('export-gif-dialog').classList.remove('open')
+			ExportGif.close()
 		})
 	}
 }

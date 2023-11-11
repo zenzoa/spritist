@@ -1,9 +1,21 @@
 class ExportSpritesheet {
-	static setup() {
-		const dialogEl = document.getElementById('export-spritesheet-dialog')
+	static isOpen() {
+		return document.getElementById('export-spritesheet-dialog').classList.contains('open')
+	}
 
-		const closeButton = document.getElementById('export-spritesheet-close-button')
-		const cancelButton = document.getElementById('export-spritesheet-cancel-button')
+	static open() {
+		document.getElementById('export-spritesheet-dialog').classList.add('open')
+	}
+
+	static close() {
+		document.getElementById('export-spritesheet-dialog').classList.remove('open')
+	}
+
+	static focusConfirmButton() {
+		document.getElementById('export-spritesheet-confirm-button').focus()
+	}
+
+	static setup() {
 		const confirmButton = document.getElementById('export-spritesheet-confirm-button')
 
 		const pathInput = document.getElementById('export-spritesheet-path')
@@ -12,12 +24,12 @@ class ExportSpritesheet {
 		const colsInput = document.getElementById('export-spritesheet-cols')
 		const rowsInput = document.getElementById('export-spritesheet-rows')
 
-		closeButton.addEventListener('click', () => {
-			dialogEl.classList.remove('open')
+		document.getElementById('export-spritesheet-close-button').addEventListener('click', () => {
+			ExportSpritesheet.close()
 		})
 
-		cancelButton.addEventListener('click', () => {
-			dialogEl.classList.remove('open')
+		document.getElementById('export-spritesheet-cancel-button').addEventListener('click', () => {
+			ExportSpritesheet.close()
 		})
 
 		fileButton.addEventListener('click', () => {
@@ -32,8 +44,18 @@ class ExportSpritesheet {
 			const cols = parseInt(colsInput.value)
 			const rows = parseInt(rowsInput.value)
 			Tauri.invoke('export_spritesheet', { filePath, cols, rows })
-			dialogEl.classList.remove('open')
+			ExportSpritesheet.close()
 		})
+
+		let onKeydown = (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault()
+				ExportSpritesheet.focusConfirmButton()
+			}
+		}
+		pathInput.addEventListener('keydown', onKeydown)
+		colsInput.addEventListener('keydown', onKeydown)
+		rowsInput.addEventListener('keydown', onKeydown)
 
 		let onUpdateColsInput = () => {
 			const cols = parseInt(colsInput.value)
@@ -70,8 +92,9 @@ class ExportSpritesheet {
 			colsInput.value = squarestFactor
 			rowsInput.value = Math.ceil(frameCount / squarestFactor)
 			update(frameCount, 1)
-			dialogEl.classList.add('open')
-			confirmButton.focus()
+
+			ExportSpritesheet.open()
+			ExportSpritesheet.focusConfirmButton()
 		})
 
 		Tauri.event.listen('update_export_spritesheet_path', (event) => {
@@ -79,7 +102,7 @@ class ExportSpritesheet {
 		})
 
 		Tauri.event.listen('successful_spritesheet_export', () => {
-			dialogEl.classList.remove('open')
+			ExportSpritesheet.close()
 		})
 
 		const update = (cols, rows) => {

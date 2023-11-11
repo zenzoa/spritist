@@ -147,115 +147,110 @@ window.addEventListener('load', () => {
 	})
 
 	document.body.addEventListener('keydown', (event) => {
-		const key = event.key.toLowerCase();
+		const KEY = event.key.toUpperCase()
+		const ONLY = !event.ctrlKey && !event.shiftKey && !event.altKey
+		const CTRL = event.ctrlKey && !event.shiftKey && !event.altKey
+		const CTRL_SHIFT = event.ctrlKey && event.shiftKey && !event.altKey
 
-		if (key === 'q' && event.ctrlKey) {
+		if (CTRL && KEY === 'Q') {
 			event.preventDefault()
 			Tauri.invoke('try_quit')
-			return
-		}
 
-		const dialogIsOpen =
-		document.getElementById('export-png-dialog').classList.contains('open') ||
-		document.getElementById('export-gif-dialog').classList.contains('open') ||
-		document.getElementById('export-spritesheet-dialog').classList.contains('open') ||
-		document.getElementById('import-spritesheet-dialog').classList.contains('open')
-
-		if (dialogIsOpen) {
-			if (event.key === 'Escape') {
-				document.getElementById('export-png-dialog').classList.remove('open')
-				document.getElementById('export-gif-dialog').classList.remove('open')
-				document.getElementById('export-spritesheet-dialog').classList.remove('open')
-				document.getElementById('import-spritesheet-dialog').classList.remove('open')
+		} else if (ExportPng.isOpen() || ExportGif.isOpen() || ExportSpritesheet.isOpen() || ImportSpritesheet.isOpen()) {
+			if (ONLY && KEY === 'ESCAPE') {
+				event.preventDefault()
+				ExportPng.close()
+				ExportGif.close()
+				ExportSpritesheet.close()
+				ImportSpritesheet.close()
 			}
-			return
 
-		} else if (key === 'n' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'N') {
 			event.preventDefault()
 			Tauri.invoke('activate_new_file')
-		} else if (key === 'o' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'O') {
 			event.preventDefault()
 			Tauri.invoke('activate_open_file')
-		} else if (key === 's' && event.shiftKey && event.ctrlKey) {
-			event.preventDefault()
-			Tauri.invoke('activate_save_as')
-		} else if (key === 's' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'S') {
 			event.preventDefault()
 			Tauri.invoke('activate_save_file')
-		} else if (key === 'b' && event.shiftKey && event.ctrlKey) {
+		} else if (CTRL_SHIFT && KEY === 'S') {
+			event.preventDefault()
+			Tauri.invoke('activate_save_as')
+		} else if (CTRL && KEY === 'B') {
 			event.preventDefault()
 			Tauri.invoke('activate_import_png_as_blk')
-		} else if (key === 't' && event.shiftKey && event.ctrlKey) {
+		} else if (CTRL_SHIFT && KEY === 'T') {
 			event.preventDefault()
 			Tauri.invoke('export_spritesheet')
-		} else if (key === 't' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'T') {
 			event.preventDefault()
 			Tauri.invoke('activate_import_spritesheet')
-		} else if (key === 'e' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'E') {
 			event.preventDefault()
 			Tauri.invoke('export_png')
-		} else if (key === 'g' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'G') {
 			event.preventDefault()
 			Tauri.invoke('export_gif')
 
-		} else if (key === 'z' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'Z') {
 			event.preventDefault()
 			Tauri.invoke('undo')
-		} else if (key === 'y' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'Y') {
 			event.preventDefault()
 			Tauri.invoke('redo')
-		} else if (key === 'x' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'X') {
 			event.preventDefault()
 			Tauri.invoke('cut')
-		} else if (key === 'c' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'C') {
 			event.preventDefault()
 			Tauri.invoke('copy')
-		} else if (key === 'v' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'V') {
 			event.preventDefault()
 			Tauri.invoke('paste')
-		} else if (key === 'Delete') {
+		} else if (ONLY && KEY === 'DELETE') {
 			event.preventDefault()
 			Tauri.invoke('delete_frames')
-		} else if (key === 'a' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'A') {
 			event.preventDefault()
 			Tauri.invoke('select_all')
-		} else if (key === 'd' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'D') {
 			event.preventDefault()
 			Tauri.invoke('deselect_all')
-		} else if (key === 'r' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'R') {
 			event.preventDefault()
 			Tauri.invoke('activate_replace_frame')
-		} else if (key === 'i' && event.ctrlKey) {
+		} else if (CTRL && KEY === 'I') {
 			event.preventDefault()
 			Tauri.invoke('activate_insert_image')
 
-		} else if (event.key === '0' && event.ctrlKey) {
+		} else if (CTRL && KEY === '0') {
 			event.preventDefault()
 			if (Sprite.scale > 1) Tauri.invoke('reset_zoom')
-		} else if (event.key === '=' && event.ctrlKey) {
+		} else if ((CTRL || CTRL_SHIFT) && (KEY === '=' || KEY === '+')) {
 			event.preventDefault()
 			if (Sprite.scale < 4) Tauri.invoke('zoom_in')
-		} else if (event.key === '-' && event.ctrlKey) {
+		} else if ((CTRL || CTRL_SHIFT) && (KEY === '-' || KEY === '_')) {
 			event.preventDefault()
 			if (Sprite.scale > 1) Tauri.invoke('zoom_out')
 
-		} else if (event.key === 'ArrowLeft' && event.shiftKey && event.ctrlKey) {
+		} else if (CTRL_SHIFT && KEY === 'ARROWLEFT') {
 			event.preventDefault()
 			Tauri.invoke('shift_selection', { xShift: -1, yShift: 0 })
-		} else if (event.key === 'ArrowRight' && event.shiftKey && event.ctrlKey) {
+		} else if (CTRL_SHIFT && KEY === 'ARROWRIGHT') {
 			event.preventDefault()
 			Tauri.invoke('shift_selection', { xShift: 1, yShift: 0 })
-		} else if (event.key === 'ArrowUp' && event.shiftKey && event.ctrlKey) {
+		} else if (CTRL_SHIFT && KEY === 'ARROWUP') {
 			event.preventDefault()
 			Tauri.invoke('shift_selection', { xShift: 0, yShift: -1 })
-		} else if (event.key === 'ArrowDown' && event.shiftKey && event.ctrlKey) {
+		} else if (CTRL_SHIFT && KEY === 'ARROWDOWN') {
 			event.preventDefault()
 			Tauri.invoke('shift_selection', { xShift: 0, yShift: 1 })
 
-		} else if (event.key === 'ArrowLeft') {
+		} else if (ONLY && KEY === 'ARROWLEFT') {
 			event.preventDefault()
 			Selection.selectLeft()
-		} else if (event.key === 'ArrowRight') {
+		} else if (ONLY && KEY === 'ARROWRIGHT') {
 			event.preventDefault()
 			Selection.selectRight()
 		}
