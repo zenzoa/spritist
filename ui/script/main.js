@@ -147,65 +147,66 @@ window.addEventListener('load', () => {
 	})
 
 	document.body.addEventListener('keydown', (event) => {
-		if (event.key === 'n' && event.ctrlKey) {
+		const key = event.key.toLowerCase();
+		if (key === 'n' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_new_file')
-		} else if (event.key === 'o' && event.ctrlKey) {
+		} else if (key === 'o' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_open_file')
-		} else if (event.key === 's' && event.shiftKey && event.ctrlKey) {
+		} else if (key === 's' && event.shiftKey && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_save_as')
-		} else if (event.key === 's' && event.ctrlKey) {
+		} else if (key === 's' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_save_file')
-		} else if (event.key === 'b' && event.shiftKey && event.ctrlKey) {
+		} else if (key === 'b' && event.shiftKey && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_import_png_as_blk')
-		} else if (event.key === 't' && event.shiftKey && event.ctrlKey) {
+		} else if (key === 't' && event.shiftKey && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_import_spritesheet')
-		} else if (event.key === 'e' && event.ctrlKey) {
+		} else if (key === 'e' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('export_png')
-		} else if (event.key === 'g' && event.ctrlKey) {
+		} else if (key === 'g' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('export_gif')
-		} else if (event.key === 't' && event.ctrlKey) {
+		} else if (key === 't' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('export_spritesheet')
-		} else if (event.key === 'q' && event.ctrlKey) {
+		} else if (key === 'q' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('try_quit')
 
-		} else if (event.key === 'z' && event.ctrlKey) {
+		} else if (key === 'z' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('undo')
-		} else if (event.key === 'y' && event.ctrlKey) {
+		} else if (key === 'y' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('redo')
-		} else if (event.key === 'x' && event.ctrlKey) {
+		} else if (key === 'x' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('cut')
-		} else if (event.key === 'c' && event.ctrlKey) {
+		} else if (key === 'c' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('copy')
-		} else if (event.key === 'v' && event.ctrlKey) {
+		} else if (key === 'v' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('paste')
-		} else if (event.key === 'Delete') {
+		} else if (key === 'Delete') {
 			event.preventDefault()
 			Tauri.invoke('delete_frames')
-		} else if (event.key === 'a' && event.ctrlKey) {
+		} else if (key === 'a' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('select_all')
-		} else if (event.key === 'd' && event.ctrlKey) {
+		} else if (key === 'd' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('deselect_all')
-		} else if (event.key === 'i' && event.shiftKey && event.ctrlKey) {
+		} else if (key === 'i' && event.shiftKey && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_replace_frame')
-		} else if (event.key === 'i' && event.ctrlKey) {
+		} else if (key === 'i' && event.ctrlKey) {
 			event.preventDefault()
 			Tauri.invoke('activate_insert_image')
 
