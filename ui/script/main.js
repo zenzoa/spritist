@@ -8,8 +8,6 @@ window.addEventListener('load', () => {
 		return false
 	}, false)
 
-	Sprite.drawFrames()
-
 	Tauri.event.listen('redraw', (event) => {
 		Sprite.frameCount = event.payload.frame_count
 		Selection.frameIndexes = event.payload.selected_frames

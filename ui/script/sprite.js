@@ -59,6 +59,19 @@ class Sprite {
 		return frameElement
 	}
 
+	static updateFrame(index, frameList) {
+		let frameElement = document.getElementById(`frame-${index}`)
+		if (frameElement != null) {
+			const frameImage = document.getElementById(`frame-img-${index}`)
+			frameImage.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
+			frameImage.addEventListener('load', () => Sprite.onImageLoad(frameImage, index))
+		} else {
+			frameElement = Sprite.createFrameElement(index)
+			frameList.append(frameElement)
+		}
+		return frameElement
+	}
+
 	static drawFrames() {
 		const frameList = document.getElementById('frame-list')
 		const originalHeight = frameList.getBoundingClientRect().height
@@ -69,11 +82,13 @@ class Sprite {
 
 		document.documentElement.style.setProperty('--img-scale', `${Sprite.scale}00%`)
 
-		Sprite.frameElements.forEach(frameElement => frameElement.remove())
-		Sprite.frameElements = [...Array(Sprite.frameCount).keys()].map(i => Sprite.createFrameElement(i))
-		Sprite.frameElements.forEach(frameElement => {
-			frameList.append(frameElement)
-		})
+		Sprite.frameElements.slice(Sprite.frameCount).forEach(frameElement => frameElement.remove())
+		Sprite.frameElements = []
+		for (let i = 0; i < Sprite.frameCount; i++) {
+			Sprite.frameElements.push(
+				Sprite.updateFrame(i, frameList)
+			)
+		}
 
 		Sprite.updateSelectedFrames()
 	}
