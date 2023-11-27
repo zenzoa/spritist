@@ -7,7 +7,7 @@ use tauri::{
 	AppHandle,
 	Manager,
 	State,
-	api::dialog::{ ask, message }
+	api::dialog::ask
 };
 use image::{ Rgba, RgbaImage };
 use image::io::Reader as ImageReader;
@@ -16,7 +16,7 @@ use crate::{
 	format::{ spr, s16, c16 },
 	view::{ view_as_bg, view_as_sprite },
 	state::{ RedrawPayload, reset_state, update_window_title },
-	file::{ FileState, Frame, SpriteInfo, create_open_dialog, enable_file_only_items }
+	file::{ FileState, Frame, SpriteInfo, create_open_dialog, open_file_from_path, enable_file_only_items }
 };
 
 struct Callback {
@@ -216,7 +216,7 @@ fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &PathBuf, frames
 	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
 	let data = spr::encode(sprite_info, &palette)?;
 	fs::write(file_path, &data)?;
-	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported SPR file succesfully");
+	open_file_from_path(app_handle, file_path).unwrap();
 	Ok(())
 }
 
@@ -224,7 +224,7 @@ fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &PathBuf, frames
 	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
 	let data = s16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
-	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported S16 file succesfully");
+	open_file_from_path(app_handle, file_path).unwrap();
 	Ok(())
 }
 
@@ -232,7 +232,7 @@ fn encode_spritesheet_as_c16(app_handle: &AppHandle, file_path: &PathBuf, frames
 	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
 	let data = c16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
-	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported C16 file succesfully");
+	open_file_from_path(app_handle, file_path).unwrap();
 	Ok(())
 }
 
