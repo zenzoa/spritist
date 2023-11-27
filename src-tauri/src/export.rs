@@ -6,8 +6,7 @@ use std::{
 use tauri::{
 	AppHandle,
 	Manager,
-	State,
-	api::dialog::message
+	State
 };
 use image::{
 	Delay,
@@ -102,7 +101,7 @@ pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection
 			}
 		}
 	}
-	message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported PNG file(s) succesfully");
+	app_handle.emit_all("notify", "Exported PNG file(s) succesfully".to_string()).unwrap();
 	app_handle.emit_all("successful_png_export", "".to_string()).unwrap();
 }
 
@@ -126,7 +125,7 @@ pub fn export_gif(app_handle: AppHandle, file_state: State<FileState>, selection
 			gif_encoder.set_repeat(Repeat::Infinite).unwrap();
 			match gif_encoder.encode_frames(gif_frames) {
 				Ok(()) => {
-					message(Some(&app_handle.get_window("main").unwrap()), "Success", "Exported GIF file succesfully");
+					app_handle.emit_all("notify", "Exported GIF file succesfully".to_string()).unwrap();
 					app_handle.emit_all("successful_gif_export", "".to_string()).unwrap();
 				}
 				Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()

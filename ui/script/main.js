@@ -97,6 +97,13 @@ window.addEventListener('load', () => {
 		Tauri.invoke('show_error_message', { why: event.payload })
 	})
 
+	Tauri.event.listen('notify', (event) => {
+		const notificationElement = document.getElementById('notification')
+		notificationElement.innerText = event.payload
+		notificationElement.classList.add('on')
+		setTimeout(() => notificationElement.classList.remove('on'), 2000)
+	})
+
 	document.getElementById('new-file-button').addEventListener('click', () => {
 		Tauri.invoke('activate_new_file')
 	})

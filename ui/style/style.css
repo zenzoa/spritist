@@ -182,6 +182,36 @@ main {
 	opacity: 0.67;
 }
 
+.notification-container {
+	z-index: 101;
+	position: absolute;
+	top: var(--toolbar-height);
+	left: 0;
+	right: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	pointer-events: none;
+}
+
+.notification {
+	margin-top: 8px;
+	padding: 12px 24px;
+	border-radius: 1px;
+	background-color: var(--menubar-bg);
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.notification.off {
+	opacity: 0;
+	transition: opacity 1000ms linear;
+}
+
+.notification.on {
+	opacity: 1;
+	transition: opacity 100ms linear;
+}
+
 #bg-bar {
 	display: none;
 	z-index: 100;

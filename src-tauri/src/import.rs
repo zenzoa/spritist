@@ -216,6 +216,7 @@ fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &PathBuf, frames
 	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
 	let data = spr::encode(sprite_info, &palette)?;
 	fs::write(file_path, &data)?;
+	app_handle.emit_all("notify", "Exported SPR file succesfully".to_string()).unwrap();
 	open_file_from_path(app_handle, file_path).unwrap();
 	Ok(())
 }
@@ -224,6 +225,7 @@ fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &PathBuf, frames
 	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
 	let data = s16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
+	app_handle.emit_all("notify", "Exported S16 file succesfully".to_string()).unwrap();
 	open_file_from_path(app_handle, file_path).unwrap();
 	Ok(())
 }
@@ -232,6 +234,7 @@ fn encode_spritesheet_as_c16(app_handle: &AppHandle, file_path: &PathBuf, frames
 	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
 	let data = c16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
+	app_handle.emit_all("notify", "Exported C16 file succesfully".to_string()).unwrap();
 	open_file_from_path(app_handle, file_path).unwrap();
 	Ok(())
 }
