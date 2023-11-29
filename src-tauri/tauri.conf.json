@@ -8,7 +8,7 @@
 	},
 	"package": {
 		"productName": "Spritist",
-		"version": "1.9.7"
+		"version": "2.0"
 	},
 	"tauri": {
 		"allowlist": {
