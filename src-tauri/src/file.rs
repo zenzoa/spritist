@@ -114,16 +114,11 @@ pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, n
 	}
 
  	if file_name.is_empty() {
-		let ext = match new_extension {
-			Some(ext) => ext,
-			None => "c16"
-		};
+		let ext = new_extension.unwrap_or("c16");
 		file_name = format!("untitled.{}", ext).to_string();
-	} else {
-		if let Some(ext) = new_extension {
-			if let Some(new_file_name) = PathBuf::from(&file_name).with_extension(ext).to_str() {
-				file_name = new_file_name.to_string();
-			}
+	} else if let Some(ext) = new_extension {
+		if let Some(new_file_name) = PathBuf::from(&file_name).with_extension(ext).to_str() {
+			file_name = new_file_name.to_string();
 		}
 	}
 

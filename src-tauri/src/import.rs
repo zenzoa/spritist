@@ -247,16 +247,14 @@ fn import_spritesheet_for_export(app_handle: AppHandle, file_path: String, cols:
 			if new_path.is_file() {
 				ask(Some(&app_handle.get_window("main").unwrap()),
 					"File exists",
-					&format!("Do you want to overwrite {}?", new_path.to_string_lossy()),
+					format!("Do you want to overwrite {}?", new_path.to_string_lossy()),
 					move |answer| { if answer {
 						if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
 							app_handle.emit_all("error", why.to_string()).unwrap();
 						}
 					}});
-			} else {
-				if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
+			} else if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
+				app_handle.emit_all("error", why.to_string()).unwrap();
 			}
 		}
 		Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()

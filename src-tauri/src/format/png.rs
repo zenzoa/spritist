@@ -9,7 +9,7 @@ use png::{ Encoder, ColorType, BitDepth, Compression };
 
 pub fn encode(img: &RgbaImage, file_path: PathBuf) -> Result<(), Box<dyn Error>> {
 	let file = File::create(file_path)?;
-	let ref mut file_buffer = BufWriter::new(file);
+	let file_buffer = &mut BufWriter::new(file);
 	let mut encoder = Encoder::new(file_buffer, img.width(), img.height());
 	encoder.set_color(ColorType::Rgba);
 	encoder.set_depth(BitDepth::Eight);

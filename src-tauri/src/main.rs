@@ -205,7 +205,6 @@ fn main() {
 			file::set_bg_size,
 			selection::update_selection,
 			selection::move_frames,
-			selection::delete_frames,
 			selection::select_all,
 			selection::deselect_all,
 			selection::delete_frames,

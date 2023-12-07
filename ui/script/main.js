@@ -132,7 +132,7 @@ window.addEventListener('load', () => {
 		Tauri.invoke('paste')
 	})
 	document.getElementById('delete-button').addEventListener('click', () => {
-		Tauri.invoke('delete')
+		Tauri.invoke('delete_frames')
 	})
 	document.getElementById('bg-cols').addEventListener('change', (event) => {
 		Sprite.setBackgroundSize(parseInt(event.target.value), null)
