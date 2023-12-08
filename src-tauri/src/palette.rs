@@ -108,20 +108,26 @@ fn load_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result
 
 pub fn load_original(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
-	load_palette(&app_handle, file_state, original_palette()).unwrap();
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("load_original").set_title("✔ Original Palette").unwrap();
-	menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
-	menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	if let Err(why) = load_palette(&app_handle, file_state, original_palette()) {
+		app_handle.emit_all("error", why.to_string()).unwrap();
+	} else {
+		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
+		menu_handle.get_item("load_original").set_title("✔ Original Palette").unwrap();
+		menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
+		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	}
 }
 
 pub fn load_reversed(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
-	load_palette(&app_handle, file_state, reversed_palette()).unwrap();
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
-	menu_handle.get_item("load_reversed").set_title("✔ Reversed Palette").unwrap();
-	menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	if let Err(why) = load_palette(&app_handle, file_state, reversed_palette()) {
+		app_handle.emit_all("error", why.to_string()).unwrap();
+	} else {
+		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
+		menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
+		menu_handle.get_item("load_reversed").set_title("✔ Reversed Palette").unwrap();
+		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	}
 }
 
 fn load_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
@@ -167,20 +173,26 @@ fn convert_to_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> 
 
 pub fn convert_to_original(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
-	convert_to_palette(&app_handle, file_state, original_palette()).unwrap();
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("load_original").set_title("✔ Original Palette").unwrap();
-	menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
-	menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	if let Err(why) = convert_to_palette(&app_handle, file_state, original_palette()) {
+		app_handle.emit_all("error", why.to_string()).unwrap();
+	} else {
+		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
+		menu_handle.get_item("load_original").set_title("✔ Original Palette").unwrap();
+		menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
+		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	}
 }
 
 pub fn convert_to_reversed(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
-	convert_to_palette(&app_handle, file_state, reversed_palette()).unwrap();
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
-	menu_handle.get_item("load_reversed").set_title("✔ Reversed Palette").unwrap();
-	menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	if let Err(why) = convert_to_palette(&app_handle, file_state, reversed_palette()) {
+		app_handle.emit_all("error", why.to_string()).unwrap();
+	} else {
+		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
+		menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
+		menu_handle.get_item("load_reversed").set_title("✔ Reversed Palette").unwrap();
+		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+	}
 }
 
 fn convert_to_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
