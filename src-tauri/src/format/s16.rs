@@ -81,7 +81,7 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 
 fn write_file_header(image_count: u16) -> Bytes {
 	let mut buffer = BytesMut::new();
-	buffer.put_u32_le(3); // 565 format
+	buffer.put_u32_le(1); // 565 format
 	buffer.put_u16_le(image_count);
 	buffer.freeze()
 }
