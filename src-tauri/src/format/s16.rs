@@ -99,7 +99,11 @@ fn write_image_data(image: &RgbaImage) -> Bytes {
 	for y in 0..image.height() {
 		for x in 0..image.width() {
 			let pixel = image.get_pixel(x, y);
-			buffer.extend_from_slice(&write_pixel_data(pixel[0].into(), pixel[1].into(), pixel[2].into()));
+			if pixel[3] == 0 {
+				buffer.extend_from_slice(&write_pixel_data(0, 0, 0));
+			} else {
+				buffer.extend_from_slice(&write_pixel_data(pixel[0].into(), pixel[1].into(), pixel[2].into()));
+			}
 		}
 	}
 	buffer.freeze()
