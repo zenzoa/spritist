@@ -191,6 +191,10 @@ fn main() {
 				"theme_purple" => {
 					config::set_theme(&app_handle, config::Theme::Purple, false);
 				}
+				"show_toolbar" => {
+					let current_value = config_state.show_toolbar.lock().unwrap().to_owned();
+					config::set_toolbar_visibility(&app_handle, !current_value, false);
+				}
 				_ => {}
 			}
 		})
@@ -241,7 +245,8 @@ fn main() {
 		.manage(config::ConfigState {
 			show_image_info: Mutex::new(true),
 			transparent_color: Mutex::new(config::TransparentColor::Black),
-			theme: Mutex::new(config::Theme::Dark)
+			theme: Mutex::new(config::Theme::Dark),
+			show_toolbar: Mutex::new(true)
 		})
 		.manage(selection::SelectionState {
 			selected_frames: Mutex::new(Vec::new())

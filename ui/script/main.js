@@ -93,6 +93,8 @@ window.addEventListener('load', () => {
 	Tauri.event.listen('set_transparent_color', setTransparentColor)
 	Tauri.event.listen('set_theme', setTheme)
 
+	Tauri.event.listen('set_toolbar_visibility', setToolbarVisibility)
+
 	Tauri.event.listen('error', (event) => {
 		Tauri.invoke('show_error_message', { why: event.payload })
 	})
@@ -265,6 +267,7 @@ window.addEventListener('load', () => {
 		setShowImageInfo({ payload: config.show_image_info })
 		setTransparentColor({ payload: config.transparent_color })
 		setTheme({ payload: config.theme })
+		setToolbarVisibility({ payload: config.show_toolbar })
 	})
 
 	ExportPng.setup()
@@ -298,4 +301,14 @@ const setTransparentColor = (event) => {
 
 const setTheme = (event) => {
 	Theme.set(event.payload)
+}
+
+const setToolbarVisibility = (event) => {
+	if (event.payload) {
+		document.documentElement.style.setProperty(`--toolbar-height`, '48px')
+		document.getElementById('toolbar').classList.remove('hidden')
+	} else {
+		document.documentElement.style.setProperty(`--toolbar-height`, '0')
+		document.getElementById('toolbar').classList.add('hidden')
+	}
 }

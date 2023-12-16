@@ -91,6 +91,7 @@ pub fn build_menu() -> Menu {
 		.add_item(CustomMenuItem::new("theme_light".to_string(), "- Light"))
 		.add_item(CustomMenuItem::new("theme_purple".to_string(), "- Purple"))
 	);
+	let show_toolbar = CustomMenuItem::new("show_toolbar".to_string(), "✔ Show Toolbar");
 	let view_menu = Submenu::new("View", Menu::new()
 		.add_item(reset_zoom)
 		.add_item(zoom_in)
@@ -104,6 +105,8 @@ pub fn build_menu() -> Menu {
 		.add_item(show_image_info)
 		.add_submenu(transparent_menu)
 		.add_submenu(theme_menu)
+		.add_native_item(MenuItem::Separator)
+		.add_item(show_toolbar)
 	);
 
 	Menu::new()

@@ -1,7 +1,7 @@
 class Theme {
 	static dark = {
 		"main-bg": "#444444",
-		"menubar-bg": "#292929",
+		"toolbar-bg": "#292929",
 		"bg-bar-bg": "#363636",
 
 		"divider-color": "#444444",
@@ -28,7 +28,7 @@ class Theme {
 
 	static light = {
 		"main-bg": "#dddddd",
-		"menubar-bg": "#b0b0b0",
+		"toolbar-bg": "#b0b0b0",
 		"bg-bar-bg": "#c9c9c9",
 
 		"divider-color": "#9d9d9d",
@@ -56,7 +56,7 @@ class Theme {
 
 	static purple = {
 		"main-bg": "#3F3A63",
-		"menubar-bg": "#201E35",
+		"toolbar-bg": "#201E35",
 		"bg-bar-bg": "#2f2b50",
 
 		"divider-color": "#3F3A63",

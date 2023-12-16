@@ -2,7 +2,7 @@
 	--toolbar-height: 48px;
 
 	--main-bg: #444444;
-	--menubar-bg: #292929;
+	--toolbar-bg: #292929;
 	--bg-bar-bg: #363636;
 
 	--divider-color: #444444;
@@ -58,7 +58,7 @@ h1, h2, h3, h4 {
 	font: inherit;
 }
 
-#menubar {
+#toolbar {
 	z-index: 101;
 	position: absolute;
 	top: 0;
@@ -68,15 +68,15 @@ h1, h2, h3, h4 {
 	padding: 0 12px;
 	display: flex;
 	align-items: center;
-	background-color: var(--menubar-bg);
+	background-color: var(--toolbar-bg);
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-#menubar > * + * {
+#toolbar > * + * {
 	margin-left: 6px;
 }
 
-#menubar > span {
+#toolbar > span {
 	height: 24px;
 	border-left: 1px solid var(--divider-color);
 	margin-left: 24px;
@@ -198,7 +198,7 @@ main {
 	margin-top: 8px;
 	padding: 12px 24px;
 	border-radius: 1px;
-	background-color: var(--menubar-bg);
+	background-color: var(--toolbar-bg);
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
