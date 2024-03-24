@@ -52,6 +52,9 @@ window.addEventListener('load', () => {
 		setTimeout(() => notificationElement.classList.remove('on'), 2000)
 	})
 
+	tauri_listen('show_spinner', showSpinner)
+	tauri_listen('hide_spinner', hideSpinner)
+
 	document.getElementById('new-file-button').addEventListener('click', () => {
 		tauri_invoke('activate_new_file')
 	})
@@ -257,4 +260,14 @@ const setToolbarVisibility = (event) => {
 		document.documentElement.style.setProperty(`--toolbar-height`, '0')
 		document.getElementById('toolbar').classList.add('hidden')
 	}
+}
+
+const showSpinner = (event) => {
+	const spinnerEl = document.getElementById('spinner')
+	spinnerEl.classList.add('on')
+}
+
+const hideSpinner = (event) => {
+	const spinnerEl = document.getElementById('spinner')
+	spinnerEl.classList.remove('on')
 }

@@ -40,8 +40,6 @@ mod palette;
 mod export;
 mod import;
 
-use file::{ FileModifiedCallback, check_file_modified };
-
 fn main() {
 
 	Builder::default()
@@ -50,9 +48,11 @@ fn main() {
 			match event {
 				WindowEvent::FileDrop(FileDropEvent::Dropped{ paths, position: _ }) => {
 					if !paths.is_empty() {
+						window.app_handle().emit("show_spinner", ()).unwrap();
 						if let Err(why) = file::drop_files(window.app_handle(), paths) {
 							error_dialog(why.to_string());
 						}
+						window.app_handle().emit("hide_spinner", ()).unwrap();
 					}
 				},
 				WindowEvent::CloseRequested { api, .. } => {
@@ -334,7 +334,7 @@ fn main() {
 
 #[tauri::command]
 fn try_quit(app_handle: AppHandle) {
-	check_file_modified(app_handle, PathBuf::new(), FileModifiedCallback { func: |handle, _| {
+	file::check_file_modified(app_handle, PathBuf::new(), file::FileModifiedCallback { func: |handle, _| {
 		if let Some(window) = handle.get_webview_window("main") {
 			window.destroy().unwrap();
 		};

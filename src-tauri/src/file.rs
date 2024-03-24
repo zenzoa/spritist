@@ -192,10 +192,12 @@ pub fn open_file_dialog(app_handle: AppHandle) {
 			.pick_file()
 			.await;
 		if let Some(file_handle) = file_handle {
+			app_handle.emit("show_spinner", ()).unwrap();
 			let path = file_handle.path().to_path_buf();
 			if let Err(why) = open_file_from_path(&app_handle, &path) {
 				error_dialog(why.to_string());
 			};
+			app_handle.emit("hide_spinner", ()).unwrap();
 		}
 	});
 }
@@ -283,10 +285,12 @@ pub fn activate_insert_image(app_handle: AppHandle) {
 			.pick_file()
 			.await;
 		if let Some(file_handle) = file_handle {
+			app_handle.emit("show_spinner", ()).unwrap();
 			let path = file_handle.path().to_path_buf();
 			if let Err(why) =  insert_image_from_path(&app_handle, &path) {
 				error_dialog(why.to_string());
 			};
+			app_handle.emit("hide_spinner", ()).unwrap();
 		}
 	});
 }
@@ -338,10 +342,12 @@ pub fn activate_replace_frame(app_handle: AppHandle, selection_state: State<Sele
 				.pick_file()
 				.await;
 			if let Some(file_handle) = file_handle {
+				app_handle.emit("show_spinner", ()).unwrap();
 				let path = file_handle.path().to_path_buf();
 				if let Err(why) =  replace_frame_from_path(&app_handle, &path) {
 					error_dialog(why.to_string());
 				};
+				app_handle.emit("hide_spinner", ()).unwrap();
 			}
 		});
 	}
@@ -463,9 +469,11 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 	match file_path_opt {
 		Some(file_path) => {
 			if !*file_state.read_only.lock().unwrap() {
+				app_handle.emit("show_spinner", ()).unwrap();
 				if let Err(why) = save_file_to_path(&app_handle, &file_path) {
 					error_dialog(why.to_string());
 				}
+				app_handle.emit("hide_spinner", ()).unwrap();
 			} else if file_path.ends_with(".png") || file_path.ends_with(".PNG") {
 				error_dialog("Use Export PNG or Export Spritesheet instead.".to_string());
 			} else if file_path.ends_with(".gif") || file_path.ends_with(".GIF") {
@@ -491,9 +499,11 @@ pub fn activate_save_as(app_handle: AppHandle) {
 			.save_file()
 			.await;
 		if let Some(file_handle) = file_handle {
+			app_handle.emit("show_spinner", ()).unwrap();
 			if let Err(why) = save_file_to_path(&app_handle, &file_handle.path().to_path_buf()) {
 				error_dialog(why.to_string());
 			}
+			app_handle.emit("hide_spinner", ()).unwrap();
 		}
 	});
 }
