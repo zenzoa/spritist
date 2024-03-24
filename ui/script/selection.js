@@ -11,7 +11,7 @@ class Selection {
 		} else {
 			Selection.frameIndexes = [0]
 		}
-		Tauri.invoke('update_selection', { newSelectedFrames: Selection.frameIndexes })
+		tauri_invoke('update_selection', { newSelectedFrames: Selection.frameIndexes })
 		Sprite.updateSelectedFrames()
 	}
 
@@ -24,7 +24,7 @@ class Selection {
 		} else {
 			Selection.frameIndexes = [Sprite.frameCount - 1]
 		}
-		Tauri.invoke('update_selection', { newSelectedFrames: Selection.frameIndexes })
+		tauri_invoke('update_selection', { newSelectedFrames: Selection.frameIndexes })
 		Sprite.updateSelectedFrames()
 	}
 }

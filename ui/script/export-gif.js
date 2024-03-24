@@ -26,7 +26,7 @@ class ExportGif {
 
 		document.getElementById('export-gif-select-file-button').addEventListener('click', () => {
 			const filePath = document.getElementById('export-gif-path').value
-			Tauri.invoke('select_gif_path', { filePath }).then((filePath) => {
+			tauri_invoke('select_gif_path', { filePath }).then((filePath) => {
 				if (filePath) {
 					document.getElementById('export-gif-path').value = filePath
 				}
@@ -47,14 +47,14 @@ class ExportGif {
 			const framesToExport = document.getElementById('export-gif-frames').value
 			const frameDelay = parseInt(document.getElementById('export-gif-speed').value)
 			if (isNaN(frameDelay) || frameDelay <= 0) {
-				Tauri.invoke('show_error_message', { why: "Invalid animation speed. Must be an integer greater than 0." })
+				tauri_invoke('error_dialog', { why: "Invalid animation speed. Must be an integer greater than 0." })
 			} else {
-				Tauri.invoke('export_gif', { filePath, framesToExport, frameDelay })
+				tauri_invoke('export_gif', { filePath, framesToExport, frameDelay })
 			}
 		})
 
-		Tauri.event.listen('export_gif', () => {
-			Tauri.invoke('get_file_path', { extension: 'gif' }).then((filePath) => {
+		tauri_listen('export_gif', () => {
+			tauri_invoke('get_file_path', { extension: 'gif' }).then((filePath) => {
 				document.getElementById('export-gif-path').value = filePath
 			})
 			if (Selection.frameIndexes.length > 0) {
@@ -67,11 +67,11 @@ class ExportGif {
 			ExportGif.focusConfirmButton()
 		})
 
-		Tauri.event.listen('update_export_gif_path', (event) => {
+		tauri_listen('update_export_gif_path', (event) => {
 			document.getElementById('export-gif-path').value = event.payload
 		})
 
-		Tauri.event.listen('successful_gif_export', (event) => {
+		tauri_listen('successful_gif_export', (event) => {
 			ExportGif.close()
 		})
 	}

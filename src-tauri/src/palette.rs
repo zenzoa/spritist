@@ -3,15 +3,16 @@ use std::{
 	error::Error,
 	path::PathBuf
 };
-use tauri::{
-	AppHandle,
-	Manager,
-	State
-};
+
+use tauri::{ AppHandle, Manager, State };
+use tauri::async_runtime::spawn;
+use tauri::menu::MenuItemKind;
+
 use bytes::{ Bytes, Buf };
 use image::{ Rgba, RgbaImage };
 
 use crate::{
+	error_dialog,
 	file::{ FileState, Frame, create_open_dialog },
 	state::{ redraw, update_window_title },
 	history::add_state_to_history
@@ -19,8 +20,16 @@ use crate::{
 
 #[derive(Clone)]
 pub struct Palette {
+	pub palette_type: PaletteType,
 	pub file_name: Option<String>,
 	pub colors: [(u8, u8, u8); 256]
+}
+
+#[derive(Clone, PartialEq)]
+pub enum PaletteType {
+	Original,
+	Reversed,
+	Custom
 }
 
 impl Palette {
@@ -80,16 +89,20 @@ impl Palette {
 }
 
 pub fn activate_load_palette(app_handle: AppHandle) {
-	create_open_dialog(&app_handle, false)
-		.set_title("Load Palette")
-		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
-		.pick_file(move |file_path| {
-			if let Some(file_path) = file_path {
-				if let Err(why) = load_palette_from_path(&app_handle, &file_path) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
+	spawn(async move {
+		let file_handle = create_open_dialog(&app_handle, false)
+			.set_title("Load Palette")
+			.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
+			.save_file()
+			.await;
+		if let Some(file_handle) = file_handle {
+			let path = file_handle.path().to_path_buf();
+			if let Err(why) = load_palette_from_path(&app_handle, &path) {
+				error_dialog(why.to_string());
 			}
-		});
+			update_palette_menu_items(&app_handle);
+		}
+	});
 }
 
 fn load_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -97,37 +110,26 @@ fn load_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result
 	let colors = read_color_data(&bytes)?;
 	let file_name = file_path.file_name().map(|file_name| file_name.to_string_lossy().into());
 	let file_state: State<FileState> = app_handle.state();
-	let new_palette = Palette{ file_name, colors };
+	let new_palette = Palette{ palette_type: PaletteType::Custom, file_name, colors };
 	load_palette(app_handle, file_state, new_palette)?;
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
-	menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
-	menu_handle.get_item("load_palette").set_title("✔ Custom Palette...").unwrap();
+	update_palette_menu_items(&app_handle);
 	Ok(())
 }
 
 pub fn load_original(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
 	if let Err(why) = load_palette(&app_handle, file_state, original_palette()) {
-		app_handle.emit_all("error", why.to_string()).unwrap();
-	} else {
-		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-		menu_handle.get_item("load_original").set_title("✔ Original Palette").unwrap();
-		menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
-		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+		error_dialog(why.to_string());
 	}
+	update_palette_menu_items(&app_handle);
 }
 
 pub fn load_reversed(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
 	if let Err(why) = load_palette(&app_handle, file_state, reversed_palette()) {
-		app_handle.emit_all("error", why.to_string()).unwrap();
-	} else {
-		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-		menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
-		menu_handle.get_item("load_reversed").set_title("✔ Reversed Palette").unwrap();
-		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+		error_dialog(why.to_string());
 	}
+	update_palette_menu_items(&app_handle);
 }
 
 fn load_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
@@ -145,16 +147,20 @@ fn load_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: P
 }
 
 pub fn activate_convert_to_palette(app_handle: AppHandle) {
-	create_open_dialog(&app_handle, false)
-		.set_title("Convert to Palette")
-		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
-		.pick_file(move |file_path| {
-			if let Some(file_path) = file_path {
-				if let Err(why) = convert_to_palette_from_path(&app_handle, &file_path) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
+	spawn(async move {
+		let file_handle = create_open_dialog(&app_handle, false)
+			.set_title("Convert to Palette")
+			.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
+			.save_file()
+			.await;
+		if let Some(file_handle) = file_handle {
+			let path = file_handle.path().to_path_buf();
+			if let Err(why) = convert_to_palette_from_path(&app_handle, &path) {
+				error_dialog(why.to_string());
 			}
-		});
+			update_palette_menu_items(&app_handle);
+		}
+	});
 }
 
 fn convert_to_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -162,37 +168,25 @@ fn convert_to_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> 
 	let colors = read_color_data(&bytes)?;
 	let file_name = file_path.file_name().map(|file_name| file_name.to_string_lossy().into());
 	let file_state: State<FileState> = app_handle.state();
-	let new_palette = Palette{ file_name, colors };
+	let new_palette = Palette { palette_type: PaletteType::Custom, file_name, colors };
 	convert_to_palette(app_handle, file_state, new_palette)?;
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
-	menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
-	menu_handle.get_item("load_palette").set_title("✔ Custom Palette...").unwrap();
 	Ok(())
 }
 
 pub fn convert_to_original(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
 	if let Err(why) = convert_to_palette(&app_handle, file_state, original_palette()) {
-		app_handle.emit_all("error", why.to_string()).unwrap();
-	} else {
-		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-		menu_handle.get_item("load_original").set_title("✔ Original Palette").unwrap();
-		menu_handle.get_item("load_reversed").set_title("- Reversed Palette").unwrap();
-		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+		error_dialog(why.to_string());
 	}
+	update_palette_menu_items(&app_handle);
 }
 
 pub fn convert_to_reversed(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
 	if let Err(why) = convert_to_palette(&app_handle, file_state, reversed_palette()) {
-		app_handle.emit_all("error", why.to_string()).unwrap();
-	} else {
-		let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-		menu_handle.get_item("load_original").set_title("- Original Palette").unwrap();
-		menu_handle.get_item("load_reversed").set_title("✔ Reversed Palette").unwrap();
-		menu_handle.get_item("load_palette").set_title("- Custom Palette...").unwrap();
+		error_dialog(why.to_string());
 	}
+	update_palette_menu_items(&app_handle);
 }
 
 fn convert_to_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
@@ -317,7 +311,7 @@ fn translate_colors_for_frame(frame: &Frame, palette: &Palette) -> Result<Frame,
 
 pub fn original_palette() -> Palette {
 	let colors = [ (0, 0, 0), (252, 252, 252), (252, 252, 252), (252, 252, 252), (252, 252, 252), (252, 252, 252), (252, 252, 252), (252, 252, 252), (252, 252, 252), (252, 252, 252), (252, 252, 252), (16, 8, 8), (20, 24, 40), (24, 40, 16), (24, 36, 48), (44, 16, 8), (40, 24, 36), (52, 40, 16), (48, 44, 48), (24, 28, 68), (20, 52, 84), (24, 60, 96), (36, 28, 68), (44, 52, 72), (44, 56, 104), (28, 64, 28), (28, 64, 40), (52, 72, 24), (52, 72, 44), (60, 96, 24), (60, 96, 40), (24, 64, 92), (28, 64, 100), (52, 68, 80), (44, 76, 104), (56, 96, 76), (60, 96, 112), (72, 24, 8), (72, 28, 36), (80, 44, 16), (72, 52, 44), (104, 24, 12), (108, 28, 36), (108, 48, 16), (104, 52, 36), (72, 56, 72), (72, 56, 104), (104, 52, 72), (116, 52, 104), (80, 72, 20), (80, 72, 48), (80, 100, 24), (76, 104, 44), (112, 72, 20), (108, 76, 44), (112, 100, 20), (116, 100, 48), (76, 76, 76), (76, 84, 108), (84, 100, 80), (84, 100, 112), (104, 84, 76), (104, 88, 104), (112, 104, 80), (108, 108, 108), (48, 60, 132), (56, 92, 144), (64, 60, 132), (76, 88, 140), (72, 88, 176), (80, 104, 140), (72, 108, 172), (100, 88, 136), (100, 92, 172), (108, 112, 140), (108, 116, 168), (76, 92, 196), (80, 116, 200), (92, 112, 236), (104, 120, 204), (100, 120, 244), (104, 140, 52), (92, 132, 76), (92, 128, 104), (108, 140, 76), (116, 136, 112), (120, 164, 76), (120, 164, 104), (88, 128, 140), (92, 128, 184), (112, 132, 148), (116, 136, 172), (124, 164, 140), (120, 164, 176), (88, 132, 204), (88, 144, 228), (88, 164, 240), (112, 136, 204), (116, 136, 252), (120, 160, 216), (112, 164, 236), (140, 24, 16), (144, 28, 36), (136, 52, 16), (140, 52, 40), (172, 24, 16), (172, 28, 32), (168, 48, 16), (172, 48, 40), (152, 52, 72), (140, 76, 20), (140, 80, 40), (144, 104, 20), (144, 104, 48), (172, 80, 20), (168, 84, 40), (176, 104, 20), (172, 108, 44), (136, 84, 72), (136, 88, 108), (140, 108, 76), (136, 116, 108), (172, 80, 72), (176, 84, 100), (168, 116, 72), (172, 116, 104), (208, 44, 28), (212, 52, 72), (200, 84, 20), (200, 84, 40), (204, 104, 20), (204, 112, 44), (232, 80, 20), (232, 80, 44), (232, 116, 20), (232, 116, 40), (204, 80, 72), (204, 84, 100), (204, 116, 72), (200, 116, 104), (232, 80, 80), (236, 88, 96), (240, 112, 72), (236, 112, 112), (144, 60, 132), (140, 80, 132), (132, 120, 144), (132, 120, 168), (168, 120, 136), (164, 124, 164), (128, 124, 196), (208, 48, 128), (216, 112, 136), (236, 116, 204), (164, 136, 44), (148, 132, 80), (144, 136, 112), (136, 172, 80), (140, 172, 108), (176, 136, 80), (172, 140, 108), (180, 164, 80), (180, 168, 112), (156, 196, 60), (164, 208, 92), (208, 136, 24), (208, 136, 48), (212, 168, 20), (208, 168, 44), (240, 140, 20), (236, 140, 44), (244, 172, 20), (244, 172, 48), (204, 140, 76), (200, 148, 104), (208, 168, 80), (208, 168, 112), (236, 144, 72), (236, 144, 100), (240, 172, 76), (236, 176, 108), (208, 196, 56), (244, 204, 12), (248, 204, 48), (252, 240, 12), (252, 236, 44), (212, 196, 80), (212, 196, 112), (200, 244, 80), (204, 244, 108), (248, 200, 76), (244, 204, 108), (248, 236, 76), (252, 232, 112), (140, 136, 144), (140, 144, 172), (144, 168, 144), (148, 168, 180), (168, 144, 140), (164, 152, 176), (176, 168, 144), (172, 168, 180), (136, 148, 204), (132, 152, 248), (148, 164, 208), (144, 168, 252), (160, 156, 196), (172, 172, 204), (164, 184, 244), (168, 200, 168), (152, 196, 196), (176, 192, 208), (168, 196, 252), (176, 232, 196), (184, 228, 232), (204, 144, 144), (200, 152, 164), (204, 176, 140), (200, 176, 176), (236, 144, 140), (236, 144, 164), (232, 180, 136), (232, 180, 168), (196, 184, 200), (196, 188, 224), (244, 172, 204), (212, 200, 144), (208, 200, 176), (204, 240, 136), (204, 228, 176), (240, 204, 144), (236, 208, 172), (248, 232, 144), (248, 236, 176), (212, 200, 204), (200, 200, 232), (212, 228, 204), (216, 232, 228), (228, 212, 208), (224, 208, 224), (240, 232, 208), (244, 244, 236), (252, 252, 252), (0, 0, 0), (0, 0, 0), (0, 0, 0), (255, 255, 255), (192, 192, 192), (128, 128, 128), (255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255), (255, 0, 255), (0, 255, 255), (255, 255, 255) ];
-	Palette { file_name: None, colors }
+	Palette { palette_type: PaletteType::Original, file_name: None, colors }
 }
 
 pub fn reversed_palette() -> Palette {
@@ -325,5 +319,25 @@ pub fn reversed_palette() -> Palette {
 	let mut colors = original_palette().colors;
 	colors.reverse();
 	format_colors(colors);
-	Palette{ file_name, colors }
+	Palette { palette_type: PaletteType::Reversed, file_name, colors }
+}
+
+fn update_palette_menu_items(app_handle: &AppHandle) {
+	let file_state: State<FileState> = app_handle.state();
+	let palette_type = file_state.palette.lock().unwrap().palette_type.clone();
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
+			if let Some(MenuItemKind::Submenu(spr_palette_menu)) = view_menu.get("spr_palette") {
+				if let Some(MenuItemKind::Check(menu_item)) = spr_palette_menu.get("load_original") {
+					menu_item.set_checked(palette_type == PaletteType::Original).unwrap();
+				};
+				if let Some(MenuItemKind::Check(menu_item)) = spr_palette_menu.get("load_reversed") {
+					menu_item.set_checked(palette_type == PaletteType::Reversed).unwrap();
+				};
+				if let Some(MenuItemKind::Check(menu_item)) = spr_palette_menu.get("load_palette") {
+					menu_item.set_checked(palette_type == PaletteType::Custom).unwrap();
+				};
+			}
+		}
+	}
 }

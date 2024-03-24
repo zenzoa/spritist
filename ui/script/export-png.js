@@ -26,7 +26,7 @@ class ExportPng {
 
 		document.getElementById('export-png-select-file-button').addEventListener('click', () => {
 			const filePath = document.getElementById('export-png-path').value
-			Tauri.invoke('select_png_path', { filePath }).then((filePath) => {
+			tauri_invoke('select_png_path', { filePath }).then((filePath) => {
 				if (filePath) {
 					document.getElementById('export-png-path').value = filePath
 				}
@@ -43,13 +43,13 @@ class ExportPng {
 		document.getElementById('export-png-confirm-button').addEventListener('click', () => {
 			const filePath = document.getElementById('export-png-path').value
 			const framesToExport = document.getElementById('export-png-frames').value
-			Tauri.invoke('export_png', { filePath, framesToExport })
+			tauri_invoke('export_png', { filePath, framesToExport })
 		})
 
-		Tauri.event.listen('export_png', () => {
+		tauri_listen('export_png', () => {
 			let dropdown = document.getElementById('export-png-frames')
 			let bgOption = document.getElementById('export-png-bg-option')
-			Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
+			tauri_invoke('get_file_path', { extension: 'png' }).then((filePath) => {
 				document.getElementById('export-png-path').value = filePath
 			})
 			if (Selection.frameIndexes.length > 0) {
@@ -74,12 +74,12 @@ class ExportPng {
 			ExportPng.focusConfirmButton()
 		})
 
-		Tauri.event.listen('update_export_png_path', (event) => {
+		tauri_listen('update_export_png_path', (event) => {
 			document.getElementById('export-png-path').value = event.payload
 			document.getElementById('export-spritesheet-path').value = event.payload
 		})
 
-		Tauri.event.listen('successful_png_export', () => {
+		tauri_listen('successful_png_export', () => {
 			ExportPng.close()
 		})
 	}

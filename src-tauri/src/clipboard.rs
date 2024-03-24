@@ -2,12 +2,11 @@ use std::{
 	borrow::Cow,
 	sync::Mutex
 };
-use tauri::{
-	AppHandle,
-	Manager,
-	State
-};
+
+use tauri::{ AppHandle, Manager, State };
+
 use image::{ ImageBuffer, DynamicImage, RgbaImage };
+
 use arboard::{ Clipboard, ImageData };
 
 use crate::{
@@ -83,7 +82,7 @@ fn paste_from_real_clipboard(file_state: &State<FileState>, selection_state: &St
 
 }
 
-fn paste_from_local_clipboard(file_state: &State<FileState>, selection_state: &State<SelectionState>, copied_frames: &Vec<Frame>) {
+fn paste_from_local_clipboard(file_state: &State<FileState>, selection_state: &State<SelectionState>, copied_frames: &[Frame]) {
 	let mut frames = file_state.frames.lock().unwrap();
 	let mut selected_frames = selection_state.selected_frames.lock().unwrap();
 
@@ -119,7 +118,7 @@ pub fn paste(app_handle: AppHandle, file_state: State<FileState>, selection_stat
 
 	let frames = file_state.frames.lock().unwrap();
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
-	app_handle.emit_all("redraw", RedrawPayload{
+	app_handle.emit("redraw", RedrawPayload{
 		frame_count: frames.len(),
 		selected_frames: selected_frames.clone(),
 		cols: *file_state.cols.lock().unwrap(),

@@ -1,9 +1,7 @@
 use std::sync::Mutex;
-use tauri::{
-	AppHandle,
-	Manager,
-	State
-};
+
+use tauri::{ AppHandle, Manager, State };
+use tauri::menu::MenuItemKind;
 
 pub struct ViewState {
 	pub zoom_scale: Mutex<u32>
@@ -31,31 +29,36 @@ fn set_zoom_scale(app_handle: &AppHandle, view_state: &State<ViewState>, new_zoo
 	if zoom_scale < 1 { zoom_scale = 1; }
 	if zoom_scale > 4 { zoom_scale = 4; }
 
-	update_zoom_menu(app_handle, zoom_scale);
-
 	*view_state.zoom_scale.lock().unwrap() = zoom_scale;
 
-	app_handle.emit_all("set_scale", zoom_scale).unwrap();
-}
-
-fn update_zoom_menu(app_handle: &AppHandle, zoom_scale: u32) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("reset_zoom").set_enabled(zoom_scale != 1).unwrap();
-	menu_handle.get_item("zoom_in").set_enabled(zoom_scale < 4).unwrap();
-	menu_handle.get_item("zoom_out").set_enabled(zoom_scale > 1).unwrap();
+	app_handle.emit("set_scale", zoom_scale).unwrap();
 }
 
 #[tauri::command]
 pub fn view_as_sprite(app_handle: AppHandle) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("view_as_sprite").set_title("✔ View As Sprite").unwrap();
-	menu_handle.get_item("view_as_bg").set_title("- View As Background").unwrap();
-	app_handle.emit_all("view_as_sprite", "").unwrap();
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
+			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("view_as_sprite") {
+				menu_item.set_checked(true).unwrap();
+			};
+			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("view_as_bg") {
+				menu_item.set_checked(false).unwrap();
+			};
+		}
+	}
+	app_handle.emit("view_as_sprite", "").unwrap();
 }
 
 pub fn view_as_bg(app_handle: AppHandle) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("view_as_sprite").set_title("- View As Sprite").unwrap();
-	menu_handle.get_item("view_as_bg").set_title("✔ View As Background").unwrap();
-	app_handle.emit_all("view_as_bg", "").unwrap();
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
+			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("view_as_sprite") {
+				menu_item.set_checked(false).unwrap();
+			};
+			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("view_as_bg") {
+				menu_item.set_checked(true).unwrap();
+			};
+		}
+	}
+	app_handle.emit("view_as_bg", "").unwrap();
 }

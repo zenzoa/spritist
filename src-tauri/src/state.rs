@@ -1,15 +1,11 @@
-use tauri::{
-	AppHandle,
-	Manager,
-	State
-};
+use tauri::{ AppHandle, Manager, State };
 
 use crate::{
 	palette,
 	file::FileState,
 	view::ViewState,
-	selection::{ SelectionState, update_selection_items },
-	history::{ HistoryState, update_undo_redo_items }
+	selection::SelectionState,
+	history::HistoryState
 };
 
 #[derive(Clone, serde::Serialize)]
@@ -34,12 +30,10 @@ pub fn reset_state(app_handle: &AppHandle) {
 
 	let selection_state: State<SelectionState> = app_handle.state();
 	*selection_state.selected_frames.lock().unwrap() = Vec::new();
-	update_selection_items(app_handle, 0);
 
 	let history_state: State<HistoryState> = app_handle.state();
 	*history_state.undo_stack.lock().unwrap() = Vec::new();
 	*history_state.redo_stack.lock().unwrap() = Vec::new();
-	update_undo_redo_items(app_handle, &history_state);
 
 	let view_state: State<ViewState> = app_handle.state();
 	*view_state.zoom_scale.lock().unwrap() = 1;
@@ -48,7 +42,7 @@ pub fn reset_state(app_handle: &AppHandle) {
 pub fn redraw(app_handle: &AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
 	let selection_state: State<SelectionState> = app_handle.state();
-	app_handle.emit_all("redraw", RedrawPayload{
+	app_handle.emit("redraw", RedrawPayload{
 		frame_count: file_state.frames.lock().unwrap().len(),
 		selected_frames: selection_state.selected_frames.lock().unwrap().clone(),
 		cols: *file_state.cols.lock().unwrap(),
@@ -57,7 +51,7 @@ pub fn redraw(app_handle: &AppHandle) {
 }
 
 pub fn update_window_title(app_handle: &AppHandle) {
-	let window = app_handle.get_window("main").unwrap();
+	let window = app_handle.get_webview_window("main").unwrap();
 	let file_state: State<FileState> = app_handle.state();
 	if *file_state.file_is_open.lock().unwrap() {
 		let file_title = file_state.file_title.lock().unwrap();

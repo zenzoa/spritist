@@ -1,4 +1,7 @@
 const Tauri = window.__TAURI__
+const tauri_listen = Tauri.event.listen
+const tauri_invoke = Tauri.core.invoke
+const convertFileSrc = Tauri.core.convertFileSrc
 
 window.addEventListener('load', () => {
 
@@ -8,98 +11,41 @@ window.addEventListener('load', () => {
 		return false
 	}, false)
 
-	Tauri.event.listen('redraw', (event) => {
+	tauri_listen('redraw', (event) => {
 		Sprite.frameCount = event.payload.frame_count
 		Selection.frameIndexes = event.payload.selected_frames
 		Sprite.setBackgroundSize(event.payload.cols, event.payload.rows)
 		Sprite.drawFrames()
 	})
 
-	Tauri.event.listen('reload_selection', () => {
+	tauri_listen('reload_selection', () => {
 		Sprite.reloadSelectedFrames()
 	})
 
-	Tauri.event.listen('update_selection', (event) => {
+	tauri_listen('update_selection', (event) => {
 		Selection.frameIndexes = event.payload
 		Sprite.updateSelectedFrames()
 	})
 
-	Tauri.event.listen('update_save_button', (event) => {
-		if (event.payload) {
-			document.getElementById('save-file-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('save-file-button').setAttribute('disabled', '')
-		}
-	})
-	Tauri.event.listen('update_save_as_button', (event) => {
-		if (event.payload) {
-			document.getElementById('save-as-file-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('save-as-file-button').setAttribute('disabled', '')
-		}
-	})
-	Tauri.event.listen('update_insert_button', (event) => {
-		if (event.payload) {
-			document.getElementById('insert-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('insert-button').setAttribute('disabled', '')
-		}
-	})
-	Tauri.event.listen('update_undo_button', (event) => {
-		if (event.payload) {
-			document.getElementById('undo-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('undo-button').setAttribute('disabled', '')
-		}
-	})
-	Tauri.event.listen('update_redo_button', (event) => {
-		if (event.payload) {
-			document.getElementById('redo-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('redo-button').setAttribute('disabled', '')
-		}
-	})
-	Tauri.event.listen('update_copy_button', (event) => {
-		if (event.payload) {
-			document.getElementById('copy-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('copy-button').setAttribute('disabled', '')
-		}
-	})
-	Tauri.event.listen('update_paste_button', (event) => {
-		if (event.payload) {
-			document.getElementById('paste-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('paste-button').setAttribute('disabled', '')
-		}
-	})
-	Tauri.event.listen('update_delete_button', (event) => {
-		if (event.payload) {
-			document.getElementById('delete-button').removeAttribute('disabled')
-		} else {
-			document.getElementById('delete-button').setAttribute('disabled', '')
-		}
-	})
-
-	Tauri.event.listen('set_scale', (event) => {
+	tauri_listen('set_scale', (event) => {
 		Sprite.scale = event.payload
 		Sprite.drawFrames()
 	})
 
-	Tauri.event.listen('view_as_sprite', viewAsSprite)
-	Tauri.event.listen('view_as_bg', viewAsBg)
+	tauri_listen('view_as_sprite', viewAsSprite)
+	tauri_listen('view_as_bg', viewAsBg)
 
-	Tauri.event.listen('set_show_image_info', setShowImageInfo)
-	Tauri.event.listen('set_transparent_color', setTransparentColor)
-	Tauri.event.listen('set_theme', setTheme)
+	tauri_listen('set_show_image_info', setShowImageInfo)
+	tauri_listen('set_transparent_color', setTransparentColor)
+	tauri_listen('set_theme', setTheme)
 
-	Tauri.event.listen('set_toolbar_visibility', setToolbarVisibility)
+	tauri_listen('set_toolbar_visibility', setToolbarVisibility)
 
-	Tauri.event.listen('error', (event) => {
-		Tauri.invoke('show_error_message', { why: event.payload })
+	tauri_listen('error', (event) => {
+		tauri_invoke('error_dialog', { why: event.payload })
 	})
 
-	Tauri.event.listen('notify', (event) => {
+	tauri_listen('notify', (event) => {
 		const notificationElement = document.getElementById('notification')
 		notificationElement.innerText = event.payload
 		notificationElement.classList.add('on')
@@ -107,34 +53,34 @@ window.addEventListener('load', () => {
 	})
 
 	document.getElementById('new-file-button').addEventListener('click', () => {
-		Tauri.invoke('activate_new_file')
+		tauri_invoke('activate_new_file')
 	})
 	document.getElementById('open-file-button').addEventListener('click', () => {
-		Tauri.invoke('activate_open_file')
+		tauri_invoke('activate_open_file')
 	})
 	document.getElementById('save-file-button').addEventListener('click', () => {
-		Tauri.invoke('activate_save_file')
+		tauri_invoke('activate_save_file')
 	})
 	document.getElementById('save-as-file-button').addEventListener('click', () => {
-		Tauri.invoke('activate_save_as')
+		tauri_invoke('activate_save_as')
 	})
 	document.getElementById('insert-button').addEventListener('click', () => {
-		Tauri.invoke('activate_insert_image')
+		tauri_invoke('activate_insert_image')
 	})
 	document.getElementById('undo-button').addEventListener('click', () => {
-		Tauri.invoke('undo')
+		tauri_invoke('undo')
 	})
 	document.getElementById('redo-button').addEventListener('click', () => {
-		Tauri.invoke('redo')
+		tauri_invoke('redo')
 	})
 	document.getElementById('copy-button').addEventListener('click', () => {
-		Tauri.invoke('copy')
+		tauri_invoke('copy')
 	})
 	document.getElementById('paste-button').addEventListener('click', () => {
-		Tauri.invoke('paste')
+		tauri_invoke('paste')
 	})
 	document.getElementById('delete-button').addEventListener('click', () => {
-		Tauri.invoke('delete_frames')
+		tauri_invoke('delete_frames')
 	})
 	document.getElementById('bg-cols').addEventListener('change', (event) => {
 		Sprite.setBackgroundSize(parseInt(event.target.value), null)
@@ -143,7 +89,7 @@ window.addEventListener('load', () => {
 		Sprite.setBackgroundSize(null, parseInt(event.target.value))
 	})
 	document.getElementById('exit-bg-mode').addEventListener('click', () => {
-		Tauri.invoke('view_as_sprite')
+		tauri_invoke('view_as_sprite')
 	})
 
 	document.body.addEventListener('mouseup', Drag.end)
@@ -161,7 +107,7 @@ window.addEventListener('load', () => {
 
 		if (CTRL && KEY === 'Q') {
 			event.preventDefault()
-			Tauri.invoke('try_quit')
+			tauri_invoke('try_quit')
 
 		} else if (ExportPng.isOpen() || ExportGif.isOpen() || ExportSpritesheet.isOpen() || ImportSpritesheet.isOpen()) {
 			if (ONLY && KEY === 'ESCAPE') {
@@ -174,22 +120,22 @@ window.addEventListener('load', () => {
 
 		} else if (CTRL && KEY === 'N') {
 			event.preventDefault()
-			Tauri.invoke('activate_new_file')
+			tauri_invoke('activate_new_file')
 		} else if (CTRL && KEY === 'O') {
 			event.preventDefault()
-			Tauri.invoke('activate_open_file')
+			tauri_invoke('activate_open_file')
 		} else if (CTRL && KEY === 'S') {
 			event.preventDefault()
-			Tauri.invoke('activate_save_file')
+			tauri_invoke('activate_save_file')
 		} else if (CTRL_SHIFT && KEY === 'S') {
 			event.preventDefault()
-			Tauri.invoke('activate_save_as')
+			tauri_invoke('activate_save_as')
 		} else if (CTRL && KEY === 'B') {
 			event.preventDefault()
-			Tauri.invoke('activate_import_png_as_blk')
+			tauri_invoke('activate_import_png_as_blk')
 		} else if (CTRL && KEY === 'T') {
 			event.preventDefault()
-			Tauri.invoke('activate_import_spritesheet')
+			tauri_invoke('activate_import_spritesheet')
 		} else if (CTRL && KEY === 'E') {
 			event.preventDefault()
 			Tauri.event.emit('export_png')
@@ -202,57 +148,57 @@ window.addEventListener('load', () => {
 
 		} else if (CTRL && KEY === 'Z') {
 			event.preventDefault()
-			Tauri.invoke('undo')
+			tauri_invoke('undo')
 		} else if (CTRL && KEY === 'Y') {
 			event.preventDefault()
-			Tauri.invoke('redo')
+			tauri_invoke('redo')
 		} else if (CTRL && KEY === 'X') {
 			event.preventDefault()
-			Tauri.invoke('cut')
+			tauri_invoke('cut')
 		} else if (CTRL && KEY === 'C') {
 			event.preventDefault()
-			Tauri.invoke('copy')
+			tauri_invoke('copy')
 		} else if (CTRL && KEY === 'V') {
 			event.preventDefault()
-			Tauri.invoke('paste')
+			tauri_invoke('paste')
 		} else if (ONLY && KEY === 'DELETE') {
 			event.preventDefault()
-			Tauri.invoke('delete_frames')
+			tauri_invoke('delete_frames')
 		} else if (CTRL && KEY === 'A') {
 			event.preventDefault()
-			Tauri.invoke('select_all')
+			tauri_invoke('select_all')
 		} else if (CTRL && KEY === 'D') {
 			event.preventDefault()
-			Tauri.invoke('deselect_all')
+			tauri_invoke('deselect_all')
 		} else if (CTRL && KEY === 'R') {
 			event.preventDefault()
-			Tauri.invoke('activate_replace_frame')
+			tauri_invoke('activate_replace_frame')
 		} else if (CTRL && KEY === 'I') {
 			event.preventDefault()
-			Tauri.invoke('activate_insert_image')
+			tauri_invoke('activate_insert_image')
 
 		} else if (CTRL && KEY === '0') {
 			event.preventDefault()
-			if (Sprite.scale > 1) Tauri.invoke('reset_zoom')
+			if (Sprite.scale > 1) tauri_invoke('reset_zoom')
 		} else if ((CTRL || CTRL_SHIFT) && (KEY === '=' || KEY === '+')) {
 			event.preventDefault()
-			if (Sprite.scale < 4) Tauri.invoke('zoom_in')
+			if (Sprite.scale < 4) tauri_invoke('zoom_in')
 		} else if ((CTRL || CTRL_SHIFT) && (KEY === '-' || KEY === '_')) {
 			event.preventDefault()
-			if (Sprite.scale > 1) Tauri.invoke('zoom_out')
+			if (Sprite.scale > 1) tauri_invoke('zoom_out')
 
 		} else if (CTRL_SHIFT && KEY === 'ARROWLEFT') {
 			event.preventDefault()
-			Tauri.invoke('shift_selection', { xShift: -1, yShift: 0 })
+			tauri_invoke('shift_selection', { xShift: -1, yShift: 0 })
 		} else if (CTRL_SHIFT && KEY === 'ARROWRIGHT') {
 			event.preventDefault()
-			Tauri.invoke('shift_selection', { xShift: 1, yShift: 0 })
+			tauri_invoke('shift_selection', { xShift: 1, yShift: 0 })
 		} else if (CTRL_SHIFT && KEY === 'ARROWUP') {
 			event.preventDefault()
-			Tauri.invoke('shift_selection', { xShift: 0, yShift: -1 })
+			tauri_invoke('shift_selection', { xShift: 0, yShift: -1 })
 		} else if (CTRL_SHIFT && KEY === 'ARROWDOWN') {
 			event.preventDefault()
-			Tauri.invoke('shift_selection', { xShift: 0, yShift: 1 })
+			tauri_invoke('shift_selection', { xShift: 0, yShift: 1 })
 
 		} else if (ONLY && KEY === 'ARROWLEFT') {
 			event.preventDefault()
@@ -263,7 +209,7 @@ window.addEventListener('load', () => {
 		}
 	})
 
-	Tauri.invoke('get_config').then((config) => {
+	tauri_invoke('get_config').then((config) => {
 		setShowImageInfo({ payload: config.show_image_info })
 		setTransparentColor({ payload: config.transparent_color })
 		setTheme({ payload: config.theme })

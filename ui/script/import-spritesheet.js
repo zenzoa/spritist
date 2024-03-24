@@ -58,7 +58,7 @@ class ImportSpritesheet {
 			const filePath = pathInput.value
 			const cols = parseInt(colsInput.value)
 			const rows = parseInt(rowsInput.value)
-			Tauri.invoke('import_spritesheet' + tauriAction, { filePath, cols, rows })
+			tauri_invoke('import_spritesheet' + tauriAction, { filePath, cols, rows })
 			ImportSpritesheet.lastButtonId = 'import-spritesheet-' + lastButtonId + '-button'
 			ImportSpritesheet.close()
 		}
@@ -79,7 +79,7 @@ class ImportSpritesheet {
 		colsInput.addEventListener('keydown', onKeydown)
 		rowsInput.addEventListener('keydown', onKeydown)
 
-		Tauri.event.listen('import_spritesheet', (event) => {
+		tauri_listen('import_spritesheet', (event) => {
 			pathInput.value = event.payload.file_path
 			widthInput.value = event.payload.width
 			heightInput.value = event.payload.height

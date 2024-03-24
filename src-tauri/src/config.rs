@@ -3,11 +3,9 @@ use std::{
 	fmt,
 	sync::Mutex
 };
-use tauri::{
-	AppHandle,
-	Manager,
-	State
-};
+
+use tauri::{ AppHandle, Manager, State };
+use tauri::menu::MenuItemKind;
 
 pub struct ConfigState {
 	pub show_image_info: Mutex<bool>,
@@ -24,7 +22,7 @@ pub struct ConfigInfo {
 	pub show_toolbar: bool
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TransparentColor {
 	Black,
 	White,
@@ -41,7 +39,7 @@ impl fmt::Display for TransparentColor {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Theme {
 	Dark,
 	Light,
@@ -73,7 +71,7 @@ pub fn get_config(state: State<ConfigState>) -> ConfigInfo {
 }
 
 pub fn load_config_file(app_handle: AppHandle) {
-	if let Some(config_dir) = app_handle.path_resolver().app_config_dir() {
+	if let Ok(config_dir) = app_handle.path().config_dir() {
 		let config_file_path = config_dir.join("spritist.conf");
 		if let Ok(config_contents) = fs::read_to_string(config_file_path) {
 			let lines: Vec<&str> = config_contents.split('\n').collect();
@@ -121,7 +119,7 @@ pub fn load_config_file(app_handle: AppHandle) {
 
 pub fn save_config_file(app_handle: &AppHandle) {
 	let config_state: State<ConfigState> = app_handle.state();
-	if let Some(config_dir) = app_handle.path_resolver().app_config_dir() {
+	if let Ok(config_dir) = app_handle.path().config_dir() {
 		let config_file_path = config_dir.join("spritist.conf");
 		if let Ok(()) = fs::create_dir_all(config_dir) {
 			fs::write(config_file_path, format!(
@@ -136,86 +134,88 @@ pub fn save_config_file(app_handle: &AppHandle) {
 }
 
 pub fn set_show_image_info(app_handle: &AppHandle, new_value: bool, init: bool) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	if new_value {
-		menu_handle.get_item("show_image_info").set_title("✔ Show Image Info").unwrap();
-		if !init { app_handle.emit_all("set_show_image_info", "black").unwrap(); }
-	} else {
-		menu_handle.get_item("show_image_info").set_title("- Show Image Info").unwrap();
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
+			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("show_image_info") {
+				menu_item.set_checked(new_value).unwrap();
+			};
+		}
 	}
+
 	let config_state: State<ConfigState> = app_handle.state();
 	*config_state.show_image_info.lock().unwrap() = new_value;
 	if !init {
 		save_config_file(app_handle);
-		app_handle.emit_all("set_show_image_info", new_value).unwrap();
+		app_handle.emit("set_show_image_info", new_value).unwrap();
 	}
 }
 
 pub fn set_transparent_color(app_handle: &AppHandle, new_color: TransparentColor, init: bool) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	match new_color {
-		TransparentColor::Black => {
-			menu_handle.get_item("transparent_black").set_title("✔ Black").unwrap();
-			menu_handle.get_item("transparent_white").set_title("- White").unwrap();
-			menu_handle.get_item("transparent_none").set_title("- Transparent").unwrap();
-			if !init { app_handle.emit_all("set_transparent_color", "black").unwrap(); }
-		}
-		TransparentColor::White => {
-			menu_handle.get_item("transparent_black").set_title("- Black").unwrap();
-			menu_handle.get_item("transparent_white").set_title("✔ White").unwrap();
-			menu_handle.get_item("transparent_none").set_title("- Transparent").unwrap();
-			if !init { app_handle.emit_all("set_transparent_color", "white").unwrap() };
-		}
-		TransparentColor::None => {
-			menu_handle.get_item("transparent_black").set_title("- Black").unwrap();
-			menu_handle.get_item("transparent_white").set_title("- White").unwrap();
-			menu_handle.get_item("transparent_none").set_title("✔ Transparent").unwrap();
-			if !init { app_handle.emit_all("set_transparent_color", "none").unwrap() };
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
+			if let Some(MenuItemKind::Submenu(transparent_color_menu)) = view_menu.get("transparent_color") {
+				if let Some(MenuItemKind::Check(menu_item)) = transparent_color_menu.get("transparent_black") {
+					menu_item.set_checked(new_color == TransparentColor::Black).unwrap();
+				};
+				if let Some(MenuItemKind::Check(menu_item)) = transparent_color_menu.get("transparent_white") {
+					menu_item.set_checked(new_color == TransparentColor::White).unwrap();
+				};
+				if let Some(MenuItemKind::Check(menu_item)) = transparent_color_menu.get("transparent_none") {
+					menu_item.set_checked(new_color == TransparentColor::None).unwrap();
+				};
+			}
 		}
 	}
 
 	let config_state: State<ConfigState> = app_handle.state();
 	*config_state.transparent_color.lock().unwrap() = new_color.clone();
-	if !init { save_config_file(app_handle); }
+	if !init {
+		app_handle.emit("set_transparent_color", match new_color {
+			TransparentColor::Black => "black",
+			TransparentColor::White => "white",
+			TransparentColor::None => "none"
+		}).unwrap();
+		save_config_file(app_handle);
+	}
 }
 
 pub fn set_theme(app_handle: &AppHandle, new_theme: Theme, init: bool) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	match new_theme {
-		Theme::Dark => {
-			menu_handle.get_item("theme_dark").set_title("✔ Dark").unwrap();
-			menu_handle.get_item("theme_light").set_title("- Light").unwrap();
-			menu_handle.get_item("theme_purple").set_title("- Purple").unwrap();
-			if !init { app_handle.emit_all("set_theme", "dark").unwrap() };
-		}
-		Theme::Light => {
-			menu_handle.get_item("theme_dark").set_title("- Dark").unwrap();
-			menu_handle.get_item("theme_light").set_title("✔ Light").unwrap();
-			menu_handle.get_item("theme_purple").set_title("- Purple").unwrap();
-			if !init { app_handle.emit_all("set_theme", "light").unwrap() };
-		}
-		Theme::Purple => {
-			menu_handle.get_item("theme_dark").set_title("- Dark").unwrap();
-			menu_handle.get_item("theme_light").set_title("- Light").unwrap();
-			menu_handle.get_item("theme_purple").set_title("✔ Purple").unwrap();
-			if !init { app_handle.emit_all("set_theme", "purple").unwrap() };
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
+			if let Some(MenuItemKind::Submenu(theme_menu)) = view_menu.get("theme") {
+				if let Some(MenuItemKind::Check(menu_item)) = theme_menu.get("theme_dark") {
+					menu_item.set_checked(new_theme == Theme::Dark).unwrap();
+				};
+				if let Some(MenuItemKind::Check(menu_item)) = theme_menu.get("theme_light") {
+					menu_item.set_checked(new_theme == Theme::Light).unwrap();
+				};
+				if let Some(MenuItemKind::Check(menu_item)) = theme_menu.get("theme_purple") {
+					menu_item.set_checked(new_theme == Theme::Purple).unwrap();
+				};
+			}
 		}
 	}
 
 	let config_state: State<ConfigState> = app_handle.state();
 	*config_state.theme.lock().unwrap() = new_theme.clone();
-	if !init { save_config_file(app_handle); }
+	if !init {
+		app_handle.emit("set_theme", match new_theme {
+			Theme::Dark => "dark",
+			Theme::Light => "light",
+			Theme::Purple => "purple"
+		}).unwrap();
+		save_config_file(app_handle);
+	}
 }
 
 pub fn set_toolbar_visibility(app_handle: &AppHandle, show_toolbar: bool, init: bool) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-
-	if show_toolbar {
-		menu_handle.get_item("show_toolbar").set_title("✔ Show Toolbar").unwrap();
-		app_handle.emit_all("set_toolbar_visibility", true).unwrap();
-	} else {
-		menu_handle.get_item("show_toolbar").set_title("- Show Toolbar").unwrap();
-		app_handle.emit_all("set_toolbar_visibility", false).unwrap();
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
+			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("show_toolbar") {
+				menu_item.set_checked(show_toolbar).unwrap();
+				app_handle.emit("set_toolbar_visibility", show_toolbar).unwrap();
+			};
+		}
 	}
 
 	let config_state: State<ConfigState> = app_handle.state();

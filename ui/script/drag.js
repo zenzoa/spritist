@@ -47,7 +47,7 @@ class Drag {
 		if (!Drag.isMouseDown) return
 
 		if (Selection.insertPoint >= 0) {
-			Tauri.invoke("move_frames", { insertPoint: Selection.insertPoint })
+			tauri_invoke("move_frames", { insertPoint: Selection.insertPoint })
 		}
 
 		Drag.cancel()

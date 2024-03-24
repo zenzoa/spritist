@@ -1,10 +1,6 @@
 use image::RgbaImage;
 
-use tauri::{
-	AppHandle,
-	Manager,
-	State,
-};
+use tauri::{ AppHandle, Manager, State };
 
 use crate::{
 	file::{ FileState, Frame },
@@ -22,7 +18,7 @@ pub fn shift_selection(app_handle: AppHandle, file_state: State<FileState>, sele
 			*frame = shift_pixels(frame, x_shift, y_shift);
 		}
 	}
-	app_handle.emit_all("reload_selection", ()).unwrap();
+	app_handle.emit("reload_selection", ()).unwrap();
 }
 
 fn shift_pixels(frame: &Frame, x_shift:i32, y_shift:i32) -> Frame {

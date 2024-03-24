@@ -5,12 +5,12 @@ use std::{
 	sync::Mutex,
 	io::Cursor
 };
-use tauri::{
-	AppHandle,
-	Manager,
-	State,
-	api::dialog::{ FileDialogBuilder, ask }
-};
+
+use tauri::{ AppHandle, State, Manager };
+use tauri::async_runtime::spawn;
+
+use rfd::{ AsyncFileDialog, AsyncMessageDialog, MessageButtons, MessageDialogResult };
+
 use image::{
 	RgbaImage,
 	AnimationDecoder,
@@ -19,6 +19,7 @@ use image::{
 };
 
 use crate::{
+	error_dialog,
 	state::{
 		RedrawPayload,
 		reset_state,
@@ -55,6 +56,10 @@ pub struct FileState {
 	pub read_only: Mutex<bool>
 }
 
+pub struct FileModifiedCallback {
+	pub func: fn(AppHandle, PathBuf)
+}
+
 impl FileState {
 	pub fn new() -> FileState {
 		FileState{
@@ -84,8 +89,8 @@ pub struct Frame {
 	pub color_indexes: Vec<u8>
 }
 
-pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> FileDialogBuilder {
-	let mut file_dialog = FileDialogBuilder::new();
+pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> AsyncFileDialog {
+	let mut file_dialog = AsyncFileDialog::new();
 
 	if use_default_filter {
 		file_dialog = file_dialog.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "png", "PNG", "gif", "GIF"]);
@@ -101,7 +106,7 @@ pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> F
 	file_dialog
 }
 
-pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, new_file_path: Option<&str>) -> FileDialogBuilder {
+pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, new_file_path: Option<&str>) -> AsyncFileDialog {
 	let file_state: State<FileState> = app_handle.state();
 
 	let mut file_name = file_state.file_title.lock().unwrap().clone();
@@ -113,7 +118,7 @@ pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, n
 		}
 	}
 
- 	if file_name.is_empty() {
+	if file_name.is_empty() {
 		let ext = new_extension.unwrap_or("c16");
 		file_name = format!("untitled.{}", ext).to_string();
 	} else if let Some(ext) = new_extension {
@@ -122,7 +127,7 @@ pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, n
 		}
 	}
 
-	let mut file_dialog = FileDialogBuilder::new()
+	let mut file_dialog = AsyncFileDialog::new()
 		.set_file_name(&file_name);
 
 	if let Some(file_path) = new_file_path {
@@ -138,17 +143,30 @@ pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, n
 	file_dialog
 }
 
-#[tauri::command]
-pub fn activate_new_file(app_handle: AppHandle) {
+pub fn check_file_modified(app_handle: AppHandle, path: PathBuf, callback: FileModifiedCallback) {
 	let file_state: State<FileState> = app_handle.state();
 	if *file_state.file_is_modified.lock().unwrap() {
-		ask(Some(&app_handle.get_window("main").unwrap()),
-			"File modified",
-			"Do you want to continue anyway and lose any unsaved work?",
-			|answer| { if answer { complete_new_file(app_handle); } });
+		spawn(async move {
+			let confirm_reload = AsyncMessageDialog::new()
+				.set_title("File modified")
+				.set_description("Do you want to continue anyway and lose any unsaved work?")
+				.set_buttons(MessageButtons::YesNo)
+				.show()
+				.await;
+			if let MessageDialogResult::Yes = confirm_reload {
+				(callback.func)(app_handle, path);
+			}
+		});
 	} else {
-		complete_new_file(app_handle);
+		(callback.func)(app_handle, path);
 	}
+}
+
+#[tauri::command]
+pub fn activate_new_file(app_handle: AppHandle) {
+	check_file_modified(app_handle, PathBuf::new(), FileModifiedCallback { func: |handle, _| {
+		complete_new_file(handle.clone());
+	}});
 }
 
 pub fn complete_new_file(app_handle: AppHandle) {
@@ -156,34 +174,30 @@ pub fn complete_new_file(app_handle: AppHandle) {
 	let file_state: State<FileState> = app_handle.state();
 	*file_state.file_is_open.lock().unwrap() = true;
 
-	enable_file_only_items(&app_handle, false);
 	update_window_title(&app_handle);
 	redraw(&app_handle);
 }
 
 #[tauri::command]
 pub fn activate_open_file(app_handle: AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	if *file_state.file_is_modified.lock().unwrap() {
-		ask(Some(&app_handle.get_window("main").unwrap()),
-			"File modified",
-			"Do you want to continue anyway and lose any unsaved work?",
-			|answer| { if answer { open_file_dialog(app_handle); } });
-	} else {
-		open_file_dialog(app_handle);
-	}
+	check_file_modified(app_handle, PathBuf::new(), FileModifiedCallback { func: |handle, _| {
+		open_file_dialog(handle.clone());
+	}});
 }
 
 pub fn open_file_dialog(app_handle: AppHandle) {
-	create_open_dialog(&app_handle, true)
-		.set_title("Open Sprite")
-		.pick_file(move |file_path| {
-			if let Some(file_path_str) = file_path {
-				if let Err(why) = open_file_from_path(&app_handle, &file_path_str) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
-			}
-		});
+	spawn(async move {
+		let file_handle = create_open_dialog(&app_handle, true)
+			.set_title("Open Sprite")
+			.pick_file()
+			.await;
+		if let Some(file_handle) = file_handle {
+			let path = file_handle.path().to_path_buf();
+			if let Err(why) = open_file_from_path(&app_handle, &path) {
+				error_dialog(why.to_string());
+			};
+		}
+	});
 }
 
 pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -230,11 +244,9 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Resul
 		view_as_sprite(app_handle.clone());
 	}
 
-	enable_file_only_items(app_handle, sprite_info.read_only);
-
 	update_window_title(app_handle);
 
-	app_handle.emit_all("redraw", RedrawPayload{
+	app_handle.emit("redraw", RedrawPayload{
 		frame_count: file_state.frames.lock().unwrap().len(),
 		selected_frames: Vec::new(),
 		cols: *file_state.cols.lock().unwrap(),
@@ -244,11 +256,16 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Resul
 	Ok(())
 }
 
-pub fn drop_files(app_handle: &AppHandle, file_paths: &Vec<PathBuf>) -> Result<(), Box<dyn Error>> {
+pub fn drop_files(app_handle: &AppHandle, file_paths: &[PathBuf]) -> Result<(), Box<dyn Error>> {
 	let file_state: State<FileState> = app_handle.state();
 	let file_is_open = *file_state.file_is_open.lock().unwrap();
 	let frames = file_state.frames.lock().unwrap().clone();
 	if (file_is_open && !frames.is_empty()) || file_paths.len() > 1 {
+		if !file_is_open {
+			reset_state(app_handle);
+			*file_state.file_is_open.lock().unwrap() = true;
+			update_window_title(app_handle);
+		}
 		for file_path in file_paths.iter() {
 			insert_image_from_path(app_handle, file_path)?;
 		}
@@ -260,15 +277,18 @@ pub fn drop_files(app_handle: &AppHandle, file_paths: &Vec<PathBuf>) -> Result<(
 
 #[tauri::command]
 pub fn activate_insert_image(app_handle: AppHandle) {
-	create_open_dialog(&app_handle, true)
-		.set_title("Insert Image")
-		.pick_file(move |file_path| {
-			if let Some(file_path_str) = file_path {
-				if let Err(why) = insert_image_from_path(&app_handle, &file_path_str) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
-			}
-		});
+	spawn(async move {
+		let file_handle = create_open_dialog(&app_handle, true)
+			.set_title("Insert Image")
+			.pick_file()
+			.await;
+		if let Some(file_handle) = file_handle {
+			let path = file_handle.path().to_path_buf();
+			if let Err(why) =  insert_image_from_path(&app_handle, &path) {
+				error_dialog(why.to_string());
+			};
+		}
+	});
 }
 
 pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -279,6 +299,12 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 
 	let file_state: State<FileState> = app_handle.state();
 	let selection_state: State<SelectionState> = app_handle.state();
+
+	if !*file_state.file_is_open.lock().unwrap() {
+		reset_state(app_handle);
+		*file_state.file_is_open.lock().unwrap() = true;
+		update_window_title(app_handle);
+	}
 
 	let mut frames = file_state.frames.lock().unwrap();
 	let mut selected_frames = selection_state.selected_frames.lock().unwrap();
@@ -291,7 +317,7 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 	if insert_point <= frames.len() {
 		frames.splice(insert_point..insert_point, new_frames.iter().cloned());
 		*selected_frames = (insert_point..(insert_point + new_frames.len())).map(usize::from).collect();
-		app_handle.emit_all("redraw", RedrawPayload{
+		app_handle.emit("redraw", RedrawPayload{
 			frame_count: frames.len(),
 			selected_frames: selected_frames.clone(),
 			cols: *file_state.cols.lock().unwrap(),
@@ -306,15 +332,18 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 pub fn activate_replace_frame(app_handle: AppHandle, selection_state: State<SelectionState>) {
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
 	if !selected_frames.is_empty() {
-		create_open_dialog(&app_handle, true)
-			.set_title("Replace Frame")
-			.pick_file(move |file_path| {
-				if let Some(file_path_str) = file_path {
-					if let Err(why) = replace_frame_from_path(&app_handle, &file_path_str) {
-						app_handle.emit_all("error", why.to_string()).unwrap();
-					}
-				}
-			});
+		spawn(async move {
+			let file_handle = create_open_dialog(&app_handle, true)
+				.set_title("Replace Frame")
+				.pick_file()
+				.await;
+			if let Some(file_handle) = file_handle {
+				let path = file_handle.path().to_path_buf();
+				if let Err(why) =  replace_frame_from_path(&app_handle, &path) {
+					error_dialog(why.to_string());
+				};
+			}
+		});
 	}
 }
 
@@ -343,7 +372,7 @@ pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> R
 
 	*selected_frames = (insert_point..(insert_point + new_frames.len())).map(usize::from).collect();
 
-	app_handle.emit_all("redraw", RedrawPayload{
+	app_handle.emit("redraw", RedrawPayload{
 		frame_count: frames.len(),
 		selected_frames: selected_frames.clone(),
 		cols: *file_state.cols.lock().unwrap(),
@@ -435,16 +464,16 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 		Some(file_path) => {
 			if !*file_state.read_only.lock().unwrap() {
 				if let Err(why) = save_file_to_path(&app_handle, &file_path) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
+					error_dialog(why.to_string());
 				}
 			} else if file_path.ends_with(".png") || file_path.ends_with(".PNG") {
-				app_handle.emit_all("error", "Use Export PNG or Export Spritesheet instead.".to_string()).unwrap();
+				error_dialog("Use Export PNG or Export Spritesheet instead.".to_string());
 			} else if file_path.ends_with(".gif") || file_path.ends_with(".GIF") {
-				app_handle.emit_all("error", "Use Export GIF instead.".to_string()).unwrap();
+				error_dialog("Use Export GIF instead.".to_string());
 			} else if file_path.ends_with(".spr") || file_path.ends_with(".SPR") {
-				app_handle.emit_all("error", "File is in a SPR format Spritist can read but not write. Use Save As to save a copy in the standard SPR format.".to_string()).unwrap();
+				error_dialog("File is in a SPR format Spritist can read but not write. Use Save As to save a copy in the standard SPR format.".to_string());
 			} else {
-				app_handle.emit_all("error", "File is read-only. Use Save As or Export instead.".to_string()).unwrap();
+				error_dialog("File is read-only. Use Save As or Export instead.".to_string());
 			}
 		}
 		_ => {
@@ -455,16 +484,18 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 
 #[tauri::command]
 pub fn activate_save_as(app_handle: AppHandle) {
-	create_save_dialog(&app_handle, None, None)
-		.set_title("Save As")
-		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
-		.save_file(move |file_path| {
-			if let Some(file_path_str) = file_path {
-				if let Err(why) = save_file_to_path(&app_handle, &file_path_str) {
-					app_handle.emit_all("error", why.to_string()).unwrap();
-				}
+	spawn(async move {
+		let file_handle = create_save_dialog(&app_handle, None, None)
+			.set_title("Save As")
+			.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
+			.save_file()
+			.await;
+		if let Some(file_handle) = file_handle {
+			if let Err(why) = save_file_to_path(&app_handle, &file_handle.path().to_path_buf()) {
+				error_dialog(why.to_string());
 			}
-		});
+		}
+	});
 }
 
 pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -511,23 +542,4 @@ pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<
 pub fn set_bg_size(file_state: State<FileState>, cols: usize, rows: usize) {
 	*file_state.cols.lock().unwrap() = cols;
 	*file_state.rows.lock().unwrap() = rows;
-}
-
-pub fn enable_file_only_items(app_handle: &AppHandle, read_only: bool) {
-	let menu_handle = app_handle.get_window("main").unwrap().menu_handle();
-	menu_handle.get_item("save_file").set_enabled(!read_only).unwrap();
-	menu_handle.get_item("save_as").set_enabled(true).unwrap();
-	menu_handle.get_item("export_png").set_enabled(true).unwrap();
-	menu_handle.get_item("export_gif").set_enabled(true).unwrap();
-	menu_handle.get_item("export_spritesheet").set_enabled(true).unwrap();
-	menu_handle.get_item("insert_image").set_enabled(true).unwrap();
-	menu_handle.get_item("convert_to_palette").set_enabled(true).unwrap();
-	menu_handle.get_item("convert_to_original").set_enabled(true).unwrap();
-	menu_handle.get_item("convert_to_reversed").set_enabled(true).unwrap();
-	menu_handle.get_item("view_as_sprite").set_enabled(true).unwrap();
-	menu_handle.get_item("view_as_bg").set_enabled(true).unwrap();
-
-	app_handle.emit_all("update_save_button", !read_only).unwrap();
-	app_handle.emit_all("update_save_as_button", true).unwrap();
-	app_handle.emit_all("update_insert_button", true).unwrap();
 }

@@ -34,7 +34,7 @@ class ExportSpritesheet {
 
 		fileButton.addEventListener('click', () => {
 			const filePath = pathInput.value
-			Tauri.invoke('select_png_path', { filePath }).then((filePath) => {
+			tauri_invoke('select_png_path', { filePath }).then((filePath) => {
 				if (filePath) pathInput.value = filePath
 			})
 		})
@@ -43,7 +43,7 @@ class ExportSpritesheet {
 			const filePath = pathInput.value
 			const cols = parseInt(colsInput.value)
 			const rows = parseInt(rowsInput.value)
-			Tauri.invoke('export_spritesheet', { filePath, cols, rows })
+			tauri_invoke('export_spritesheet', { filePath, cols, rows })
 			ExportSpritesheet.close()
 		})
 
@@ -75,8 +75,8 @@ class ExportSpritesheet {
 		rowsInput.addEventListener('input', onUpdateRowsInput)
 		rowsInput.addEventListener('click', onUpdateRowsInput)
 
-		Tauri.event.listen('export_spritesheet', () => {
-			Tauri.invoke('get_file_path', { extension: 'png' }).then((filePath) => {
+		tauri_listen('export_spritesheet', () => {
+			tauri_invoke('get_file_path', { extension: 'png' }).then((filePath) => {
 				pathInput.value = filePath.replace('.png', '_spritesheet.png')
 			})
 			const frameCount = Sprite.frameCount
@@ -97,11 +97,11 @@ class ExportSpritesheet {
 			ExportSpritesheet.focusConfirmButton()
 		})
 
-		Tauri.event.listen('update_export_spritesheet_path', (event) => {
+		tauri_listen('update_export_spritesheet_path', (event) => {
 			pathInput.value = event.payload
 		})
 
-		Tauri.event.listen('successful_spritesheet_export', () => {
+		tauri_listen('successful_spritesheet_export', () => {
 			ExportSpritesheet.close()
 		})
 

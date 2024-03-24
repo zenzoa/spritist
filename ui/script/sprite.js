@@ -38,7 +38,7 @@ class Sprite {
 
 		const img = document.createElement('img')
 		img.id = `frame-img-${index}`
-		img.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
+		img.src = convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
 		img.addEventListener('load', () => Sprite.onImageLoad(img, index))
 		frameImage.append(img)
 
@@ -63,7 +63,7 @@ class Sprite {
 		let frameElement = document.getElementById(`frame-${index}`)
 		if (frameElement != null) {
 			const frameImage = document.getElementById(`frame-img-${index}`)
-			frameImage.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
+			frameImage.src = convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
 			frameImage.addEventListener('load', () => Sprite.onImageLoad(frameImage, index))
 		} else {
 			frameElement = Sprite.createFrameElement(index)
@@ -97,7 +97,7 @@ class Sprite {
 		Sprite.timestamp = Date.now()
 		Selection.frameIndexes.forEach(index => {
 			const frameImage = document.getElementById(`frame-img-${index}`)
-			frameImage.src = Tauri.tauri.convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
+			frameImage.src = convertFileSrc(`${Sprite.timestamp}-${index}`, 'getframe')
 		})
 	}
 
@@ -168,7 +168,7 @@ class Sprite {
 			Selection.frameIndexes = [index]
 		}
 
-		Tauri.invoke('update_selection', { newSelectedFrames: Selection.frameIndexes })
+		tauri_invoke('update_selection', { newSelectedFrames: Selection.frameIndexes })
 		Sprite.updateSelectedFrames()
 	}
 
@@ -185,6 +185,6 @@ class Sprite {
 		const root = document.querySelector(':root')
 		root.style.setProperty('--bg-mode-cols', `${Sprite.cols}`)
 		root.style.setProperty('--bg-mode-rows', `${Sprite.rows}`)
-		Tauri.invoke('set_bg_size', { cols: Sprite.cols, rows: Sprite.rows })
+		tauri_invoke('set_bg_size', { cols: Sprite.cols, rows: Sprite.rows })
 	}
 }

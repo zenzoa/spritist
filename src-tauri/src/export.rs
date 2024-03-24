@@ -3,11 +3,10 @@ use std::{
 	error::Error,
 	path::PathBuf
 };
-use tauri::{
-	AppHandle,
-	Manager,
-	State
-};
+
+use tauri::{ AppHandle, State, Manager };
+use tauri::async_runtime::spawn;
+
 use image::{
 	Delay,
 	RgbaImage,
@@ -16,6 +15,7 @@ use image::{
 };
 
 use crate::{
+	error_dialog,
 	file::{ FileState, Frame, create_save_dialog },
 	selection::SelectionState,
 	format::png::encode as encode_png
@@ -35,26 +35,32 @@ pub fn get_file_path(file_state: State<FileState>, extension: String) -> String 
 
 #[tauri::command]
 pub fn select_png_path(app_handle: AppHandle, file_path: String) {
-	create_save_dialog(&app_handle, Some("png"), Some(&file_path))
-		.set_title("Export PNG")
-		.add_filter("PNG Images", &["png", "PNG"])
-		.save_file(move |new_file_path| {
-			if let Some(file_path_str) = new_file_path {
-				app_handle.emit_all("update_export_png_path", file_path_str.to_string_lossy()).unwrap();
-			}
-		});
+	spawn(async move {
+		let file_handle = create_save_dialog(&app_handle, Some("png"), Some(&file_path))
+			.set_title("Export PNG")
+			.add_filter("PNG Images", &["png", "PNG"])
+			.save_file()
+			.await;
+		if let Some(file_handle) = file_handle {
+			let path = file_handle.path().to_path_buf();
+			app_handle.emit("update_export_png_path", path.to_string_lossy()).unwrap();
+		}
+	});
 }
 
 #[tauri::command]
 pub fn select_gif_path(app_handle: AppHandle, file_path: String) {
-	create_save_dialog(&app_handle, Some("gif"), Some(&file_path))
-		.set_title("Export GIF")
-		.add_filter("GIF Images", &["gif", "GIF"])
-		.save_file(move |file_path| {
-			if let Some(file_path_str) = file_path {
-				app_handle.emit_all("update_export_gif_path", file_path_str.to_string_lossy()).unwrap();
-			}
-		});
+	spawn(async move {
+		let file_handle = create_save_dialog(&app_handle, Some("gif"), Some(&file_path))
+			.set_title("Export GIF")
+			.add_filter("GIF Images", &["gif", "GIF"])
+			.save_file()
+			.await;
+		if let Some(file_handle) = file_handle {
+			let path = file_handle.path().to_path_buf();
+			app_handle.emit("update_export_gif_path", path.to_string_lossy()).unwrap();
+		}
+	});
 }
 
 #[tauri::command]
@@ -69,12 +75,12 @@ pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection
 			match combine_frames(&frames, cols, rows, false) {
 				Ok(image) => {
 					if let Err(why) = encode_png(&image, file_path) {
-						app_handle.emit_all("error", why.to_string()).unwrap();
+						error_dialog(why.to_string());
 						return
 					}
 				},
 				Err(why) => {
-					app_handle.emit_all("error", why.to_string()).unwrap();
+					error_dialog(why.to_string());
 					return
 				}
 			}
@@ -88,21 +94,21 @@ pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection
 								if frames_to_export != "selected" || selected_frames.contains(&i) {
 									let file_path = base_dir.join(format!("{}-{}.png", file_stem.to_string_lossy(), i));
 									if let Err(why) = encode_png(&frame.image, file_path) {
-										app_handle.emit_all("error", why.to_string()).unwrap();
+										error_dialog(why.to_string());
 										return
 									}
 								}
 							}
 						}
-						None => app_handle.emit_all("error", "Invalid file name".to_string()).unwrap()
+						None => error_dialog("Invalid file name".to_string())
 					}
 				}
-				None => app_handle.emit_all("error", "Invalid file path".to_string()).unwrap()
+				None => error_dialog("Invalid file path".to_string())
 			}
 		}
 	}
-	app_handle.emit_all("notify", "Exported PNG file(s) succesfully".to_string()).unwrap();
-	app_handle.emit_all("successful_png_export", "".to_string()).unwrap();
+	app_handle.emit("notify", "Exported PNG file(s) succesfully".to_string()).unwrap();
+	app_handle.emit("successful_png_export", "".to_string()).unwrap();
 }
 
 #[tauri::command]
@@ -125,27 +131,27 @@ pub fn export_gif(app_handle: AppHandle, file_state: State<FileState>, selection
 			gif_encoder.set_repeat(Repeat::Infinite).unwrap();
 			match gif_encoder.encode_frames(gif_frames) {
 				Ok(()) => {
-					app_handle.emit_all("notify", "Exported GIF file succesfully".to_string()).unwrap();
-					app_handle.emit_all("successful_gif_export", "".to_string()).unwrap();
+					app_handle.emit("notify", "Exported GIF file succesfully".to_string()).unwrap();
+					app_handle.emit("successful_gif_export", "".to_string()).unwrap();
 				}
-				Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()
+				Err(why) => error_dialog(why.to_string())
 			}
 		}
-		Err(why) => app_handle.emit_all("error", why.to_string()).unwrap()
+		Err(why) => error_dialog(why.to_string())
 	}
 }
 
 #[tauri::command]
-pub fn export_spritesheet(app_handle: AppHandle, file_state: State<FileState>, file_path: String, cols: u32, rows: u32) {
+pub fn export_spritesheet(file_state: State<FileState>, file_path: String, cols: u32, rows: u32) {
 	let frames = file_state.frames.lock().unwrap();
 	match combine_frames(&frames, cols as usize, rows as usize, true) {
 		Ok(image) => {
 			if let Err(why) = encode_png(&image, PathBuf::from(file_path)) {
-				app_handle.emit_all("error", why.to_string()).unwrap();
+				error_dialog(why.to_string());
 			}
 		},
 		Err(why) => {
-			app_handle.emit_all("error", why.to_string()).unwrap();
+			error_dialog(why.to_string());
 		}
 	}
 }

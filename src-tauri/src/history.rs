@@ -1,14 +1,11 @@
 use std::sync::Mutex;
-use tauri::{
-	AppHandle,
-	Manager,
-	State
-};
+
+use tauri::{ AppHandle, Manager, State };
 
 use crate::{
 	palette::Palette,
 	file::{ FileState, Frame },
-	selection::{ SelectionState, update_selection_items },
+	selection::SelectionState,
 	state::{ redraw, update_window_title },
 };
 
@@ -31,8 +28,6 @@ pub fn add_state_to_history(app_handle: &AppHandle) {
 	history_state.undo_stack.lock().unwrap().push(get_current_state(&file_state, &selection_state));
 	history_state.redo_stack.lock().unwrap().clear();
 
-	update_undo_redo_items(app_handle, &history_state);
-
 	*file_state.file_is_modified.lock().unwrap() = true;
 
 	update_window_title(app_handle);
@@ -46,8 +41,6 @@ pub fn undo(app_handle: AppHandle, file_state: State<FileState>, selection_state
 		set_current_state(&file_state, &selection_state, new_history_item);
 	}
 
-	update_undo_redo_items(&app_handle, &history_state);
-	update_selection_items(&app_handle, selection_state.selected_frames.lock().unwrap().len());
 	update_window_title(&app_handle);
 
 	redraw(&app_handle);
@@ -61,8 +54,6 @@ pub fn redo(app_handle: AppHandle, file_state: State<FileState>, selection_state
 		set_current_state(&file_state, &selection_state, new_history_item);
 	}
 
-	update_undo_redo_items(&app_handle, &history_state);
-	update_selection_items(&app_handle, selection_state.selected_frames.lock().unwrap().len());
 	update_window_title(&app_handle);
 
 	redraw(&app_handle);
@@ -80,18 +71,4 @@ fn set_current_state(file_state: &State<FileState>, selection_state: &State<Sele
 	*file_state.frames.lock().unwrap() = new_history_item.frames.lock().unwrap().clone();
 	*selection_state.selected_frames.lock().unwrap() = new_history_item.selected_frames.lock().unwrap().clone();
 	*file_state.palette.lock().unwrap() = new_history_item.palette.lock().unwrap().clone();
-}
-
-pub fn update_undo_redo_items(app_handle: &AppHandle, history_state: &State<HistoryState>) {
-	let has_undo_stack = history_state.undo_stack.lock().unwrap().len() > 0;
-	let has_redo_stack = history_state.redo_stack.lock().unwrap().len() > 0;
-
-	let window = app_handle.get_window("main").unwrap();
-	let menu_handle = window.menu_handle();
-
-	menu_handle.get_item("undo").set_enabled(has_undo_stack).unwrap();
-	menu_handle.get_item("redo").set_enabled(has_redo_stack).unwrap();
-
-	app_handle.emit_all("update_undo_button", has_undo_stack).unwrap();
-	app_handle.emit_all("update_redo_button", has_redo_stack).unwrap();
 }
