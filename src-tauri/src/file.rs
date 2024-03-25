@@ -280,16 +280,18 @@ pub fn drop_files(app_handle: &AppHandle, file_paths: &[PathBuf]) -> Result<(), 
 #[tauri::command]
 pub fn activate_insert_image(app_handle: AppHandle) {
 	spawn(async move {
-		let file_handle = create_open_dialog(&app_handle, true)
+		let file_handles = create_open_dialog(&app_handle, true)
 			.set_title("Insert Image")
-			.pick_file()
+			.pick_files()
 			.await;
-		if let Some(file_handle) = file_handle {
+		if let Some(file_handles) = file_handles {
 			app_handle.emit("show_spinner", ()).unwrap();
-			let path = file_handle.path().to_path_buf();
-			if let Err(why) =  insert_image_from_path(&app_handle, &path) {
-				error_dialog(why.to_string());
-			};
+			for file_handle in file_handles {
+				let path = file_handle.path().to_path_buf();
+				if let Err(why) =  insert_image_from_path(&app_handle, &path) {
+					error_dialog(why.to_string());
+				};
+			}
 			app_handle.emit("hide_spinner", ()).unwrap();
 		}
 	});
