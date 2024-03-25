@@ -112,9 +112,10 @@ window.addEventListener('load', () => {
 			event.preventDefault()
 			tauri_invoke('try_quit')
 
-		} else if (ExportPng.isOpen() || ExportGif.isOpen() || ExportSpritesheet.isOpen() || ImportSpritesheet.isOpen()) {
+		} else if (AboutDialog.isOpen() || ExportPng.isOpen() || ExportGif.isOpen() || ExportSpritesheet.isOpen() || ImportSpritesheet.isOpen()) {
 			if (ONLY && KEY === 'ESCAPE') {
 				event.preventDefault()
+				AboutDialog.close()
 				ExportPng.close()
 				ExportGif.close()
 				ExportSpritesheet.close()
@@ -219,6 +220,7 @@ window.addEventListener('load', () => {
 		setToolbarVisibility({ payload: config.show_toolbar })
 	})
 
+	AboutDialog.setup()
 	ExportPng.setup()
 	ExportGif.setup()
 	ExportSpritesheet.setup()

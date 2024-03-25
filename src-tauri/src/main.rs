@@ -142,6 +142,10 @@ fn main() {
 					&CheckMenuItem::with_id(handle, "show_toolbar", "Show Toolbar", true, true, None::<&str>)?,
 				])?,
 
+				&Submenu::with_id_and_items(handle, "help", "Help", true, &[
+					&MenuItem::with_id(handle, "about", "About", true, None::<&str>)?,
+				])?,
+
 			])
 		})
 
@@ -202,28 +206,20 @@ fn main() {
 						let current_value = config_state.show_image_info.lock().unwrap().to_owned();
 						config::set_show_image_info(&handle, !current_value, false);
 					},
-					"transparent_black" => {
-						config::set_transparent_color(&handle, config::TransparentColor::Black, false);
-					},
-					"transparent_white" => {
-						config::set_transparent_color(&handle, config::TransparentColor::White, false);
-					},
-					"transparent_none" => {
-						config::set_transparent_color(&handle, config::TransparentColor::None, false);
-					},
-					"theme_dark" => {
-						config::set_theme(&handle, config::Theme::Dark, false);
-					},
-					"theme_light" => {
-						config::set_theme(&handle, config::Theme::Light, false);
-					},
-					"theme_purple" => {
-						config::set_theme(&handle, config::Theme::Purple, false);
-					},
+					"transparent_black" => config::set_transparent_color(&handle, config::TransparentColor::Black, false),
+					"transparent_white" => config::set_transparent_color(&handle, config::TransparentColor::White, false),
+					"transparent_none" => config::set_transparent_color(&handle, config::TransparentColor::None, false),
+					"theme_dark" => config::set_theme(&handle, config::Theme::Dark, false),
+					"theme_light" => config::set_theme(&handle, config::Theme::Light, false),
+					"theme_purple" => config::set_theme(&handle, config::Theme::Purple, false),
 					"show_toolbar" => {
 						let current_value = config_state.show_toolbar.lock().unwrap().to_owned();
 						config::set_toolbar_visibility(&handle, !current_value, false);
 					},
+
+					// HELP MENU
+					"about" => handle.emit("show_about_dialog", "").unwrap(),
+
 					_ => {}
 				}
 			});

@@ -8,6 +8,7 @@
 		<title>Spritist</title>
 		<link rel="stylesheet" href="./style/style.css">
 
+		<script src="./script/about.js"></script>
 		<script src="./script/export-png.js"></script>
 		<script src="./script/export-gif.js"></script>
 		<script src="./script/export-spritesheet.js"></script>
@@ -321,6 +322,35 @@
 						</button>
 						<button id="import-spritesheet-confirm-button" class="text-button primary">
 							Import
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- ABOUT -->
+		<div id="about-dialog" class="dialog">
+			<div class="dialog-content">
+				<div class="dialog-header">
+					<span class="dialog-title">
+						About Spritist
+					</span>
+					<button id="about-close-button" class="dialog-close-button" title="Close Dialog">
+						<img src="library/mono-icons/svg/close.svg" alt="Close Dialog">
+					</button>
+				</div>
+				<div class="dialog-body about-dialog">
+					<img src="icon.png">
+					<p><strong>Spritist <span id="about-version">x.x.x<span></strong></p>
+					<p>
+						A sprite editor for the Creatures game series
+						<br>
+						<em>https://github.com/zenzoa/spritist</em>
+					</p>
+					<div class="input-row button-row">
+						<button id="about-ok-button" class="text-button primary">
+							Ok
 						</button>
 					</div>
 				</div>

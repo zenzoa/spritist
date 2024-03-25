@@ -312,6 +312,19 @@ main {
 	padding: 24px;
 }
 
+.about-dialog {
+	text-align: center;
+}
+
+.about-dialog p {
+	user-select: auto;
+	-webkit-user-select: auto;
+}
+
+.about-dialog .input-row {
+	margin-top: 24px;
+}
+
 .spinner {
 	display: none;
 	z-index: 201;
