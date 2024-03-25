@@ -93,7 +93,7 @@ pub fn activate_load_palette(app_handle: AppHandle) {
 		let file_handle = create_open_dialog(&app_handle, false)
 			.set_title("Load Palette")
 			.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
-			.save_file()
+			.pick_file()
 			.await;
 		if let Some(file_handle) = file_handle {
 			let path = file_handle.path().to_path_buf();
