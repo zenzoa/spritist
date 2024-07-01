@@ -9,7 +9,7 @@ use tauri::{
 	Builder,
 	AppHandle,
 	WindowEvent,
-	FileDropEvent,
+	DragDropEvent,
 	Manager,
 	State
 };
@@ -46,7 +46,7 @@ fn main() {
 
 		.on_window_event(|window, event| {
 			match event {
-				WindowEvent::FileDrop(FileDropEvent::Dropped{ paths, position: _ }) => {
+				WindowEvent::DragDrop(DragDropEvent::Dropped{ paths, position: _ }) => {
 					if !paths.is_empty() {
 						window.app_handle().emit("show_spinner", ()).unwrap();
 						if let Err(why) = file::drop_files(window.app_handle(), paths) {
