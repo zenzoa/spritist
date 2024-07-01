@@ -1,11 +1,15 @@
 {
 	"productName": "Spritist",
-	"version": "2.2.1",
+	"version": "2.2.2",
 	"identifier": "thing.zenzoa.spritist",
 	"app": {
 		"withGlobalTauri": true,
 		"security": {
-			"csp": "default-src 'self'; img-src 'self' getframe: https://getframe.localhost",
+			"csp": {
+				"default-src": "'self'",
+				"img-src": "'self' getframe: http://getframe.localhost",
+				"connect-src": "ipc: http://ipc.localhost"
+			},
 			"assetProtocol": {
 				"enable": false,
 				"scope": []
@@ -73,7 +77,8 @@
 				}
 			},
 			"files": {},
-			"minimumSystemVersion": "10.13"
+			"minimumSystemVersion": "10.13",
+			"signingIdentity": "-"
 		},
 		"linux": {
 			"appimage": {
