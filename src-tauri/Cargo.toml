@@ -1,6 +1,6 @@
 [package]
-name = "app"
-version = "0.1.0"
+name = "spritist"
+version = "2.3.0"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
@@ -9,19 +9,19 @@ edition = "2021"
 rust-version = "1.70"
 
 [build-dependencies]
-tauri-build = { version = "2.0.0-beta.17", features = [] }
+tauri-build = { version = "2.0.3", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "2.0.0-beta.22", features = [] }
-bytes = "1.5.0"
-png = "0.17.10"
-image = "0.24.8"
-arboard = "3.2.1"
-rfd = "0.13.0"
-regex = "1.10.2"
-http = "1.1.0"
+tauri = { version = "2.1.1", features = [] }
+bytes = "1.9.0"
+png = "0.17.16"
+image = "0.25.5"
+arboard = "3.4.1"
+rfd = "0.15.1"
+regex = "1.11.1"
+http = "1.2.0"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

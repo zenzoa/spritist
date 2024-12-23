@@ -6,7 +6,7 @@ use std::{
 	io::Cursor
 };
 
-use tauri::{ AppHandle, State, Manager };
+use tauri::{ AppHandle, State, Manager, Emitter };
 use tauri::async_runtime::spawn;
 
 use rfd::{ AsyncFileDialog, AsyncMessageDialog, MessageButtons, MessageDialogResult };
@@ -14,7 +14,7 @@ use rfd::{ AsyncFileDialog, AsyncMessageDialog, MessageButtons, MessageDialogRes
 use image::{
 	RgbaImage,
 	AnimationDecoder,
-	io::Reader as ImageReader,
+	ImageReader,
 	codecs::gif::GifDecoder
 };
 

@@ -1,6 +1,6 @@
 {
 	"productName": "Spritist",
-	"version": "2.2.2",
+	"version": "2.3.0",
 	"identifier": "thing.zenzoa.spritist",
 	"app": {
 		"withGlobalTauri": true,
@@ -54,7 +54,6 @@
 			"nsis": null,
 			"timestampUrl": null,
 			"tsp": false,
-			"webviewFixedRuntimePath": null,
 			"webviewInstallMode": {
 				"silent": true,
 				"type": "downloadBootstrapper"
@@ -77,8 +76,7 @@
 				}
 			},
 			"files": {},
-			"minimumSystemVersion": "10.13",
-			"signingIdentity": "-"
+			"minimumSystemVersion": "10.13"
 		},
 		"linux": {
 			"appimage": {

@@ -1,6 +1,6 @@
 use image::RgbaImage;
 
-use tauri::{ AppHandle, Manager, State };
+use tauri::{ AppHandle, State, Emitter };
 
 use crate::{
 	file::{ FileState, Frame },

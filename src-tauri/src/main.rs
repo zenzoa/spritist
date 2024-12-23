@@ -11,7 +11,8 @@ use tauri::{
 	WindowEvent,
 	DragDropEvent,
 	Manager,
-	State
+	State,
+	Emitter
 };
 use tauri::menu::{
 	Menu,
@@ -25,7 +26,7 @@ use tauri::async_runtime::spawn;
 
 use rfd::{ AsyncMessageDialog, MessageButtons };
 
-use image::ImageOutputFormat;
+use image::ImageFormat;
 
 mod file;
 mod state;
@@ -46,7 +47,7 @@ fn main() {
 
 		.on_window_event(|window, event| {
 			match event {
-				WindowEvent::DragDrop(DragDropEvent::Dropped{ paths, position: _ }) => {
+				WindowEvent::DragDrop(DragDropEvent::Drop{ paths, position: _ }) => {
 					if !paths.is_empty() {
 						window.app_handle().emit("show_spinner", ()).unwrap();
 						if let Err(why) = file::drop_files(window.app_handle(), paths) {
@@ -292,7 +293,9 @@ fn main() {
 			state::update_window_title(window.app_handle());
 		})
 
-		.register_uri_scheme_protocol("getframe", |app, request| {
+		.register_uri_scheme_protocol("getframe", |context, request| {
+			let handle = context.app_handle();
+			
 			let not_found = http::Response::builder().body(Vec::new()).unwrap();
 
 			let uri = request.uri().path();
@@ -305,12 +308,12 @@ fn main() {
 				Err(_) => return not_found
 			};
 
-			let file_state: State<file::FileState> = app.state();
+			let file_state: State<file::FileState> = handle.state();
 			let frames = file_state.frames.lock().unwrap();
 			match frames.get(frame_index) {
 				Some(frame) => {
 					let mut frame_data = Cursor::new(Vec::new());
-					if let Ok(()) = frame.image.write_to(&mut frame_data, ImageOutputFormat::Png) {
+					if let Ok(()) = frame.image.write_to(&mut frame_data, ImageFormat::Png) {
 						http::Response::builder()
 							.header("Content-Type", "image/png")
 							.body(frame_data.into_inner())

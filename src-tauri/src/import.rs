@@ -4,13 +4,13 @@ use std::{
 	path::PathBuf
 };
 
-use tauri::{ Manager, AppHandle, State };
+use tauri::{ Manager, AppHandle, State, Emitter };
 use tauri::async_runtime::spawn;
 
 use rfd::{ AsyncMessageDialog, MessageButtons, MessageDialogResult };
 
 use image::{ Rgba, RgbaImage };
-use image::io::Reader as ImageReader;
+use image::ImageReader;
 
 use crate::{
 	error_dialog,

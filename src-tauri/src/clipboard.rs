@@ -3,7 +3,7 @@ use std::{
 	sync::Mutex
 };
 
-use tauri::{ AppHandle, Manager, State };
+use tauri::{ AppHandle, State, Emitter };
 
 use image::{ ImageBuffer, DynamicImage, RgbaImage };
 

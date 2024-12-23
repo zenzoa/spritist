@@ -4,7 +4,7 @@ use std::{
 	path::PathBuf
 };
 
-use tauri::{ AppHandle, State, Manager };
+use tauri::{ AppHandle, State, Emitter };
 use tauri::async_runtime::spawn;
 
 use image::{
