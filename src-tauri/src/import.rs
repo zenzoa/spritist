@@ -1,13 +1,12 @@
 use std::{
 	fs,
 	error::Error,
-	path::PathBuf
+	path::{ Path, PathBuf }
 };
 
 use tauri::{ Manager, AppHandle, State, Emitter };
-use tauri::async_runtime::spawn;
 
-use rfd::{ AsyncMessageDialog, MessageButtons, MessageDialogResult };
+use rfd::{ MessageDialog, MessageButtons, MessageDialogResult };
 
 use image::{ Rgba, RgbaImage };
 use image::ImageReader;
@@ -21,11 +20,11 @@ use crate::{
 };
 
 struct Callback {
-	func: fn(&AppHandle, &PathBuf) -> Result<(), Box<dyn Error>>
+	func: fn(&AppHandle, &Path) -> Result<(), Box<dyn Error>>
 }
 
 struct SpritesheetCallback {
-	func: fn(&AppHandle, &PathBuf, Vec<Frame>, u16, u16) -> Result<(), Box<dyn Error>>
+	func: fn(&AppHandle, &Path, Vec<Frame>, u16, u16) -> Result<(), Box<dyn Error>>
 }
 
 #[tauri::command]
@@ -41,39 +40,32 @@ pub fn activate_import_spritesheet(app_handle: AppHandle) {
 fn activate_import(app_handle: AppHandle, title: String, callback: Callback) {
 	let file_state: State<FileState> = app_handle.state();
 	if *file_state.file_is_modified.lock().unwrap() {
-		spawn(async move {
-			let confirm_reload = AsyncMessageDialog::new()
-				.set_title("File modified")
-				.set_description("Do you want to continue anyway and lose any unsaved work?")
-				.set_buttons(MessageButtons::YesNo)
-				.show()
-				.await;
-			if let MessageDialogResult::Yes = confirm_reload {
-				open_png_dialog(app_handle, title, callback);
-			}
-		});
+		let confirm_reload = MessageDialog::new()
+			.set_title("File modified")
+			.set_description("Do you want to continue anyway and lose any unsaved work?")
+			.set_buttons(MessageButtons::YesNo)
+			.show();
+		if let MessageDialogResult::Yes = confirm_reload {
+			open_png_dialog(app_handle, title, callback);
+		}
 	} else {
 		open_png_dialog(app_handle, title, callback);
 	}
 }
 
 fn open_png_dialog(app_handle: AppHandle, title: String, callback: Callback) {
-	spawn(async move {
-		let file_handle = create_open_dialog(&app_handle, false)
-			.set_title(&title)
-			.add_filter("PNG Images", &["png", "PNG"])
-			.pick_file()
-			.await;
-		if let Some(file_handle) = file_handle {
-			let path = file_handle.path().to_path_buf();
-			if let Err(why) = (callback.func)(&app_handle, &path) {
-				error_dialog(why.to_string());
-			};
-		}
-	});
+	let file_handle = create_open_dialog(&app_handle, false)
+		.set_title(&title)
+		.add_filter("PNG Images", &["png", "PNG"])
+		.pick_file();
+	if let Some(file_handle) = file_handle {
+		if let Err(why) = (callback.func)(&app_handle, &file_handle.as_path()) {
+			error_dialog(why.to_string());
+		};
+	}
 }
 
-fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let png_image = get_image(file_path)?;
 
 	let cols = (png_image.width() as f32 / 128.0).ceil() as u32;
@@ -142,7 +134,7 @@ struct SpritesheetPayload {
 	height: u32
 }
 
-fn open_import_spritesheet_dialog(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+fn open_import_spritesheet_dialog(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let png_image = get_image(file_path)?;
 	app_handle.emit("import_spritesheet", SpritesheetPayload{
 		file_path: file_path.to_str().ok_or("Invalid file path. Contains non-unicode characters.")?.to_string(),
@@ -152,7 +144,7 @@ fn open_import_spritesheet_dialog(app_handle: &AppHandle, file_path: &PathBuf) -
 	Ok(())
 }
 
-fn import_spritesheet_as_frames(file_path: &PathBuf, cols: u32, rows: u32) -> Result<Vec<Frame>, Box<dyn Error>> {
+fn import_spritesheet_as_frames(file_path: &Path, cols: u32, rows: u32) -> Result<Vec<Frame>, Box<dyn Error>> {
 	let png_image = get_image(file_path)?;
 	let tile_width = png_image.width() / cols;
 	let tile_height = png_image.height() / rows;
@@ -217,7 +209,7 @@ pub fn import_spritesheet(app_handle: AppHandle, file_path: String, cols: u32, r
 	}
 }
 
-fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
 	let file_state: State<FileState> = app_handle.state();
 	let palette = file_state.palette.lock().unwrap().clone();
 	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
@@ -228,7 +220,7 @@ fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &PathBuf, frames
 	Ok(())
 }
 
-fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
 	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = s16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
@@ -237,7 +229,7 @@ fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &PathBuf, frames
 	Ok(())
 }
 
-fn encode_spritesheet_as_c16(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+fn encode_spritesheet_as_c16(app_handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
 	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = c16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
@@ -252,20 +244,17 @@ fn import_spritesheet_for_export(app_handle: AppHandle, file_path: String, cols:
 		Ok(frames) => {
 			let new_path = file_path.with_extension(extension);
 			if new_path.is_file() {
-				spawn(async move {
-					let confirm_overwrite = AsyncMessageDialog::new()
-						.set_title("File exists")
-						.set_description(format!("Do you want to overwrite {}?", new_path.to_string_lossy()))
-						.set_buttons(MessageButtons::YesNo)
-						.show()
-						.await;
+				let confirm_overwrite = MessageDialog::new()
+					.set_title("File exists")
+					.set_description(format!("Do you want to overwrite {}?", new_path.to_string_lossy()))
+					.set_buttons(MessageButtons::YesNo)
+					.show();
 
-					if let MessageDialogResult::Yes = confirm_overwrite {
-						if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
-							error_dialog(why.to_string());
-						}
+				if let MessageDialogResult::Yes = confirm_overwrite {
+					if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
+						error_dialog(why.to_string());
 					}
-				});
+				}
 			} else if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
 				error_dialog(why.to_string());
 			}
@@ -289,6 +278,6 @@ pub fn import_spritesheet_export_c16(app_handle: AppHandle, file_path: String, c
 	import_spritesheet_for_export(app_handle, file_path, cols, rows, "c16", SpritesheetCallback{ func: encode_spritesheet_as_c16 });
 }
 
-fn get_image(file_path: &PathBuf) -> Result<RgbaImage, Box<dyn Error>> {
+fn get_image(file_path: &Path) -> Result<RgbaImage, Box<dyn Error>> {
 	Ok(ImageReader::open(file_path)?.decode()?.to_rgba8())
 }

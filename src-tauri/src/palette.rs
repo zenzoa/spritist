@@ -1,11 +1,10 @@
 use std::{
 	fs,
 	error::Error,
-	path::PathBuf
+	path::Path
 };
 
 use tauri::{ AppHandle, Manager, State };
-use tauri::async_runtime::spawn;
 use tauri::menu::MenuItemKind;
 
 use bytes::{ Bytes, Buf };
@@ -89,23 +88,19 @@ impl Palette {
 }
 
 pub fn activate_load_palette(app_handle: AppHandle) {
-	spawn(async move {
-		let file_handle = create_open_dialog(&app_handle, false)
-			.set_title("Load Palette")
-			.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
-			.pick_file()
-			.await;
-		if let Some(file_handle) = file_handle {
-			let path = file_handle.path().to_path_buf();
-			if let Err(why) = load_palette_from_path(&app_handle, &path) {
-				error_dialog(why.to_string());
-			}
-			update_palette_menu_items(&app_handle);
+	let file_handle = create_open_dialog(&app_handle, false)
+		.set_title("Load Palette")
+		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
+		.pick_file();
+	if let Some(file_handle) = file_handle {
+		if let Err(why) = load_palette_from_path(&app_handle, &file_handle.as_path()) {
+			error_dialog(why.to_string());
 		}
-	});
+		update_palette_menu_items(&app_handle);
+	}
 }
 
-fn load_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+fn load_palette_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 	let colors = read_color_data(&bytes)?;
 	let file_name = file_path.file_name().map(|file_name| file_name.to_string_lossy().into());
@@ -147,23 +142,19 @@ fn load_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: P
 }
 
 pub fn activate_convert_to_palette(app_handle: AppHandle) {
-	spawn(async move {
-		let file_handle = create_open_dialog(&app_handle, false)
-			.set_title("Convert to Palette")
-			.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
-			.save_file()
-			.await;
-		if let Some(file_handle) = file_handle {
-			let path = file_handle.path().to_path_buf();
-			if let Err(why) = convert_to_palette_from_path(&app_handle, &path) {
-				error_dialog(why.to_string());
-			}
-			update_palette_menu_items(&app_handle);
+	let file_handle = create_open_dialog(&app_handle, false)
+		.set_title("Convert to Palette")
+		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
+		.save_file();
+	if let Some(file_handle) = file_handle {
+		if let Err(why) = convert_to_palette_from_path(&app_handle, &file_handle.as_path()) {
+			error_dialog(why.to_string());
 		}
-	});
+		update_palette_menu_items(&app_handle);
+	}
 }
 
-fn convert_to_palette_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+fn convert_to_palette_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 	let colors = read_color_data(&bytes)?;
 	let file_name = file_path.file_name().map(|file_name| file_name.to_string_lossy().into());

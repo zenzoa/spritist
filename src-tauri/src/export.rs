@@ -5,7 +5,6 @@ use std::{
 };
 
 use tauri::{ AppHandle, State, Emitter };
-use tauri::async_runtime::spawn;
 
 use image::{
 	Delay,
@@ -35,32 +34,26 @@ pub fn get_file_path(file_state: State<FileState>, extension: String) -> String 
 
 #[tauri::command]
 pub fn select_png_path(app_handle: AppHandle, file_path: String) {
-	spawn(async move {
-		let file_handle = create_save_dialog(&app_handle, Some("png"), Some(&file_path))
-			.set_title("Export PNG")
-			.add_filter("PNG Images", &["png", "PNG"])
-			.save_file()
-			.await;
-		if let Some(file_handle) = file_handle {
-			let path = file_handle.path().to_path_buf();
-			app_handle.emit("update_export_png_path", path.to_string_lossy()).unwrap();
-		}
-	});
+	let file_handle = create_save_dialog(&app_handle, Some("png"), Some(&file_path))
+		.set_title("Export PNG")
+		.add_filter("PNG Images", &["png", "PNG"])
+		.save_file();
+	if let Some(file_handle) = file_handle {
+		let path_string = file_handle.as_path().to_string_lossy();
+		app_handle.emit("update_export_png_path", path_string).unwrap();
+	}
 }
 
 #[tauri::command]
 pub fn select_gif_path(app_handle: AppHandle, file_path: String) {
-	spawn(async move {
-		let file_handle = create_save_dialog(&app_handle, Some("gif"), Some(&file_path))
-			.set_title("Export GIF")
-			.add_filter("GIF Images", &["gif", "GIF"])
-			.save_file()
-			.await;
-		if let Some(file_handle) = file_handle {
-			let path = file_handle.path().to_path_buf();
-			app_handle.emit("update_export_gif_path", path.to_string_lossy()).unwrap();
-		}
-	});
+	let file_handle = create_save_dialog(&app_handle, Some("gif"), Some(&file_path))
+		.set_title("Export GIF")
+		.add_filter("GIF Images", &["gif", "GIF"])
+		.save_file();
+	if let Some(file_handle) = file_handle {
+		let path_string = file_handle.as_path().to_string_lossy();
+		app_handle.emit("update_export_gif_path", path_string).unwrap();
+	}
 }
 
 #[tauri::command]

@@ -1,7 +1,7 @@
 use std::{
 	fs,
 	error::Error,
-	path::PathBuf,
+	path::{ Path, PathBuf },
 	sync::Mutex,
 	io::Cursor
 };
@@ -10,7 +10,7 @@ use tauri::{ AppHandle, State, Manager, Emitter };
 use tauri::async_runtime::spawn;
 use tauri::menu::MenuItemKind;
 
-use rfd::{ AsyncFileDialog, AsyncMessageDialog, MessageButtons, MessageDialogResult };
+use rfd::{ FileDialog, MessageDialog, MessageButtons, MessageDialogResult };
 
 use image::{
 	RgbaImage,
@@ -94,8 +94,8 @@ pub struct Frame {
 	pub color_indexes: Vec<u8>
 }
 
-pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> AsyncFileDialog {
-	let mut file_dialog = AsyncFileDialog::new();
+pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> FileDialog {
+	let mut file_dialog = FileDialog::new();
 
 	if use_default_filter {
 		file_dialog = file_dialog.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "png", "PNG", "gif", "GIF"]);
@@ -111,7 +111,7 @@ pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> A
 	file_dialog
 }
 
-pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, new_file_path: Option<&str>) -> AsyncFileDialog {
+pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, new_file_path: Option<&str>) -> FileDialog {
 	let file_state: State<FileState> = app_handle.state();
 
 	let mut file_name = file_state.file_title.lock().unwrap().clone();
@@ -132,7 +132,7 @@ pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, n
 		}
 	}
 
-	let mut file_dialog = AsyncFileDialog::new()
+	let mut file_dialog = FileDialog::new()
 		.set_file_name(&file_name);
 
 	if let Some(file_path) = new_file_path {
@@ -151,17 +151,14 @@ pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, n
 pub fn check_file_modified(app_handle: AppHandle, path: PathBuf, callback: FileModifiedCallback) {
 	let file_state: State<FileState> = app_handle.state();
 	if *file_state.file_is_modified.lock().unwrap() {
-		spawn(async move {
-			let confirm_reload = AsyncMessageDialog::new()
-				.set_title("File modified")
-				.set_description("Do you want to continue anyway and lose any unsaved work?")
-				.set_buttons(MessageButtons::YesNo)
-				.show()
-				.await;
-			if let MessageDialogResult::Yes = confirm_reload {
-				(callback.func)(app_handle, path);
-			}
-		});
+		let confirm_reload = MessageDialog::new()
+			.set_title("File modified")
+			.set_description("Do you want to continue anyway and lose any unsaved work?")
+			.set_buttons(MessageButtons::YesNo)
+			.show();
+		if let MessageDialogResult::Yes = confirm_reload {
+			(callback.func)(app_handle, path);
+		}
 	} else {
 		(callback.func)(app_handle, path);
 	}
@@ -193,23 +190,21 @@ pub fn activate_open_file(app_handle: AppHandle) {
 }
 
 pub fn open_file_dialog(app_handle: AppHandle) {
-	spawn(async move {
-		let file_handle = create_open_dialog(&app_handle, true)
-			.set_title("Open Sprite")
-			.pick_file()
-			.await;
-		if let Some(file_handle) = file_handle {
-			app_handle.emit("show_spinner", ()).unwrap();
-			let path = file_handle.path().to_path_buf();
-			if let Err(why) = open_file_from_path(&app_handle, &path) {
+	let file_handle = create_open_dialog(&app_handle, true)
+		.set_title("Open Sprite")
+		.pick_file();
+	if let Some(file_handle) = file_handle {
+		app_handle.emit("show_spinner", ()).unwrap();
+		spawn(async move {
+			if let Err(why) = open_file_from_path(&app_handle, &file_handle.as_path()) {
 				error_dialog(why.to_string());
 			};
 			app_handle.emit("hide_spinner", ()).unwrap();
-		}
-	});
+		});
+	}
 }
 
-pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn open_file_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let sprite_info = get_sprite_info(app_handle, file_path)?;
 
 	reset_state(app_handle);
@@ -288,25 +283,23 @@ pub fn drop_files(app_handle: &AppHandle, file_paths: &[PathBuf]) -> Result<(), 
 
 #[tauri::command]
 pub fn activate_insert_image(app_handle: AppHandle) {
-	spawn(async move {
-		let file_handles = create_open_dialog(&app_handle, true)
-			.set_title("Insert Image")
-			.pick_files()
-			.await;
-		if let Some(file_handles) = file_handles {
-			app_handle.emit("show_spinner", ()).unwrap();
+	let file_handles = create_open_dialog(&app_handle, true)
+		.set_title("Insert Image")
+		.pick_files();
+	if let Some(file_handles) = file_handles {
+		app_handle.emit("show_spinner", ()).unwrap();
+		spawn(async move {
 			for file_handle in file_handles {
-				let path = file_handle.path().to_path_buf();
-				if let Err(why) =  insert_image_from_path(&app_handle, &path) {
+				if let Err(why) =  insert_image_from_path(&app_handle, &file_handle.as_path()) {
 					error_dialog(why.to_string());
 				};
 			}
 			app_handle.emit("hide_spinner", ()).unwrap();
-		}
-	});
+		});
+	}
 }
 
-pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let sprite_info = get_sprite_info(app_handle, file_path)?;
 	add_state_to_history(app_handle);
 
@@ -347,20 +340,19 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Re
 pub fn activate_replace_frame(app_handle: AppHandle, selection_state: State<SelectionState>) {
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
 	if !selected_frames.is_empty() {
-		spawn(async move {
-			let file_handle = create_open_dialog(&app_handle, true)
-				.set_title("Replace Frame")
-				.pick_file()
-				.await;
-			if let Some(file_handle) = file_handle {
-				app_handle.emit("show_spinner", ()).unwrap();
-				let path = file_handle.path().to_path_buf();
+		let file_handle = create_open_dialog(&app_handle, true)
+			.set_title("Replace Frame")
+			.pick_file();
+		if let Some(file_handle) = file_handle {
+			app_handle.emit("show_spinner", ()).unwrap();
+			spawn(async move {
+				let path = file_handle.as_path().to_path_buf();
 				if let Err(why) =  replace_frame_from_path(&app_handle, &path) {
 					error_dialog(why.to_string());
 				};
 				app_handle.emit("hide_spinner", ()).unwrap();
-			}
-		});
+			});
+		}
 	}
 }
 
@@ -399,7 +391,7 @@ pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> R
 	Ok(())
 }
 
-pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<SpriteInfo, Box<dyn Error>> {
+pub fn get_sprite_info(app_handle: &AppHandle, file_path: &Path) -> Result<SpriteInfo, Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 
 	let file_state: State<FileState> = app_handle.state();
@@ -505,23 +497,22 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 
 #[tauri::command]
 pub fn activate_save_as(app_handle: AppHandle) {
-	spawn(async move {
-		let file_handle = create_save_dialog(&app_handle, None, None)
-			.set_title("Save As")
-			.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
-			.save_file()
-			.await;
-		if let Some(file_handle) = file_handle {
-			app_handle.emit("show_spinner", ()).unwrap();
-			if let Err(why) = save_file_to_path(&app_handle, &file_handle.path().to_path_buf()) {
+	let file_handle = create_save_dialog(&app_handle, None, None)
+		.set_title("Save As")
+		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
+		.save_file();
+	if let Some(file_handle) = file_handle {
+		app_handle.emit("show_spinner", ()).unwrap();
+		spawn(async move {
+			if let Err(why) = save_file_to_path(&app_handle, &file_handle.as_path()) {
 				error_dialog(why.to_string());
 			}
 			app_handle.emit("hide_spinner", ()).unwrap();
-		}
-	});
+		});
+	}
 }
 
-pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn save_file_to_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let extension_err = "File does not have a valid file extension (\".spr\", \".s16\", \".c16\", \".blk\")";
 	let extension = file_path.extension().ok_or(extension_err)?;
 	let extension_str = extension.to_str().ok_or(extension_err)?;
