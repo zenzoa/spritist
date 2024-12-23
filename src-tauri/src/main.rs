@@ -106,6 +106,9 @@ fn main() {
 						&MenuItem::with_id(handle, "shift_down", "Shift Down", true, Some("CmdOrCtrl+Shift+Down"))?,
 					])?,
 					&PredefinedMenuItem::separator(handle)?,
+					&CheckMenuItem::with_id(handle, "pixel_format_555", "Pixel Format 555", true, false, None::<&str>)?,
+					&CheckMenuItem::with_id(handle, "pixel_format_565", "Pixel Format 565 (Default)", true, true, None::<&str>)?,
+					&PredefinedMenuItem::separator(handle)?,
 					&MenuItem::with_id(handle, "insert_image", "Insert Image...", true, Some("CmdOrCtrl+I"))?,
 					&MenuItem::with_id(handle, "replace_frame", "Replace Frame...", true, Some("CmdOrCtrl+R"))?,
 				])?,
@@ -188,6 +191,8 @@ fn main() {
 					"shift_right" => edit::shift_selection(handle.clone(), file_state, selection_state, 1, 0),
 					"shift_up" => edit::shift_selection(handle.clone(), file_state, selection_state, 0, -1),
 					"shift_down" => edit::shift_selection(handle.clone(), file_state, selection_state, 0, 1),
+					"pixel_format_555" => file::set_pixel_format(&handle, format::PixelFormat::Format555),
+					"pixel_format_565" => file::set_pixel_format(&handle, format::PixelFormat::Format565),
 					"insert_image" => file::activate_insert_image(handle),
 					"replace_frame" => file::activate_replace_frame(handle.clone(), selection_state),
 

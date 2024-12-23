@@ -2,7 +2,7 @@ use std::error::Error;
 use bytes::{ Bytes, BytesMut, Buf, BufMut };
 use image::RgbaImage;
 
-use super::{ file_header_error, image_header_error, image_error };
+use super::{ PixelFormat, file_header_error, image_header_error, image_error };
 use crate::{
 	file::{ Frame, SpriteInfo },
 	palette::Palette
@@ -54,6 +54,7 @@ pub fn decode(contents: &[u8], palette: &Palette) -> Result<SpriteInfo, Box<dyn 
 
 	Ok(SpriteInfo{
 		frames,
+		pixel_format: PixelFormat::Format565,
 		cols: 0,
 		rows: 0,
 		read_only: false
@@ -91,6 +92,7 @@ pub fn decode_single_width(contents: &[u8], palette: &Palette) -> Result<SpriteI
 
 	Ok(SpriteInfo{
 		frames,
+		pixel_format: PixelFormat::Format565,
 		cols: 0,
 		rows: 0,
 		read_only: true
@@ -135,6 +137,7 @@ pub fn decode_double_width(contents: &[u8], palette: &Palette) -> Result<SpriteI
 
 	Ok(SpriteInfo{
 		frames,
+		pixel_format: PixelFormat::Format565,
 		cols: 0,
 		rows: 0,
 		read_only: true
@@ -160,6 +163,7 @@ pub fn decode_multi_sprite(contents: &[u8], palette: &Palette) -> Result<SpriteI
 
 	Ok(SpriteInfo{
 		frames,
+		pixel_format: PixelFormat::Format565,
 		cols: 0,
 		rows: 0,
 		read_only: true
@@ -203,6 +207,7 @@ pub fn decode_prototype(contents: &[u8], palette: &Palette) -> Result<SpriteInfo
 
 	Ok(SpriteInfo{
 		frames,
+		pixel_format: PixelFormat::Format565,
 		cols: 0,
 		rows: 0,
 		read_only: true

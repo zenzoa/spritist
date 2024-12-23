@@ -2,7 +2,14 @@ use std::error::Error;
 use bytes::{ Bytes, BytesMut, Buf, BufMut };
 use image::{ RgbaImage, Rgba };
 
-use super::{ file_header_error, image_header_error, image_error, parse_pixel_555, parse_pixel_565 };
+use super::{
+	PixelFormat,
+	file_header_error,
+	image_header_error,
+	image_error,
+	parse_pixel,
+	encode_pixel
+};
 use crate::file::{ Frame, SpriteInfo };
 
 struct FileHeader {
@@ -40,7 +47,7 @@ fn read_image_header(buffer: &mut Bytes) -> Result<ImageHeader, Box<dyn Error>> 
 	})
 }
 
-fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: u32) -> Result<RgbaImage, Box<dyn Error>> {
+fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: PixelFormat) -> Result<RgbaImage, Box<dyn Error>> {
 	let mut image = RgbaImage::new(header.width as u32, header.height as u32);
 	for (y, line_offset) in header.line_offsets.iter().enumerate() {
 		let mut buffer = Bytes::copy_from_slice(contents);
@@ -55,10 +62,7 @@ fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: u32) -> 
 				for i in 0..run_length {
 					if buffer.remaining() < 2 { return Err(image_error()); }
 					let pixel_data = buffer.get_u16_le();
-					let color = match pixel_format {
-						2 => parse_pixel_555(pixel_data),
-						_ => parse_pixel_565(pixel_data)
-					};
+					let color = parse_pixel(pixel_data, pixel_format);
 					image.put_pixel((x + i) as u32, y as u32, color);
 				}
 			} else if run_type == 0 {
@@ -76,6 +80,10 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 	let mut frames: Vec<Frame> = Vec::new();
 	let mut buffer = Bytes::copy_from_slice(contents);
 	let file_header = read_file_header(&mut buffer)?;
+	let pixel_format = match file_header.pixel_format {
+		2 => PixelFormat::Format555,
+		_ => PixelFormat::Format565
+	};
 	let mut image_headers: Vec<ImageHeader> = Vec::new();
 	for _ in 0..file_header.image_count {
 		if let Ok(image_header) = read_image_header(&mut buffer) {
@@ -83,19 +91,23 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 		}
 	}
 	for image_header in image_headers {
-		let image = read_image_data(contents, &image_header, file_header.pixel_format)?;
+		let image = read_image_data(contents, &image_header, pixel_format)?;
 		frames.push(Frame{ image, color_indexes: Vec::new() });
 	}
 	Ok(SpriteInfo{
 		frames,
+		pixel_format,
 		cols: 0,
 		rows: 0,
 		read_only: false
 	})
 }
 
-fn write_file_header(buffer: &mut BytesMut, image_count: u16) {
-	buffer.put_u32_le(3); // 565 format
+fn write_file_header(buffer: &mut BytesMut, pixel_format: PixelFormat, image_count: u16) {
+	buffer.put_u32_le(match pixel_format {
+		PixelFormat::Format555 => 2,
+		PixelFormat::Format565 => 3
+	});
 	buffer.put_u16_le(image_count);
 }
 
@@ -112,7 +124,7 @@ fn write_image_header(buffer: &mut BytesMut, width: u16, height: u16, line_offse
 	}
 }
 
-fn write_image_data(image: &RgbaImage, image_offset: u32) -> (BytesMut, Vec<u32>) {
+fn write_image_data(image: &RgbaImage, image_offset: u32, pixel_format: PixelFormat) -> (BytesMut, Vec<u32>) {
 	let mut buffer = BytesMut::new();
 	let mut line_offsets: Vec<u32> = Vec::new();
 	let mut last_line_offset = image_offset;
@@ -128,7 +140,7 @@ fn write_image_data(image: &RgbaImage, image_offset: u32) -> (BytesMut, Vec<u32>
 				// transparent pixel
 				if !color_run.is_empty() {
 					// end active color run
-					write_color_run(&mut buffer, &color_run);
+					write_color_run(&mut buffer, &color_run, pixel_format);
 					color_run.clear();
 				}
 				transparent_run += 1;
@@ -144,7 +156,7 @@ fn write_image_data(image: &RgbaImage, image_offset: u32) -> (BytesMut, Vec<u32>
 		}
 		// wrap up active run
 		if !color_run.is_empty() {
-			write_color_run(&mut buffer, &color_run);
+			write_color_run(&mut buffer, &color_run, pixel_format);
 		} else if transparent_run > 0 {
 			write_transparent_run(&mut buffer, transparent_run);
 		}
@@ -159,11 +171,11 @@ fn write_image_data(image: &RgbaImage, image_offset: u32) -> (BytesMut, Vec<u32>
 	(buffer, line_offsets)
 }
 
-fn write_color_run(buffer: &mut BytesMut, color_run: &Vec<Rgba<u8>>) {
+fn write_color_run(buffer: &mut BytesMut, color_run: &Vec<Rgba<u8>>, pixel_format: PixelFormat) {
 	let run_header = 1 | ((color_run.len() << 1) & 0xfffe);
 	buffer.put_u16_le(run_header as u16);
 	for pixel in color_run {
-		write_pixel_data(buffer, pixel[0].into(), pixel[1].into(), pixel[2].into());
+		buffer.put_u16_le(encode_pixel(pixel, pixel_format));
 	}
 }
 
@@ -172,15 +184,10 @@ fn write_transparent_run(buffer: &mut BytesMut, transparent_run: u16) {
 	buffer.put_u16_le(run_header);
 }
 
-fn write_pixel_data(buffer: &mut BytesMut, r: u16, g: u16, b: u16) {
-	let pixel_data: u16 = ((r << 8) & 0xf800) | ((g << 3) & 0x07e0) | ((b >> 3) & 0x001f);
-	buffer.put_u16_le(pixel_data);
-}
-
 pub fn encode(sprite_info: SpriteInfo) -> Result<Bytes, Box<dyn Error>> {
 	// write file header to buffer
 	let mut buffer = BytesMut::new();
-	write_file_header(&mut buffer, sprite_info.frames.len() as u16);
+	write_file_header(&mut buffer, sprite_info.pixel_format, sprite_info.frames.len() as u16);
 
 	// calculate initial offset of image data (= file header + image headers)
 	let mut image_offset = buffer.len() as u32;
@@ -193,7 +200,7 @@ pub fn encode(sprite_info: SpriteInfo) -> Result<Bytes, Box<dyn Error>> {
 	let mut image_headers_buffer = BytesMut::new();
 	let mut images_buffer = BytesMut::new();
 	for frame in sprite_info.frames {
-		let (image_buffer, line_offsets) = write_image_data(&frame.image, image_offset);
+		let (image_buffer, line_offsets) = write_image_data(&frame.image, image_offset, sprite_info.pixel_format);
 		write_image_header(&mut image_headers_buffer, frame.image.width() as u16, frame.image.height() as u16, line_offsets);
 		image_offset += image_buffer.len() as u32;
 		images_buffer.unsplit(image_buffer);

@@ -14,7 +14,7 @@ use image::ImageReader;
 
 use crate::{
 	error_dialog,
-	format::{ spr, s16, c16 },
+	format::{ PixelFormat, spr, s16, c16 },
 	view::{ view_as_bg, view_as_sprite },
 	state::{ RedrawPayload, reset_state, update_window_title },
 	file::{ FileState, Frame, SpriteInfo, open_file_from_path, create_open_dialog }
@@ -220,7 +220,7 @@ pub fn import_spritesheet(app_handle: AppHandle, file_path: String, cols: u32, r
 fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
 	let file_state: State<FileState> = app_handle.state();
 	let palette = file_state.palette.lock().unwrap().clone();
-	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
+	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = spr::encode(sprite_info, &palette)?;
 	fs::write(file_path, &data)?;
 	app_handle.emit("notify", "Exported SPR file succesfully".to_string()).unwrap();
@@ -229,7 +229,7 @@ fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &PathBuf, frames
 }
 
 fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
-	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
+	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = s16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
 	app_handle.emit("notify", "Exported S16 file succesfully".to_string()).unwrap();
@@ -238,7 +238,7 @@ fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &PathBuf, frames
 }
 
 fn encode_spritesheet_as_c16(app_handle: &AppHandle, file_path: &PathBuf, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
-	let sprite_info = SpriteInfo{ frames, cols, rows, read_only: false };
+	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = c16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
 	app_handle.emit("notify", "Exported C16 file succesfully".to_string()).unwrap();

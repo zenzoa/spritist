@@ -2,7 +2,7 @@ use std::error::Error;
 use bytes::{ Bytes, BytesMut, Buf, BufMut };
 use image::RgbaImage;
 
-use super::{ file_header_error, image_header_error, image_error, parse_pixel_565_be };
+use super::{ PixelFormat, file_header_error, image_header_error, image_error, parse_pixel_565_be };
 use crate::file::{ Frame, SpriteInfo };
 
 struct FileHeader {
@@ -68,6 +68,7 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 	}
 	Ok(SpriteInfo{
 		frames,
+		pixel_format: PixelFormat::Format565,
 		cols: 0,
 		rows: 0,
 		read_only: false

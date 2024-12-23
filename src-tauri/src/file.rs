@@ -8,6 +8,7 @@ use std::{
 
 use tauri::{ AppHandle, State, Manager, Emitter };
 use tauri::async_runtime::spawn;
+use tauri::menu::MenuItemKind;
 
 use rfd::{ AsyncFileDialog, AsyncMessageDialog, MessageButtons, MessageDialogResult };
 
@@ -29,6 +30,7 @@ use crate::{
 	selection::SelectionState,
 	history::add_state_to_history,
 	format::{
+		PixelFormat,
 		spr,
 		s16,
 		m16,
@@ -51,6 +53,7 @@ pub struct FileState {
 	pub file_is_modified: Mutex<bool>,
 	pub frames: Mutex<Vec<Frame>>,
 	pub palette: Mutex<palette::Palette>,
+	pub pixel_format: Mutex<PixelFormat>,
 	pub cols: Mutex<usize>,
 	pub rows: Mutex<usize>,
 	pub read_only: Mutex<bool>
@@ -69,6 +72,7 @@ impl FileState {
 			file_is_modified: Mutex::new(false),
 			frames: Mutex::new(Vec::new()),
 			palette: Mutex::new(palette::original_palette()),
+			pixel_format: Mutex::new(PixelFormat::Format565),
 			cols: Mutex::new(0),
 			rows: Mutex::new(0),
 			read_only: Mutex::new(false)
@@ -78,6 +82,7 @@ impl FileState {
 
 pub struct SpriteInfo {
 	pub frames: Vec<Frame>,
+	pub pixel_format: PixelFormat,
 	pub cols: u16,
 	pub rows: u16,
 	pub read_only: bool
@@ -175,6 +180,8 @@ pub fn complete_new_file(app_handle: AppHandle) {
 	*file_state.file_is_open.lock().unwrap() = true;
 
 	update_window_title(&app_handle);
+	update_pixel_format_menu_items(&app_handle);
+
 	redraw(&app_handle);
 }
 
@@ -216,6 +223,7 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Resul
 	*file_state.file_is_open.lock().unwrap() = true;
 	*file_state.read_only.lock().unwrap() = sprite_info.read_only;
 	*file_state.frames.lock().unwrap() = sprite_info.frames;
+	*file_state.pixel_format.lock().unwrap() = sprite_info.pixel_format;
 	*file_state.cols.lock().unwrap() = sprite_info.cols.into();
 	*file_state.rows.lock().unwrap() = sprite_info.rows.into();
 
@@ -247,6 +255,7 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Resul
 	}
 
 	update_window_title(app_handle);
+	update_pixel_format_menu_items(app_handle);
 
 	app_handle.emit("redraw", RedrawPayload{
 		frame_count: file_state.frames.lock().unwrap().len(),
@@ -442,6 +451,7 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<Sp
 			let frame = Frame{ image, color_indexes: Vec::new() };
 			Ok(SpriteInfo{
 				frames: vec![frame],
+				pixel_format: PixelFormat::Format565,
 				cols: 0,
 				rows: 0,
 				read_only: true
@@ -456,6 +466,7 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &PathBuf) -> Result<Sp
 			}
 			Ok(SpriteInfo{
 				frames,
+				pixel_format: PixelFormat::Format565,
 				cols: 0,
 				rows: 0,
 				read_only: true
@@ -519,6 +530,7 @@ pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<
 	let palette = file_state.palette.lock().unwrap().clone();
 	let sprite_info = SpriteInfo{
 		frames: file_state.frames.lock().unwrap().clone(),
+		pixel_format: file_state.pixel_format.lock().unwrap().clone(),
 		cols: *file_state.cols.lock().unwrap() as u16,
 		rows: *file_state.rows.lock().unwrap() as u16,
 		read_only: false
@@ -554,4 +566,25 @@ pub fn save_file_to_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<
 pub fn set_bg_size(file_state: State<FileState>, cols: usize, rows: usize) {
 	*file_state.cols.lock().unwrap() = cols;
 	*file_state.rows.lock().unwrap() = rows;
+}
+
+pub fn set_pixel_format(app_handle: &AppHandle, new_pixel_format: PixelFormat) {
+	let file_state: State<FileState> = app_handle.state();
+	*file_state.pixel_format.lock().unwrap() = new_pixel_format;
+	update_pixel_format_menu_items(app_handle);
+}
+
+fn update_pixel_format_menu_items(app_handle: &AppHandle) {
+	let file_state: State<FileState> = app_handle.state();
+	let pixel_format = file_state.pixel_format.lock().unwrap().clone();
+	if let Some(menu) = app_handle.menu() {
+		if let Some(MenuItemKind::Submenu(edit_menu)) = menu.get("edit") {
+			if let Some(MenuItemKind::Check(menu_item)) = edit_menu.get("pixel_format_555") {
+				menu_item.set_checked(pixel_format == PixelFormat::Format555).unwrap();
+			};
+			if let Some(MenuItemKind::Check(menu_item)) = edit_menu.get("pixel_format_565") {
+				menu_item.set_checked(pixel_format == PixelFormat::Format565).unwrap();
+			};
+		}
+	}
 }

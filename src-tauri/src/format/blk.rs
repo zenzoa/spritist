@@ -2,11 +2,18 @@ use std::error::Error;
 use bytes::{ Bytes, BytesMut, Buf, BufMut };
 use image::RgbaImage;
 
-use super::{ file_header_error, image_header_error, image_error, parse_pixel_555, parse_pixel_565 };
+use super::{
+	PixelFormat,
+	file_header_error,
+	image_header_error,
+	image_error,
+	parse_pixel,
+	encode_pixel
+};
 use crate::file::{ Frame, SpriteInfo };
 
 struct FileHeader {
-	pixel_format: u32, // 2 = 555, 3 = 565
+	pixel_format: u32, // 0 = 555, 1 = 565
 	cols: u16,
 	rows: u16,
 	image_count: u16
@@ -43,7 +50,7 @@ fn read_image_header(buffer: &mut Bytes) -> Result<ImageHeader, Box<dyn Error>> 
 	})
 }
 
-fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: u32) -> Result<RgbaImage, Box<dyn Error>> {
+fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: PixelFormat) -> Result<RgbaImage, Box<dyn Error>> {
 	let mut image = RgbaImage::new(header.width as u32, header.height as u32);
 	let mut buffer = Bytes::copy_from_slice(contents);
 	buffer.advance(header.first_line_offset as usize);
@@ -51,10 +58,7 @@ fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: u32) -> 
 		for x in 0..image.width() {
 			if buffer.remaining() < 2 { return Err(image_error()); }
 			let pixel_data = buffer.get_u16_le();
-			let color = match pixel_format {
-				2 => parse_pixel_555(pixel_data),
-				_ => parse_pixel_565(pixel_data)
-			};
+			let color = parse_pixel(pixel_data, pixel_format);
 			image.put_pixel(x, y, color);
 		}
 	}
@@ -65,6 +69,10 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 	let mut frames: Vec<Frame> = Vec::new();
 	let mut buffer = Bytes::copy_from_slice(contents);
 	let file_header = read_file_header(&mut buffer)?;
+	let pixel_format = match file_header.pixel_format {
+		0 => PixelFormat::Format555,
+		_ => PixelFormat::Format565
+	};
 	let mut image_headers: Vec<ImageHeader> = Vec::new();
 	for _ in 0..file_header.image_count {
 		if let Ok(image_header) = read_image_header(&mut buffer) {
@@ -72,19 +80,23 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 		}
 	}
 	for image_header in image_headers {
-		let image = read_image_data(contents, &image_header, file_header.pixel_format)?;
+		let image = read_image_data(contents, &image_header, pixel_format)?;
 		frames.push(Frame{ image, color_indexes: Vec::new() });
 	}
 	Ok(SpriteInfo{
 		frames,
+		pixel_format,
 		cols: file_header.cols,
 		rows: file_header.rows,
 		read_only: false
 	})
 }
 
-fn write_file_header(buffer: &mut BytesMut, cols: u16, rows: u16) {
-	buffer.put_u32_le(3); // 565 format
+fn write_file_header(buffer: &mut BytesMut, pixel_format: PixelFormat, cols: u16, rows: u16) {
+	buffer.put_u32_le(match pixel_format {
+		PixelFormat::Format555 => 0,
+		PixelFormat::Format565 => 1
+	});
 	buffer.put_u16_le(cols);
 	buffer.put_u16_le(rows);
 	buffer.put_u16_le(cols * rows);
@@ -96,20 +108,15 @@ fn write_image_header(buffer: &mut BytesMut, first_line_offset: u32) {
 	buffer.put_u16_le(128);
 }
 
-fn write_image_data(image: &RgbaImage) -> BytesMut {
+fn write_image_data(image: &RgbaImage, pixel_format: PixelFormat) -> BytesMut {
 	let mut buffer = BytesMut::new();
 	for y in 0..128 {
 		for x in 0..128 {
 			let pixel = image.get_pixel(x, y);
-			write_pixel_data(&mut buffer, pixel[0].into(), pixel[1].into(), pixel[2].into());
+			buffer.put_u16_le(encode_pixel(pixel, pixel_format));
 		}
 	}
 	buffer
-}
-
-fn write_pixel_data(buffer: &mut BytesMut, r: u16, g: u16, b: u16) {
-	let pixel_data: u16 = ((r << 8) & 0xf800) | ((g << 3) & 0x07e0) | ((b >> 3) & 0x001f);
-	buffer.put_u16_le(pixel_data);
 }
 
 pub fn encode(sprite_info: SpriteInfo) -> Result<Bytes, Box<dyn Error>> {
@@ -119,7 +126,7 @@ pub fn encode(sprite_info: SpriteInfo) -> Result<Bytes, Box<dyn Error>> {
 
 	// write file header to buffer
 	let mut buffer = BytesMut::new();
-	write_file_header(&mut buffer, sprite_info.cols, sprite_info.rows);
+	write_file_header(&mut buffer, sprite_info.pixel_format, sprite_info.cols, sprite_info.rows);
 
 	// calculate initial offset of image data (= file header + image headers)
 	let size_of_headers = 10 + (8 * sprite_info.frames.len());
@@ -133,7 +140,7 @@ pub fn encode(sprite_info: SpriteInfo) -> Result<Bytes, Box<dyn Error>> {
 		}
 		let first_line_offset = size_of_headers + (size_of_image * i);
 		write_image_header(&mut buffer, first_line_offset as u32);
-		let image_buffer = write_image_data(&frame.image);
+		let image_buffer = write_image_data(&frame.image, sprite_info.pixel_format);
 		images_buffer.unsplit(image_buffer);
 	}
 

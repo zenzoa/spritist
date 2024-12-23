@@ -4,7 +4,7 @@ use std::error::Error;
 use bytes::{ Bytes, Buf };
 use image::{ Rgba, RgbaImage };
 
-use super::image_error;
+use super::{ PixelFormat, image_error };
 use crate::file::{ Frame, SpriteInfo };
 
 pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
@@ -73,6 +73,7 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 
 	Ok(SpriteInfo{
 		frames,
+		pixel_format: PixelFormat::Format565,
 		cols: 0,
 		rows: 0,
 		read_only: false

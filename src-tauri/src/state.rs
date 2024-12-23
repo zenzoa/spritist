@@ -5,7 +5,8 @@ use crate::{
 	file::FileState,
 	view::ViewState,
 	selection::SelectionState,
-	history::HistoryState
+	history::HistoryState,
+	format::PixelFormat
 };
 
 #[derive(Clone, serde::Serialize)]
@@ -24,6 +25,7 @@ pub fn reset_state(app_handle: &AppHandle) {
 	*file_state.file_is_modified.lock().unwrap() = false;
 	*file_state.frames.lock().unwrap() = Vec::new();
 	*file_state.palette.lock().unwrap() = palette::original_palette();
+	*file_state.pixel_format.lock().unwrap() = PixelFormat::Format565;
 	*file_state.cols.lock().unwrap() = 0;
 	*file_state.rows.lock().unwrap() = 0;
 	*file_state.read_only.lock().unwrap() = false;
