@@ -16,6 +16,7 @@ use image::{
 	RgbaImage,
 	AnimationDecoder,
 	ImageReader,
+	ImageFormat,
 	codecs::gif::GifDecoder
 };
 
@@ -98,7 +99,7 @@ pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> F
 	let mut file_dialog = FileDialog::new();
 
 	if use_default_filter {
-		file_dialog = file_dialog.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "png", "PNG", "gif", "GIF"]);
+		file_dialog = file_dialog.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "png", "PNG", "gif", "GIF", "bmp", "BMP"]);
 	}
 
 	let file_state: State<FileState> = app_handle.state();
@@ -439,9 +440,20 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &Path) -> Result<Sprit
 			photo_album::decode(&bytes, &palette)
 		},
 		"png" => {
-			let image = ImageReader::new(Cursor::new(bytes)).with_guessed_format()?.decode()?.to_rgba8();
-			let frame = Frame{ image, color_indexes: Vec::new() };
-			Ok(SpriteInfo{
+			let image = ImageReader::with_format(Cursor::new(bytes), ImageFormat::Png).decode()?.to_rgba8();
+			let frame = Frame { image, color_indexes: Vec::new() };
+			Ok(SpriteInfo {
+				frames: vec![frame],
+				pixel_format: PixelFormat::Format565,
+				cols: 0,
+				rows: 0,
+				read_only: true
+			})
+		},
+		"bmp" => {
+			let image = ImageReader::with_format(Cursor::new(bytes), ImageFormat::Bmp).decode()?.to_rgba8();
+			let frame = Frame { image, color_indexes: Vec::new() };
+			Ok(SpriteInfo {
 				frames: vec![frame],
 				pixel_format: PixelFormat::Format565,
 				cols: 0,
@@ -454,16 +466,16 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &Path) -> Result<Sprit
 			let mut frames: Vec<Frame> = Vec::new();
 			for gif_frame in gif_frames {
 				let image = gif_frame?.into_buffer();
-				frames.push(Frame{ image, color_indexes: Vec::new() });
+				frames.push(Frame { image, color_indexes: Vec::new() });
 			}
-			Ok(SpriteInfo{
+			Ok(SpriteInfo {
 				frames,
 				pixel_format: PixelFormat::Format565,
 				cols: 0,
 				rows: 0,
 				read_only: true
 			})
-		}
+		},
 		_ => Err(extension_err.into())
 	}
 }

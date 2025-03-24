@@ -8,8 +8,7 @@ use tauri::{ Manager, AppHandle, State, Emitter };
 
 use rfd::{ MessageDialog, MessageButtons, MessageDialogResult };
 
-use image::{ Rgba, RgbaImage };
-use image::ImageReader;
+use image::{ Rgba, RgbaImage, ImageReader };
 
 use crate::{
 	error_dialog,
@@ -19,8 +18,10 @@ use crate::{
 	file::{ FileState, Frame, SpriteInfo, open_file_from_path, create_open_dialog }
 };
 
-struct Callback {
-	func: fn(&AppHandle, &Path) -> Result<(), Box<dyn Error>>
+struct SpritesheetFrame {
+	x: u32,
+	width: u32,
+	pixels: Vec<Rgba<u8>>
 }
 
 struct SpritesheetCallback {
@@ -28,17 +29,25 @@ struct SpritesheetCallback {
 }
 
 #[tauri::command]
-pub fn activate_import_png_as_blk(app_handle: AppHandle) {
-	activate_import(app_handle, "Import PNG as BLK".to_string(), Callback{ func: import_png_as_blk_from_path });
+pub fn activate_import_png_as_blk(handle: AppHandle) {
+	if let Some(file_path) = activate_import(&handle, "Import PNG as BLK".to_string()) {
+		if let Err(why) = import_png_as_blk_from_path(&handle, &file_path) {
+			error_dialog(why.to_string());
+		}
+	}
 }
 
 #[tauri::command]
-pub fn activate_import_spritesheet(app_handle: AppHandle) {
-	activate_import(app_handle, "Import Spritesheet".to_string(), Callback{ func: open_import_spritesheet_dialog });
+pub fn activate_import_spritesheet(handle: AppHandle) {
+	if let Some(file_path) = activate_import(&handle, "Import Spritesheet".to_string()) {
+		if let Err(why) = open_import_spritesheet_dialog(&handle, &file_path) {
+			error_dialog(why.to_string());
+		}
+	}
 }
 
-fn activate_import(app_handle: AppHandle, title: String, callback: Callback) {
-	let file_state: State<FileState> = app_handle.state();
+fn activate_import(handle: &AppHandle, title: String) -> Option<PathBuf> {
+	let file_state: State<FileState> = handle.state();
 	if *file_state.file_is_modified.lock().unwrap() {
 		let confirm_reload = MessageDialog::new()
 			.set_title("File modified")
@@ -46,26 +55,22 @@ fn activate_import(app_handle: AppHandle, title: String, callback: Callback) {
 			.set_buttons(MessageButtons::YesNo)
 			.show();
 		if let MessageDialogResult::Yes = confirm_reload {
-			open_png_dialog(app_handle, title, callback);
+			return choose_image_file(&handle, &title);
 		}
 	} else {
-		open_png_dialog(app_handle, title, callback);
+		return choose_image_file(&handle, &title);
 	}
+	None
 }
 
-fn open_png_dialog(app_handle: AppHandle, title: String, callback: Callback) {
-	let file_handle = create_open_dialog(&app_handle, false)
-		.set_title(&title)
-		.add_filter("PNG Images", &["png", "PNG"])
+fn choose_image_file(handle: &AppHandle, title: &str) -> Option<PathBuf> {
+	return create_open_dialog(handle, false)
+		.set_title(title)
+		.add_filter("Images", &["png", "PNG", "bmp", "BMP"])
 		.pick_file();
-	if let Some(file_handle) = file_handle {
-		if let Err(why) = (callback.func)(&app_handle, &file_handle.as_path()) {
-			error_dialog(why.to_string());
-		};
-	}
 }
 
-fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+fn import_png_as_blk_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let png_image = get_image(file_path)?;
 
 	let cols = (png_image.width() as f32 / 128.0).ceil() as u32;
@@ -96,7 +101,7 @@ fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &Path) -> Resu
 		}
 	}
 
-	reset_state(app_handle);
+	reset_state(handle);
 
 	let blk_file_path = file_path.with_extension("blk");
 	let blk_file_title = match blk_file_path.file_name() {
@@ -104,7 +109,7 @@ fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &Path) -> Resu
 		None => "".to_string()
 	};
 
-	let file_state: State<FileState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
 	*file_state.file_title.lock().unwrap() = blk_file_title;
 	*file_state.file_path.lock().unwrap() = Some(blk_file_path);
 	*file_state.file_is_modified.lock().unwrap() = true;
@@ -113,11 +118,11 @@ fn import_png_as_blk_from_path(app_handle: &AppHandle, file_path: &Path) -> Resu
 	*file_state.cols.lock().unwrap() = cols as usize;
 	*file_state.rows.lock().unwrap() = rows as usize;
 
-	view_as_bg(app_handle.clone());
+	view_as_bg(handle.clone());
 
-	update_window_title(app_handle);
+	update_window_title(handle);
 
-	app_handle.emit("redraw", RedrawPayload{
+	handle.emit("redraw", RedrawPayload{
 		frame_count: file_state.frames.lock().unwrap().len(),
 		selected_frames: Vec::new(),
 		cols: *file_state.cols.lock().unwrap(),
@@ -134,9 +139,9 @@ struct SpritesheetPayload {
 	height: u32
 }
 
-fn open_import_spritesheet_dialog(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+fn open_import_spritesheet_dialog(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let png_image = get_image(file_path)?;
-	app_handle.emit("import_spritesheet", SpritesheetPayload{
+	handle.emit("import_spritesheet", SpritesheetPayload{
 		file_path: file_path.to_str().ok_or("Invalid file path. Contains non-unicode characters.")?.to_string(),
 		width: png_image.width(),
 		height: png_image.height()
@@ -174,11 +179,11 @@ fn import_spritesheet_as_frames(file_path: &Path, cols: u32, rows: u32) -> Resul
 }
 
 #[tauri::command]
-pub fn import_spritesheet(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
+pub fn import_spritesheet(handle: AppHandle, file_path: String, cols: u32, rows: u32) {
 	let file_path = PathBuf::from(file_path);
 	match import_spritesheet_as_frames(&file_path, cols, rows) {
 		Ok(frames) => {
-			reset_state(&app_handle);
+			reset_state(&handle);
 
 			let c16_file_path = file_path.with_extension("c16");
 			let c16_file_title = match c16_file_path.file_name() {
@@ -186,18 +191,18 @@ pub fn import_spritesheet(app_handle: AppHandle, file_path: String, cols: u32, r
 				None => "".to_string()
 			};
 
-			let file_state: State<FileState> = app_handle.state();
+			let file_state: State<FileState> = handle.state();
 			*file_state.file_title.lock().unwrap() = c16_file_title;
 			*file_state.file_path.lock().unwrap() = Some(c16_file_path);
 			*file_state.file_is_modified.lock().unwrap() = true;
 			*file_state.file_is_open.lock().unwrap() = true;
 			*file_state.frames.lock().unwrap() = frames;
 
-			view_as_sprite(app_handle.clone());
+			view_as_sprite(handle.clone());
 
-			update_window_title(&app_handle);
+			update_window_title(&handle);
 
-			app_handle.emit("redraw", RedrawPayload{
+			handle.emit("redraw", RedrawPayload{
 				frame_count: file_state.frames.lock().unwrap().len(),
 				selected_frames: Vec::new(),
 				cols: *file_state.cols.lock().unwrap(),
@@ -209,36 +214,136 @@ pub fn import_spritesheet(app_handle: AppHandle, file_path: String, cols: u32, r
 	}
 }
 
-fn encode_spritesheet_as_spr(app_handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
-	let file_state: State<FileState> = app_handle.state();
+#[tauri::command]
+pub fn import_spritebuilder_spritesheet(handle: AppHandle, file_path: String) {
+	let file_path = Path::new(&file_path);
+
+	if let Ok(spritesheet) = get_image(&file_path) {
+		let divider_color = spritesheet.get_pixel(0, 0);
+		let mut y = 0;
+
+		let mut frames: Vec<SpritesheetFrame> = Vec::new();
+
+		loop {
+			let mut frame_row: Vec<SpritesheetFrame> = Vec::new();
+			let mut current_pixels: Vec<Rgba<u8>> = Vec::new();
+			for x in 0..spritesheet.width() {
+				let pixel = spritesheet.get_pixel(x, y);
+				if pixel == divider_color {
+					if !current_pixels.is_empty() {
+						let width = current_pixels.len() as u32;
+						let new_frame = SpritesheetFrame {
+							x: x - width,
+							width,
+							pixels: current_pixels.clone()
+						};
+						frame_row.push(new_frame);
+						current_pixels = Vec::new();
+					}
+				} else {
+					current_pixels.push(pixel.clone());
+				}
+			}
+
+			let mut last_y = y;
+			for frame in frame_row.iter_mut() {
+				for frame_y in y..spritesheet.height() {
+					let mut divider_row = true;
+					let mut pixel_row = Vec::new();
+					for frame_x in frame.x..(frame.x + frame.width) {
+						let pixel = spritesheet.get_pixel(frame_x, frame_y);
+						pixel_row.push(pixel.clone());
+						if pixel != divider_color {
+							divider_row = false;
+						}
+					}
+					if frame_y > last_y {
+						last_y = frame_y;
+					}
+					if divider_row {
+						break;
+					} else {
+						frame.pixels.extend(pixel_row);
+					}
+				}
+			}
+			frames.extend(frame_row);
+			y = last_y + 1;
+			if y >= spritesheet.height() {
+				break;
+			}
+		}
+
+		let frame_images: Vec<Frame> = frames.iter().map(|frame| {
+			let width = frame.width;
+			let height = frame.pixels.len() as u32 / width;
+			let mut image = RgbaImage::new(width, height);
+			for (i, pixel) in frame.pixels.iter().enumerate() {
+				let x = i as u32 % width;
+				let y = i as u32 / width;
+				image.put_pixel(x, y, *pixel);
+			}
+			Frame { image, color_indexes: Vec::new() }
+		}).collect();
+
+		reset_state(&handle);
+
+		let c16_file_path = file_path.with_extension("c16");
+		let c16_file_title = match c16_file_path.file_name() {
+			Some(file_name) => file_name.to_string_lossy().into_owned(),
+			None => "".to_string()
+		};
+
+		let file_state: State<FileState> = handle.state();
+		*file_state.file_title.lock().unwrap() = c16_file_title;
+		*file_state.file_path.lock().unwrap() = Some(c16_file_path);
+		*file_state.file_is_modified.lock().unwrap() = true;
+		*file_state.file_is_open.lock().unwrap() = true;
+		*file_state.frames.lock().unwrap() = frame_images;
+
+		view_as_sprite(handle.clone());
+
+		update_window_title(&handle);
+
+		handle.emit("redraw", RedrawPayload{
+			frame_count: file_state.frames.lock().unwrap().len(),
+			selected_frames: Vec::new(),
+			cols: *file_state.cols.lock().unwrap(),
+			rows: *file_state.rows.lock().unwrap(),
+		}).unwrap();
+	}
+}
+
+fn encode_spritesheet_as_spr(handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+	let file_state: State<FileState> = handle.state();
 	let palette = file_state.palette.lock().unwrap().clone();
 	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = spr::encode(sprite_info, &palette)?;
 	fs::write(file_path, &data)?;
-	app_handle.emit("notify", "Exported SPR file succesfully".to_string()).unwrap();
-	open_file_from_path(app_handle, file_path).unwrap();
+	handle.emit("notify", "Exported SPR file succesfully".to_string()).unwrap();
+	open_file_from_path(handle, file_path).unwrap();
 	Ok(())
 }
 
-fn encode_spritesheet_as_s16(app_handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+fn encode_spritesheet_as_s16(handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
 	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = s16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
-	app_handle.emit("notify", "Exported S16 file succesfully".to_string()).unwrap();
-	open_file_from_path(app_handle, file_path).unwrap();
+	handle.emit("notify", "Exported S16 file succesfully".to_string()).unwrap();
+	open_file_from_path(handle, file_path).unwrap();
 	Ok(())
 }
 
-fn encode_spritesheet_as_c16(app_handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
+fn encode_spritesheet_as_c16(handle: &AppHandle, file_path: &Path, frames: Vec<Frame>, cols: u16, rows: u16) -> Result<(), Box<dyn Error>>{
 	let sprite_info = SpriteInfo{ frames, pixel_format: PixelFormat::Format565, cols, rows, read_only: false };
 	let data = c16::encode(sprite_info)?;
 	fs::write(file_path, &data)?;
-	app_handle.emit("notify", "Exported C16 file succesfully".to_string()).unwrap();
-	open_file_from_path(app_handle, file_path).unwrap();
+	handle.emit("notify", "Exported C16 file succesfully".to_string()).unwrap();
+	open_file_from_path(handle, file_path).unwrap();
 	Ok(())
 }
 
-fn import_spritesheet_for_export(app_handle: AppHandle, file_path: String, cols: u32, rows: u32, extension: &str, callback: SpritesheetCallback) {
+fn import_spritesheet_for_export(handle: AppHandle, file_path: String, cols: u32, rows: u32, extension: &str, callback: SpritesheetCallback) {
 	let file_path = PathBuf::from(file_path);
 	match import_spritesheet_as_frames(&file_path, cols, rows) {
 		Ok(frames) => {
@@ -251,11 +356,11 @@ fn import_spritesheet_for_export(app_handle: AppHandle, file_path: String, cols:
 					.show();
 
 				if let MessageDialogResult::Yes = confirm_overwrite {
-					if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
+					if let Err(why) = (callback.func)(&handle, &new_path, frames, cols as u16, rows as u16) {
 						error_dialog(why.to_string());
 					}
 				}
-			} else if let Err(why) = (callback.func)(&app_handle, &new_path, frames, cols as u16, rows as u16) {
+			} else if let Err(why) = (callback.func)(&handle, &new_path, frames, cols as u16, rows as u16) {
 				error_dialog(why.to_string());
 			}
 		}
@@ -264,18 +369,18 @@ fn import_spritesheet_for_export(app_handle: AppHandle, file_path: String, cols:
 }
 
 #[tauri::command]
-pub fn import_spritesheet_export_spr(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
-	import_spritesheet_for_export(app_handle, file_path, cols, rows, "spr", SpritesheetCallback{ func: encode_spritesheet_as_spr });
+pub fn import_spritesheet_export_spr(handle: AppHandle, file_path: String, cols: u32, rows: u32) {
+	import_spritesheet_for_export(handle, file_path, cols, rows, "spr", SpritesheetCallback{ func: encode_spritesheet_as_spr });
 }
 
 #[tauri::command]
-pub fn import_spritesheet_export_s16(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
-	import_spritesheet_for_export(app_handle, file_path, cols, rows, "s16", SpritesheetCallback{ func: encode_spritesheet_as_s16 });
+pub fn import_spritesheet_export_s16(handle: AppHandle, file_path: String, cols: u32, rows: u32) {
+	import_spritesheet_for_export(handle, file_path, cols, rows, "s16", SpritesheetCallback{ func: encode_spritesheet_as_s16 });
 }
 
 #[tauri::command]
-pub fn import_spritesheet_export_c16(app_handle: AppHandle, file_path: String, cols: u32, rows: u32) {
-	import_spritesheet_for_export(app_handle, file_path, cols, rows, "c16", SpritesheetCallback{ func: encode_spritesheet_as_c16 });
+pub fn import_spritesheet_export_c16(handle: AppHandle, file_path: String, cols: u32, rows: u32) {
+	import_spritesheet_for_export(handle, file_path, cols, rows, "c16", SpritesheetCallback{ func: encode_spritesheet_as_c16 });
 }
 
 fn get_image(file_path: &Path) -> Result<RgbaImage, Box<dyn Error>> {

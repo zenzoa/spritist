@@ -22,9 +22,8 @@ use tauri::menu::{
 	PredefinedMenuItem,
 	MenuId
 };
-use tauri::async_runtime::spawn;
 
-use rfd::{ AsyncMessageDialog, MessageButtons };
+use rfd::{ MessageDialog, MessageButtons };
 
 use image::ImageFormat;
 
@@ -283,6 +282,7 @@ fn main() {
 			import::activate_import_png_as_blk,
 			import::activate_import_spritesheet,
 			import::import_spritesheet,
+			import::import_spritebuilder_spritesheet,
 			import::import_spritesheet_export_spr,
 			import::import_spritesheet_export_s16,
 			import::import_spritesheet_export_c16,
@@ -300,7 +300,7 @@ fn main() {
 
 		.register_uri_scheme_protocol("getframe", |context, request| {
 			let handle = context.app_handle();
-			
+
 			let not_found = http::Response::builder().body(Vec::new()).unwrap();
 
 			let uri = request.uri().path();
@@ -347,12 +347,9 @@ fn try_quit(app_handle: AppHandle) {
 
 #[tauri::command]
 fn error_dialog(error_message: String) {
-	spawn(async move {
-		AsyncMessageDialog::new()
-			.set_title("Error")
-			.set_description(error_message)
-			.set_buttons(MessageButtons::Ok)
-			.show()
-			.await;
-	});
+	MessageDialog::new()
+		.set_title("Error")
+		.set_description(error_message)
+		.set_buttons(MessageButtons::Ok)
+		.show();
 }

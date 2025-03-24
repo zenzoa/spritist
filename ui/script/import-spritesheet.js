@@ -1,6 +1,7 @@
 class ImportSpritesheet {
 	static cols = 10
 	static rows = 10
+	static lastCutStyle = 'cut-manual'
 	static lastButtonId = 'import-spritesheet-confirm-button'
 
 	static isOpen() {
@@ -22,6 +23,10 @@ class ImportSpritesheet {
 	static setup() {
 		const pathInput = document.getElementById('import-spritesheet-path')
 
+		const cutStyleAuto = document.getElementById('import-spritesheet-cut-style-auto')
+		const cutStyleManual = document.getElementById('import-spritesheet-cut-style-manual')
+		const cutManualInfo = document.getElementById('import-spritesheet-cut-manual-info')
+
 		const widthInput = document.getElementById('import-spritesheet-width')
 		const heightInput = document.getElementById('import-spritesheet-height')
 
@@ -37,12 +42,13 @@ class ImportSpritesheet {
 
 		const confirmButton = document.getElementById('import-spritesheet-confirm-button')
 
-		document.getElementById('import-spritesheet-close-button').addEventListener('click', () => {
-			ImportSpritesheet.close()
-		})
-		document.getElementById('import-spritesheet-cancel-button').addEventListener('click', () => {
-			ImportSpritesheet.close()
-		})
+		document.getElementById('import-spritesheet-close-button')
+			.addEventListener('click', ImportSpritesheet.close)
+		document.getElementById('import-spritesheet-cancel-button')
+			.addEventListener('click', ImportSpritesheet.close)
+
+		cutStyleAuto.addEventListener('click', () => update(false))
+		cutStyleManual.addEventListener('click', () => update(false))
 
 		tileWidthInput.addEventListener('input', () => update(true))
 		tileWidthInput.addEventListener('click', () => update(true))
@@ -56,9 +62,13 @@ class ImportSpritesheet {
 
 		const onConfirm = (lastButtonId, tauriAction) => {
 			const filePath = pathInput.value
-			const cols = parseInt(colsInput.value)
-			const rows = parseInt(rowsInput.value)
-			tauri_invoke('import_spritesheet' + tauriAction, { filePath, cols, rows })
+			if (cutStyleAuto.checked) {
+				tauri_invoke('import_spritebuilder_spritesheet', { filePath })
+			} else {
+				const cols = parseInt(colsInput.value)
+				const rows = parseInt(rowsInput.value)
+				tauri_invoke('import_spritesheet' + tauriAction, { filePath, cols, rows })
+			}
 			ImportSpritesheet.lastButtonId = 'import-spritesheet-' + lastButtonId + '-button'
 			ImportSpritesheet.close()
 		}
@@ -81,6 +91,11 @@ class ImportSpritesheet {
 
 		tauri_listen('import_spritesheet', (event) => {
 			pathInput.value = event.payload.file_path
+			if (ImportSpritesheet.lastCutStyle === 'cut-auto') {
+				cutStyleAuto.checked = true
+			} else {
+				cutStyleManual.checked = true
+			}
 			widthInput.value = event.payload.width
 			heightInput.value = event.payload.height
 			tileWidthInput.value = event.payload.width
@@ -100,51 +115,60 @@ class ImportSpritesheet {
 			let cols = parseInt(colsInput.value)
 			let rows = parseInt(rowsInput.value)
 
-			if (changedTileSize && !isNaN(tileWidth) && !isNaN(tileHeight)) {
-				cols = width / tileWidth
-				rows = height / tileHeight
-				colsInput.value = Number.isInteger(cols) ? cols : Number(cols).toFixed(2)
-				rowsInput.value = Number.isInteger(rows) ? rows : Number(rows).toFixed(2)
-			} else if (!changedTileSize && !isNaN(cols) && !isNaN(rows)) {
-				tileWidth = width / cols
-				tileHeight = height / rows
-				tileWidthInput.value = Number.isInteger(tileWidth) ? tileWidth : Number(tileWidth).toFixed(2)
-				tileHeightInput.value = Number.isInteger(tileHeight) ? tileHeight : Number(tileHeight).toFixed(2)
-			}
-
 			let isError = false
 
-			if (Number.isInteger(tileWidth)) {
-				tileWidthInput.classList.remove('error')
+			if (cutStyleAuto.checked) {
+				ImportSpritesheet.lastCutStyle = 'cut-auto'
+				cutManualInfo.classList.add('hidden')
+
 			} else {
-				tileWidthInput.classList.add('error')
-				isError = true
+				ImportSpritesheet.lastCutStyle = 'cut-manual'
+				cutManualInfo.classList.remove('hidden')
+
+				if (changedTileSize && !isNaN(tileWidth) && !isNaN(tileHeight)) {
+					cols = width / tileWidth
+					rows = height / tileHeight
+					colsInput.value = Number.isInteger(cols) ? cols : Number(cols).toFixed(2)
+					rowsInput.value = Number.isInteger(rows) ? rows : Number(rows).toFixed(2)
+				} else if (!changedTileSize && !isNaN(cols) && !isNaN(rows)) {
+					tileWidth = width / cols
+					tileHeight = height / rows
+					tileWidthInput.value = Number.isInteger(tileWidth) ? tileWidth : Number(tileWidth).toFixed(2)
+					tileHeightInput.value = Number.isInteger(tileHeight) ? tileHeight : Number(tileHeight).toFixed(2)
+				}
+
+				if (Number.isInteger(tileWidth)) {
+					tileWidthInput.classList.remove('error')
+				} else {
+					tileWidthInput.classList.add('error')
+					isError = true
+				}
+
+				if (Number.isInteger(tileHeight)) {
+					tileHeightInput.classList.remove('error')
+				} else {
+					tileHeightInput.classList.add('error')
+					isError = true
+				}
+
+				if (Number.isInteger(cols)) {
+					ImportSpritesheet.cols = cols
+					colsInput.classList.remove('error')
+				} else {
+					colsInput.classList.add('error')
+					isError = true
+				}
+
+				if (Number.isInteger(rows)) {
+					ImportSpritesheet.rows = rows
+					rowsInput.classList.remove('error')
+				} else {
+					rowsInput.classList.add('error')
+					isError = true
+				}
 			}
 
-			if (Number.isInteger(tileHeight)) {
-				tileHeightInput.classList.remove('error')
-			} else {
-				tileHeightInput.classList.add('error')
-				isError = true
-			}
-
-			if (Number.isInteger(cols)) {
-				ImportSpritesheet.cols = cols
-				colsInput.classList.remove('error')
-			} else {
-				colsInput.classList.add('error')
-				isError = true
-			}
-
-			if (Number.isInteger(rows)) {
-				ImportSpritesheet.rows = rows
-				rowsInput.classList.remove('error')
-			} else {
-				rowsInput.classList.add('error')
-				isError = true
-			}
-
-			if (!isError && width === tileWidth * cols && height === tileHeight * rows) {
+			if (cutStyleAuto.checked || (!isError && width === tileWidth * cols && height === tileHeight * rows)) {
 				confirmButton.innerText = 'Import'
 				confirmButton.removeAttribute('disabled')
 				exportSprButton.removeAttribute('disabled')

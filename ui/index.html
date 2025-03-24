@@ -269,43 +269,50 @@
 							<input id="import-spritesheet-path" type="text" disabled></input>
 						</label>
 					</div>
-					<div class="input-row two-columns">
-						<label>
-							<span>Width:</span>
-							<input id="import-spritesheet-width" type="text" disabled></input>
-							<span>px</span>
-						</label>
-						<label>
-							<span>Height:</span>
-							<input id="import-spritesheet-height" type="text" disabled></input>
-							<span>px</span>
-						</label>
+					<div class="input-group">
+						<label><input id="import-spritesheet-cut-style-auto" type="radio" name="cut-style" value="cut-auto"><span>Cut SpriteBuilder-style</span></label>
+						<br>
+						<label><input id="import-spritesheet-cut-style-manual" type="radio" name="cut-style" value="cut-manual"><span>Cut manually</span></label>
+						<div id="import-spritesheet-cut-manual-info">
+							<div class="input-row two-columns">
+								<label>
+									<span>Width:</span>
+									<input id="import-spritesheet-width" type="text" disabled></input>
+									<span>px</span>
+								</label>
+								<label>
+									<span>Height:</span>
+									<input id="import-spritesheet-height" type="text" disabled></input>
+									<span>px</span>
+								</label>
+							</div>
+							<div class="input-row two-columns">
+								<label>
+									<span>Tile Width:</span>
+									<input id="import-spritesheet-tile-width" type="number" step="1" min="1"></input>
+									<span>px</span>
+								</label>
+								<label>
+									<span>Tile Height:</span>
+									<input id="import-spritesheet-tile-height" type="number" step="1" min="1"></input>
+									<span>px</span>
+								</label>
+							</div>
+							<div class="input-row two-columns">
+								<label>
+									<span>Columns:</span>
+									<input id="import-spritesheet-cols" type="number" step="1" min="1"></input>
+									<span class="invisible">px</span>
+								</label>
+								<label>
+									<span>Rows:</span>
+									<input id="import-spritesheet-rows" type="number" step="1" min="1"></input>
+									<span class="invisible">px</span>
+								</label>
+							</div>
+						</div>
 					</div>
-					<div class="input-row two-columns">
-						<label>
-							<span>Tile Width:</span>
-							<input id="import-spritesheet-tile-width" type="number" step="1" min="1"></input>
-							<span>px</span>
-						</label>
-						<label>
-							<span>Tile Height:</span>
-							<input id="import-spritesheet-tile-height" type="number" step="1" min="1"></input>
-							<span>px</span>
-						</label>
-					</div>
-					<div class="input-row two-columns">
-						<label>
-							<span>Columns:</span>
-							<input id="import-spritesheet-cols" type="number" step="1" min="1"></input>
-							<span class="invisible">px</span>
-						</label>
-						<label>
-							<span>Rows:</span>
-							<input id="import-spritesheet-rows" type="number" step="1" min="1"></input>
-							<span class="invisible">px</span>
-						</label>
-					</div>
-					<div class="input-row button-row">
+					<div class="button-row">
 						<button id="import-spritesheet-export-spr-button" class="text-button primary">
 							Export SPR
 						</button>
@@ -316,7 +323,7 @@
 							Export C16
 						</button>
 					</div>
-					<div class="input-row button-row">
+					<div class="button-row">
 						<button id="import-spritesheet-cancel-button" class="text-button">
 							Cancel
 						</button>

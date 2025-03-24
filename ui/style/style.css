@@ -361,11 +361,11 @@ input, button, textarea, select {
 	font: inherit;
 }
 
-button, button *, select, select * {
+button, button *, select, select *, input[type="radio"] {
 	cursor: pointer;
 }
 
-input, textarea {
+input[type="text"], input[type="number"], textarea {
 	user-select: auto;
 	-webkit-user-select: auto;
 	cursor: text;
@@ -384,7 +384,7 @@ button.on {
 	background: var(--button-bg);
 }
 
-button:focus, select:focus {
+button:focus, select:focus, input[type="radio"]:focus {
 	outline: 1px solid var(--focus-outline);
 	outline-offset: 1px;
 }
@@ -419,7 +419,27 @@ button.primary {
 	box-shadow: 2px 2px 0 0 var(--button-shadow);
 }
 
-input {
+input[type="radio"] {
+	width: 24px;
+	height: 24px;
+	border-radius: 24px;
+	border: 4px solid var(--input-bg);
+	background-color: var(--input-bg);
+	box-shadow: 2px 2px 0 0 var(--button-shadow);
+}
+
+input[type="radio"]:hover {
+	border-color: var(--button-hover-bg2);
+	background-color: var(--button-hover-bg2);
+}
+
+input[type="radio"]:checked,
+input[type="radio"]:checked:hover {
+	background-color: var(--button-shadow);
+}
+
+input[type="text"],
+input[type="number"] {
 	width: 100px;
 	height: 28px;
 	padding: 0 8px;
@@ -428,17 +448,20 @@ input {
 	box-shadow: 2px 2px 0 0 var(--input-shadow) inset;
 }
 
-input:focus {
+input[type="text"]:focus,
+input[type="number"]:focus {
 	outline: 1px solid var(--focus-outline);
 	outline-offset: 1px;
 }
 
-input:disabled {
+input[type="text"]:disabled,
+input[type="number"]:disabled {
 	opacity: 0.5;
 	box-shadow: none;
 }
 
-input.error {
+input[type="text"].error,
+input[type="number"].error {
 	background: var(--invalid-dims-bg);
 }
 
@@ -476,14 +499,24 @@ select:active + .dropdown-arrow {
 	right: 3px;
 }
 
-.input-row {
+hr {
+	border: none;
+	border-top: 1px solid var(--input-bg);
+	margin: 16px 0;
+}
+
+.input-row,
+.button-row {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	gap: 12px;
 }
 
-.input-row + .input-row {
+.input-row + .input-row,
+.input-row + .input-group,
+.input-group + .input-row,
+.button-row + .button-row {
 	margin-top: 16px;
 }
 
@@ -501,7 +534,8 @@ select:active + .dropdown-arrow {
 	flex-basis: 150px;
 }
 
-.input-row + .button-row {
+.input-row + .button-row,
+.input-group + .button-row {
 	margin-top: 24px;
 }
 
