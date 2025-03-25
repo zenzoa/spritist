@@ -21,9 +21,9 @@ pub struct ClipboardState {
 }
 
 #[tauri::command]
-pub fn cut(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, clipboard_state: State<ClipboardState>) {
+pub fn cut(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, clipboard_state: State<ClipboardState>) {
 	copy(file_state.clone(), selection_state.clone(), clipboard_state);
-	delete_frames(app_handle, file_state, selection_state);
+	delete_frames(handle, file_state, selection_state);
 }
 
 fn copy_to_real_clipboard(img: &RgbaImage) {
@@ -93,13 +93,13 @@ fn paste_from_local_clipboard(file_state: &State<FileState>, selection_state: &S
 
 	if insert_point <= frames.len() {
 		frames.splice(insert_point..insert_point, copied_frames.iter().cloned());
-		*selected_frames = (insert_point..(insert_point + copied_frames.len())).map(usize::from).collect();
+		*selected_frames = (insert_point..(insert_point + copied_frames.len())).collect();
 	}
 }
 
 #[tauri::command]
-pub fn paste(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, clipboard_state: State<ClipboardState>) {
-	add_state_to_history(&app_handle);
+pub fn paste(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, clipboard_state: State<ClipboardState>) {
+	add_state_to_history(&handle);
 
 	let copied_frames = clipboard_state.copied_frames.lock().unwrap();
 	if copied_frames.is_empty() {
@@ -118,7 +118,7 @@ pub fn paste(app_handle: AppHandle, file_state: State<FileState>, selection_stat
 
 	let frames = file_state.frames.lock().unwrap();
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
-	app_handle.emit("redraw", RedrawPayload{
+	handle.emit("redraw", RedrawPayload{
 		frame_count: frames.len(),
 		selected_frames: selected_frames.clone(),
 		cols: *file_state.cols.lock().unwrap(),

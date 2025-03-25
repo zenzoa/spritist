@@ -20,43 +20,43 @@ pub struct HistoryItem {
 	pub selected_frames: Mutex<Vec<usize>>
 }
 
-pub fn add_state_to_history(app_handle: &AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	let selection_state: State<SelectionState> = app_handle.state();
-	let history_state: State<HistoryState> = app_handle.state();
+pub fn add_state_to_history(handle: &AppHandle) {
+	let file_state: State<FileState> = handle.state();
+	let selection_state: State<SelectionState> = handle.state();
+	let history_state: State<HistoryState> = handle.state();
 
 	history_state.undo_stack.lock().unwrap().push(get_current_state(&file_state, &selection_state));
 	history_state.redo_stack.lock().unwrap().clear();
 
 	*file_state.file_is_modified.lock().unwrap() = true;
 
-	update_window_title(app_handle);
+	update_window_title(handle);
 }
 
 #[tauri::command]
-pub fn undo(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, history_state: State<HistoryState>) {
+pub fn undo(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, history_state: State<HistoryState>) {
 	let new_history_item_result = history_state.undo_stack.lock().unwrap().pop();
 	if let Some(new_history_item) = new_history_item_result {
 		history_state.redo_stack.lock().unwrap().push(get_current_state(&file_state, &selection_state));
 		set_current_state(&file_state, &selection_state, new_history_item);
 	}
 
-	update_window_title(&app_handle);
+	update_window_title(&handle);
 
-	redraw(&app_handle);
+	redraw(&handle);
 }
 
 #[tauri::command]
-pub fn redo(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, history_state: State<HistoryState>) {
+pub fn redo(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, history_state: State<HistoryState>) {
 	let new_history_item_result = history_state.redo_stack.lock().unwrap().pop();
 	if let Some(new_history_item) = new_history_item_result {
 		history_state.undo_stack.lock().unwrap().push(get_current_state(&file_state, &selection_state));
 		set_current_state(&file_state, &selection_state, new_history_item);
 	}
 
-	update_window_title(&app_handle);
+	update_window_title(&handle);
 
-	redraw(&app_handle);
+	redraw(&handle);
 }
 
 fn get_current_state(file_state: &State<FileState>, selection_state: &State<SelectionState>) -> HistoryItem {

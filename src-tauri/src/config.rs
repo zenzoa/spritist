@@ -70,8 +70,8 @@ pub fn get_config(state: State<ConfigState>) -> ConfigInfo {
 	}
 }
 
-pub fn load_config_file(app_handle: AppHandle) {
-	if let Ok(config_dir) = app_handle.path().config_dir() {
+pub fn load_config_file(handle: AppHandle) {
+	if let Ok(config_dir) = handle.path().config_dir() {
 		let config_file_path = config_dir.join("spritist.conf");
 		if let Ok(config_contents) = fs::read_to_string(config_file_path) {
 			let lines: Vec<&str> = config_contents.split('\n').collect();
@@ -82,8 +82,8 @@ pub fn load_config_file(app_handle: AppHandle) {
 						match key.trim() {
 							"show_image_info" => {
 								match value.trim() {
-									"false" => set_show_image_info(&app_handle, false, true),
-									_ => set_show_image_info(&app_handle, true, true)
+									"false" => set_show_image_info(&handle, false, true),
+									_ => set_show_image_info(&handle, true, true)
 								};
 							}
 							"transparent_color" => {
@@ -92,7 +92,7 @@ pub fn load_config_file(app_handle: AppHandle) {
 									"none" => TransparentColor::None,
 									_ => TransparentColor::Black
 								};
-								set_transparent_color(&app_handle, new_color, true);
+								set_transparent_color(&handle, new_color, true);
 							}
 							"theme" => {
 								let new_theme = match value.trim() {
@@ -100,12 +100,12 @@ pub fn load_config_file(app_handle: AppHandle) {
 									"purple" => Theme::Purple,
 									_ => Theme::Dark
 								};
-								set_theme(&app_handle, new_theme, true);
+								set_theme(&handle, new_theme, true);
 							}
 							"show_toolbar" => {
 								match value.trim() {
-									"false" => set_toolbar_visibility(&app_handle, false, true),
-									_ => set_toolbar_visibility(&app_handle, true, true)
+									"false" => set_toolbar_visibility(&handle, false, true),
+									_ => set_toolbar_visibility(&handle, true, true)
 								};
 							}
 							_ => {}
@@ -117,9 +117,9 @@ pub fn load_config_file(app_handle: AppHandle) {
 	}
 }
 
-pub fn save_config_file(app_handle: &AppHandle) {
-	let config_state: State<ConfigState> = app_handle.state();
-	if let Ok(config_dir) = app_handle.path().config_dir() {
+pub fn save_config_file(handle: &AppHandle) {
+	let config_state: State<ConfigState> = handle.state();
+	if let Ok(config_dir) = handle.path().config_dir() {
 		let config_file_path = config_dir.join("spritist.conf");
 		if let Ok(()) = fs::create_dir_all(config_dir) {
 			fs::write(config_file_path, format!(
@@ -133,8 +133,8 @@ pub fn save_config_file(app_handle: &AppHandle) {
 	}
 }
 
-pub fn set_show_image_info(app_handle: &AppHandle, new_value: bool, init: bool) {
-	if let Some(menu) = app_handle.menu() {
+pub fn set_show_image_info(handle: &AppHandle, new_value: bool, init: bool) {
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
 			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("show_image_info") {
 				menu_item.set_checked(new_value).unwrap();
@@ -142,16 +142,16 @@ pub fn set_show_image_info(app_handle: &AppHandle, new_value: bool, init: bool) 
 		}
 	}
 
-	let config_state: State<ConfigState> = app_handle.state();
+	let config_state: State<ConfigState> = handle.state();
 	*config_state.show_image_info.lock().unwrap() = new_value;
 	if !init {
-		save_config_file(app_handle);
-		app_handle.emit("set_show_image_info", new_value).unwrap();
+		save_config_file(handle);
+		handle.emit("set_show_image_info", new_value).unwrap();
 	}
 }
 
-pub fn set_transparent_color(app_handle: &AppHandle, new_color: TransparentColor, init: bool) {
-	if let Some(menu) = app_handle.menu() {
+pub fn set_transparent_color(handle: &AppHandle, new_color: TransparentColor, init: bool) {
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
 			if let Some(MenuItemKind::Submenu(transparent_color_menu)) = view_menu.get("transparent_color") {
 				if let Some(MenuItemKind::Check(menu_item)) = transparent_color_menu.get("transparent_black") {
@@ -167,20 +167,20 @@ pub fn set_transparent_color(app_handle: &AppHandle, new_color: TransparentColor
 		}
 	}
 
-	let config_state: State<ConfigState> = app_handle.state();
+	let config_state: State<ConfigState> = handle.state();
 	*config_state.transparent_color.lock().unwrap() = new_color.clone();
 	if !init {
-		app_handle.emit("set_transparent_color", match new_color {
+		handle.emit("set_transparent_color", match new_color {
 			TransparentColor::Black => "black",
 			TransparentColor::White => "white",
 			TransparentColor::None => "none"
 		}).unwrap();
-		save_config_file(app_handle);
+		save_config_file(handle);
 	}
 }
 
-pub fn set_theme(app_handle: &AppHandle, new_theme: Theme, init: bool) {
-	if let Some(menu) = app_handle.menu() {
+pub fn set_theme(handle: &AppHandle, new_theme: Theme, init: bool) {
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
 			if let Some(MenuItemKind::Submenu(theme_menu)) = view_menu.get("theme") {
 				if let Some(MenuItemKind::Check(menu_item)) = theme_menu.get("theme_dark") {
@@ -196,29 +196,29 @@ pub fn set_theme(app_handle: &AppHandle, new_theme: Theme, init: bool) {
 		}
 	}
 
-	let config_state: State<ConfigState> = app_handle.state();
+	let config_state: State<ConfigState> = handle.state();
 	*config_state.theme.lock().unwrap() = new_theme.clone();
 	if !init {
-		app_handle.emit("set_theme", match new_theme {
+		handle.emit("set_theme", match new_theme {
 			Theme::Dark => "dark",
 			Theme::Light => "light",
 			Theme::Purple => "purple"
 		}).unwrap();
-		save_config_file(app_handle);
+		save_config_file(handle);
 	}
 }
 
-pub fn set_toolbar_visibility(app_handle: &AppHandle, show_toolbar: bool, init: bool) {
-	if let Some(menu) = app_handle.menu() {
+pub fn set_toolbar_visibility(handle: &AppHandle, show_toolbar: bool, init: bool) {
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
 			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("show_toolbar") {
 				menu_item.set_checked(show_toolbar).unwrap();
-				app_handle.emit("set_toolbar_visibility", show_toolbar).unwrap();
+				handle.emit("set_toolbar_visibility", show_toolbar).unwrap();
 			};
 		}
 	}
 
-	let config_state: State<ConfigState> = app_handle.state();
+	let config_state: State<ConfigState> = handle.state();
 	*config_state.show_toolbar.lock().unwrap() = show_toolbar;
-	if !init { save_config_file(app_handle); }
+	if !init { save_config_file(handle); }
 }

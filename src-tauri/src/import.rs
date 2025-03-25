@@ -55,19 +55,19 @@ fn activate_import(handle: &AppHandle, title: String) -> Option<PathBuf> {
 			.set_buttons(MessageButtons::YesNo)
 			.show();
 		if let MessageDialogResult::Yes = confirm_reload {
-			return choose_image_file(&handle, &title);
+			return choose_image_file(handle, &title);
 		}
 	} else {
-		return choose_image_file(&handle, &title);
+		return choose_image_file(handle, &title);
 	}
 	None
 }
 
 fn choose_image_file(handle: &AppHandle, title: &str) -> Option<PathBuf> {
-	return create_open_dialog(handle, false)
+	create_open_dialog(handle, false)
 		.set_title(title)
 		.add_filter("Images", &["png", "PNG", "bmp", "BMP"])
-		.pick_file();
+		.pick_file()
 }
 
 fn import_png_as_blk_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
@@ -224,7 +224,7 @@ pub fn import_spritesheet(handle: AppHandle, file_path: String, cols: u32, rows:
 pub fn import_spritebuilder_spritesheet(handle: AppHandle, file_path: String) {
 	let file_path = Path::new(&file_path);
 
-	if let Ok(spritesheet) = get_image(&file_path) {
+	if let Ok(spritesheet) = get_image(file_path) {
 		let divider_color = spritesheet.get_pixel(0, 0);
 		let mut y = 0;
 
@@ -247,7 +247,7 @@ pub fn import_spritebuilder_spritesheet(handle: AppHandle, file_path: String) {
 						current_pixels = Vec::new();
 					}
 				} else {
-					current_pixels.push(pixel.clone());
+					current_pixels.push(*pixel);
 				}
 			}
 
@@ -258,7 +258,7 @@ pub fn import_spritebuilder_spritesheet(handle: AppHandle, file_path: String) {
 					let mut pixel_row = Vec::new();
 					for frame_x in frame.x..(frame.x + frame.width) {
 						let pixel = spritesheet.get_pixel(frame_x, frame_y);
-						pixel_row.push(pixel.clone());
+						pixel_row.push(*pixel);
 						if pixel != divider_color {
 							divider_row = false;
 						}

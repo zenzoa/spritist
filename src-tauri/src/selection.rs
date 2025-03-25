@@ -19,26 +19,26 @@ pub fn update_selection(selection_state: State<SelectionState>, new_selected_fra
 }
 
 #[tauri::command]
-pub fn select_all(app_handle: AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	let selection_state: State<SelectionState> = app_handle.state();
+pub fn select_all(handle: AppHandle) {
+	let file_state: State<FileState> = handle.state();
+	let selection_state: State<SelectionState> = handle.state();
 	let mut selected_frames = selection_state.selected_frames.lock().unwrap();
 	let frame_count = file_state.frames.lock().unwrap().len();
-	*selected_frames = (0..frame_count).map(usize::from).collect();
-	app_handle.emit("update_selection", selected_frames.clone()).unwrap();
+	*selected_frames = (0..frame_count).collect();
+	handle.emit("update_selection", selected_frames.clone()).unwrap();
 }
 
 #[tauri::command]
-pub fn deselect_all(app_handle: AppHandle) {
-	let selection_state: State<SelectionState> = app_handle.state();
+pub fn deselect_all(handle: AppHandle) {
+	let selection_state: State<SelectionState> = handle.state();
 	let mut selected_frames = selection_state.selected_frames.lock().unwrap();
 	*selected_frames = Vec::new();
-	app_handle.emit("update_selection", selected_frames.clone()).unwrap();
+	handle.emit("update_selection", selected_frames.clone()).unwrap();
 }
 
 #[tauri::command]
-pub fn move_frames(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, insert_point: usize) {
-	add_state_to_history(&app_handle);
+pub fn move_frames(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, insert_point: usize) {
+	add_state_to_history(&handle);
 
 	let mut moved_frames: Vec<Frame> = Vec::new();
 	let mut remaining_frames: Vec<Frame> = Vec::new();
@@ -64,8 +64,8 @@ pub fn move_frames(app_handle: AppHandle, file_state: State<FileState>, selectio
 	if final_insert_point <= remaining_frames.len() {
 		remaining_frames.splice(final_insert_point..final_insert_point, moved_frames.iter().cloned());
 		*frames = remaining_frames.clone();
-		*selected_frames = (final_insert_point..(final_insert_point + moved_frames.len())).map(usize::from).collect();
-		app_handle.emit("redraw", RedrawPayload{
+		*selected_frames = (final_insert_point..(final_insert_point + moved_frames.len())).collect();
+		handle.emit("redraw", RedrawPayload{
 			frame_count: frames.len(),
 			selected_frames: selected_frames.clone(),
 			cols: *file_state.cols.lock().unwrap(),
@@ -75,8 +75,8 @@ pub fn move_frames(app_handle: AppHandle, file_state: State<FileState>, selectio
 }
 
 #[tauri::command]
-pub fn delete_frames(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>) {
-	add_state_to_history(&app_handle);
+pub fn delete_frames(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>) {
+	add_state_to_history(&handle);
 	let mut selected_frames = selection_state.selected_frames.lock().unwrap();
 	let mut new_frames: Vec<Frame> = Vec::new();
 	let old_frames = file_state.frames.lock().unwrap().clone();
@@ -88,7 +88,7 @@ pub fn delete_frames(app_handle: AppHandle, file_state: State<FileState>, select
 	let new_frame_count = new_frames.len();
 	*selected_frames = Vec::new();
 	*file_state.frames.lock().unwrap() = new_frames;
-	app_handle.emit("redraw", RedrawPayload{
+	handle.emit("redraw", RedrawPayload{
 		frame_count: new_frame_count,
 		selected_frames: Vec::new(),
 		cols: *file_state.cols.lock().unwrap(),

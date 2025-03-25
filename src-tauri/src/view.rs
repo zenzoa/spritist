@@ -8,35 +8,34 @@ pub struct ViewState {
 }
 
 #[tauri::command]
-pub fn reset_zoom(app_handle: AppHandle, view_state: State<ViewState>) {
-	set_zoom_scale(&app_handle, &view_state, 1);
+pub fn reset_zoom(handle: AppHandle, view_state: State<ViewState>) {
+	set_zoom_scale(&handle, &view_state, 1);
 }
 
 #[tauri::command]
-pub fn zoom_in(app_handle: AppHandle, view_state: State<ViewState>) {
+pub fn zoom_in(handle: AppHandle, view_state: State<ViewState>) {
 	let zoom_scale = *view_state.zoom_scale.lock().unwrap();
-	set_zoom_scale(&app_handle, &view_state, zoom_scale + 1);
+	set_zoom_scale(&handle, &view_state, zoom_scale + 1);
 }
 
 #[tauri::command]
-pub fn zoom_out(app_handle: AppHandle, view_state: State<ViewState>) {
+pub fn zoom_out(handle: AppHandle, view_state: State<ViewState>) {
 	let zoom_scale = *view_state.zoom_scale.lock().unwrap();
-	set_zoom_scale(&app_handle, &view_state, zoom_scale - 1);
+	set_zoom_scale(&handle, &view_state, zoom_scale - 1);
 }
 
-fn set_zoom_scale(app_handle: &AppHandle, view_state: &State<ViewState>, new_zoom_scale: u32) {
+fn set_zoom_scale(handle: &AppHandle, view_state: &State<ViewState>, new_zoom_scale: u32) {
 	let mut zoom_scale = new_zoom_scale;
-	if zoom_scale < 1 { zoom_scale = 1; }
-	if zoom_scale > 4 { zoom_scale = 4; }
+	zoom_scale = zoom_scale.clamp(1, 4);
 
 	*view_state.zoom_scale.lock().unwrap() = zoom_scale;
 
-	app_handle.emit("set_scale", zoom_scale).unwrap();
+	handle.emit("set_scale", zoom_scale).unwrap();
 }
 
 #[tauri::command]
-pub fn view_as_sprite(app_handle: AppHandle) {
-	if let Some(menu) = app_handle.menu() {
+pub fn view_as_sprite(handle: AppHandle) {
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
 			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("view_as_sprite") {
 				menu_item.set_checked(true).unwrap();
@@ -46,11 +45,11 @@ pub fn view_as_sprite(app_handle: AppHandle) {
 			};
 		}
 	}
-	app_handle.emit("view_as_sprite", "").unwrap();
+	handle.emit("view_as_sprite", "").unwrap();
 }
 
-pub fn view_as_bg(app_handle: AppHandle) {
-	if let Some(menu) = app_handle.menu() {
+pub fn view_as_bg(handle: AppHandle) {
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
 			if let Some(MenuItemKind::Check(menu_item)) = view_menu.get("view_as_sprite") {
 				menu_item.set_checked(false).unwrap();
@@ -60,5 +59,5 @@ pub fn view_as_bg(app_handle: AppHandle) {
 			};
 		}
 	}
-	app_handle.emit("view_as_bg", "").unwrap();
+	handle.emit("view_as_bg", "").unwrap();
 }

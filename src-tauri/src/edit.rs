@@ -9,8 +9,8 @@ use crate::{
 };
 
 #[tauri::command]
-pub fn shift_selection(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, x_shift:i32, y_shift:i32) {
-	add_state_to_history(&app_handle);
+pub fn shift_selection(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, x_shift:i32, y_shift:i32) {
+	add_state_to_history(&handle);
 	let mut frames = file_state.frames.lock().unwrap();
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
 	for (i, frame) in frames.iter_mut().enumerate() {
@@ -18,7 +18,7 @@ pub fn shift_selection(app_handle: AppHandle, file_state: State<FileState>, sele
 			*frame = shift_pixels(frame, x_shift, y_shift);
 		}
 	}
-	app_handle.emit("reload_selection", ()).unwrap();
+	handle.emit("reload_selection", ()).unwrap();
 }
 
 fn shift_pixels(frame: &Frame, x_shift:i32, y_shift:i32) -> Frame {

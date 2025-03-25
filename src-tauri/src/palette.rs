@@ -87,107 +87,107 @@ impl Palette {
 	}
 }
 
-pub fn activate_load_palette(app_handle: AppHandle) {
-	let file_handle = create_open_dialog(&app_handle, false)
+pub fn activate_load_palette(handle: AppHandle) {
+	let file_handle = create_open_dialog(&handle, false)
 		.set_title("Load Palette")
 		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
 		.pick_file();
 	if let Some(file_handle) = file_handle {
-		if let Err(why) = load_palette_from_path(&app_handle, &file_handle.as_path()) {
+		if let Err(why) = load_palette_from_path(&handle, file_handle.as_path()) {
 			error_dialog(why.to_string());
 		}
-		update_palette_menu_items(&app_handle);
+		update_palette_menu_items(&handle);
 	}
 }
 
-fn load_palette_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+fn load_palette_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 	let colors = read_color_data(&bytes)?;
 	let file_name = file_path.file_name().map(|file_name| file_name.to_string_lossy().into());
-	let file_state: State<FileState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
 	let new_palette = Palette{ palette_type: PaletteType::Custom, file_name, colors };
-	load_palette(app_handle, file_state, new_palette)?;
-	update_palette_menu_items(&app_handle);
+	load_palette(handle, file_state, new_palette)?;
+	update_palette_menu_items(handle);
 	Ok(())
 }
 
-pub fn load_original(app_handle: AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	if let Err(why) = load_palette(&app_handle, file_state, original_palette()) {
+pub fn load_original(handle: AppHandle) {
+	let file_state: State<FileState> = handle.state();
+	if let Err(why) = load_palette(&handle, file_state, original_palette()) {
 		error_dialog(why.to_string());
 	}
-	update_palette_menu_items(&app_handle);
+	update_palette_menu_items(&handle);
 }
 
-pub fn load_reversed(app_handle: AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	if let Err(why) = load_palette(&app_handle, file_state, reversed_palette()) {
+pub fn load_reversed(handle: AppHandle) {
+	let file_state: State<FileState> = handle.state();
+	if let Err(why) = load_palette(&handle, file_state, reversed_palette()) {
 		error_dialog(why.to_string());
 	}
-	update_palette_menu_items(&app_handle);
+	update_palette_menu_items(&handle);
 }
 
-fn load_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
-	match swap_palette(app_handle, &palette) {
+fn load_palette(handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
+	match swap_palette(handle, &palette) {
 		Ok(frames) => {
-			add_state_to_history(app_handle);
+			add_state_to_history(handle);
 			*file_state.frames.lock().unwrap() = frames;
 			*file_state.palette.lock().unwrap() = palette;
-			update_window_title(app_handle);
-			redraw(app_handle);
+			update_window_title(handle);
+			redraw(handle);
 			Ok(())
 		}
 		Err(why) => Err(why)
 	}
 }
 
-pub fn activate_convert_to_palette(app_handle: AppHandle) {
-	let file_handle = create_open_dialog(&app_handle, false)
+pub fn activate_convert_to_palette(handle: AppHandle) {
+	let file_handle = create_open_dialog(&handle, false)
 		.set_title("Convert to Palette")
 		.add_filter("SPR Palettes", &["dta", "DTA", "pal", "PAL"])
 		.save_file();
 	if let Some(file_handle) = file_handle {
-		if let Err(why) = convert_to_palette_from_path(&app_handle, &file_handle.as_path()) {
+		if let Err(why) = convert_to_palette_from_path(&handle, file_handle.as_path()) {
 			error_dialog(why.to_string());
 		}
-		update_palette_menu_items(&app_handle);
+		update_palette_menu_items(&handle);
 	}
 }
 
-fn convert_to_palette_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+fn convert_to_palette_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 	let colors = read_color_data(&bytes)?;
 	let file_name = file_path.file_name().map(|file_name| file_name.to_string_lossy().into());
-	let file_state: State<FileState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
 	let new_palette = Palette { palette_type: PaletteType::Custom, file_name, colors };
-	convert_to_palette(app_handle, file_state, new_palette)?;
+	convert_to_palette(handle, file_state, new_palette)?;
 	Ok(())
 }
 
-pub fn convert_to_original(app_handle: AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	if let Err(why) = convert_to_palette(&app_handle, file_state, original_palette()) {
+pub fn convert_to_original(handle: AppHandle) {
+	let file_state: State<FileState> = handle.state();
+	if let Err(why) = convert_to_palette(&handle, file_state, original_palette()) {
 		error_dialog(why.to_string());
 	}
-	update_palette_menu_items(&app_handle);
+	update_palette_menu_items(&handle);
 }
 
-pub fn convert_to_reversed(app_handle: AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	if let Err(why) = convert_to_palette(&app_handle, file_state, reversed_palette()) {
+pub fn convert_to_reversed(handle: AppHandle) {
+	let file_state: State<FileState> = handle.state();
+	if let Err(why) = convert_to_palette(&handle, file_state, reversed_palette()) {
 		error_dialog(why.to_string());
 	}
-	update_palette_menu_items(&app_handle);
+	update_palette_menu_items(&handle);
 }
 
-fn convert_to_palette(app_handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
-	match translate_colors(app_handle, &palette) {
+fn convert_to_palette(handle: &AppHandle, file_state: State<FileState>, palette: Palette) -> Result<(), Box<dyn Error>> {
+	match translate_colors(handle, &palette) {
 		Ok(frames) => {
-			add_state_to_history(app_handle);
+			add_state_to_history(handle);
 			*file_state.frames.lock().unwrap() = frames;
 			*file_state.palette.lock().unwrap() = palette;
-			update_window_title(app_handle);
-			redraw(app_handle);
+			update_window_title(handle);
+			redraw(handle);
 			Ok(())
 		}
 		Err(why) => Err(why)
@@ -227,8 +227,8 @@ fn format_colors(mut colors: [(u8, u8, u8); 256]) {
 	colors[255] = (255, 255, 255);
 }
 
-fn swap_palette(app_handle: &AppHandle, new_palette: &Palette) -> Result<Vec<Frame>, Box<dyn Error>> {
-	let file_state: State<FileState> = app_handle.state();
+fn swap_palette(handle: &AppHandle, new_palette: &Palette) -> Result<Vec<Frame>, Box<dyn Error>> {
+	let file_state: State<FileState> = handle.state();
 	let mut new_frames: Vec<Frame> = Vec::new();
 	for frame in file_state.frames.lock().unwrap().iter() {
 		let new_frame = swap_palette_for_frame(frame, new_palette)?;
@@ -265,8 +265,8 @@ fn swap_palette_for_frame(frame: &Frame, palette: &Palette) -> Result<Frame, Box
 	})
 }
 
-fn translate_colors(app_handle: &AppHandle, new_palette: &Palette) -> Result<Vec<Frame>, Box<dyn Error>> {
-	let file_state: State<FileState> = app_handle.state();
+fn translate_colors(handle: &AppHandle, new_palette: &Palette) -> Result<Vec<Frame>, Box<dyn Error>> {
+	let file_state: State<FileState> = handle.state();
 	let mut new_frames: Vec<Frame> = Vec::new();
 	for frame in file_state.frames.lock().unwrap().iter() {
 		let new_frame = translate_colors_for_frame(frame, new_palette)?;
@@ -313,10 +313,10 @@ pub fn reversed_palette() -> Palette {
 	Palette { palette_type: PaletteType::Reversed, file_name, colors }
 }
 
-fn update_palette_menu_items(app_handle: &AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
+fn update_palette_menu_items(handle: &AppHandle) {
+	let file_state: State<FileState> = handle.state();
 	let palette_type = file_state.palette.lock().unwrap().palette_type.clone();
-	if let Some(menu) = app_handle.menu() {
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(view_menu)) = menu.get("view") {
 			if let Some(MenuItemKind::Submenu(spr_palette_menu)) = view_menu.get("spr_palette") {
 				if let Some(MenuItemKind::Check(menu_item)) = spr_palette_menu.get("load_original") {

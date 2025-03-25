@@ -68,12 +68,12 @@ fn encode_pixel_555(pixel: &Rgba<u8>) -> u16 {
 	let r = ((pixel[0] as u16) << 7) & 0x7c00;
 	let g = ((pixel[1] as u16) << 2) & 0x03e0;
 	let b = ((pixel[2] as u16) >> 3) & 0x001f;
-	return r | g | b;
+	r | g | b
 }
 
 fn encode_pixel_565(pixel: &Rgba<u8>) -> u16 {
 	let r = ((pixel[0] as u16) << 8) & 0xf800;
 	let g = ((pixel[1] as u16) << 3) & 0x07c0;
 	let b = ((pixel[2] as u16) >> 3) & 0x003e;
-	return r | g | b;
+	r | g | b
 }

@@ -95,14 +95,14 @@ pub struct Frame {
 	pub color_indexes: Vec<u8>
 }
 
-pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> FileDialog {
+pub fn create_open_dialog(handle: &AppHandle, use_default_filter: bool) -> FileDialog {
 	let mut file_dialog = FileDialog::new();
 
 	if use_default_filter {
 		file_dialog = file_dialog.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "png", "PNG", "gif", "GIF", "bmp", "BMP"]);
 	}
 
-	let file_state: State<FileState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
 	if let Some(file_path) = file_state.file_path.lock().unwrap().clone() {
 		if let Some(parent_dir) = file_path.parent() {
 			file_dialog = file_dialog.set_directory(parent_dir);
@@ -112,8 +112,8 @@ pub fn create_open_dialog(app_handle: &AppHandle, use_default_filter: bool) -> F
 	file_dialog
 }
 
-pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, new_file_path: Option<&str>) -> FileDialog {
-	let file_state: State<FileState> = app_handle.state();
+pub fn create_save_dialog(handle: &AppHandle, new_extension: Option<&str>, new_file_path: Option<&str>) -> FileDialog {
+	let file_state: State<FileState> = handle.state();
 
 	let mut file_name = file_state.file_title.lock().unwrap().clone();
 	if let Some(file_path) = new_file_path {
@@ -149,8 +149,8 @@ pub fn create_save_dialog(app_handle: &AppHandle, new_extension: Option<&str>, n
 	file_dialog
 }
 
-pub fn check_file_modified(app_handle: AppHandle, path: PathBuf, callback: FileModifiedCallback) {
-	let file_state: State<FileState> = app_handle.state();
+pub fn check_file_modified(handle: AppHandle, path: PathBuf, callback: FileModifiedCallback) {
+	let file_state: State<FileState> = handle.state();
 	if *file_state.file_is_modified.lock().unwrap() {
 		let confirm_reload = MessageDialog::new()
 			.set_title("File modified")
@@ -158,58 +158,58 @@ pub fn check_file_modified(app_handle: AppHandle, path: PathBuf, callback: FileM
 			.set_buttons(MessageButtons::YesNo)
 			.show();
 		if let MessageDialogResult::Yes = confirm_reload {
-			(callback.func)(app_handle, path);
+			(callback.func)(handle, path);
 		}
 	} else {
-		(callback.func)(app_handle, path);
+		(callback.func)(handle, path);
 	}
 }
 
 #[tauri::command]
-pub fn activate_new_file(app_handle: AppHandle) {
-	check_file_modified(app_handle, PathBuf::new(), FileModifiedCallback { func: |handle, _| {
+pub fn activate_new_file(handle: AppHandle) {
+	check_file_modified(handle, PathBuf::new(), FileModifiedCallback { func: |handle, _| {
 		complete_new_file(handle.clone());
 	}});
 }
 
-pub fn complete_new_file(app_handle: AppHandle) {
-	reset_state(&app_handle);
-	let file_state: State<FileState> = app_handle.state();
+pub fn complete_new_file(handle: AppHandle) {
+	reset_state(&handle);
+	let file_state: State<FileState> = handle.state();
 	*file_state.file_is_open.lock().unwrap() = true;
 
-	update_window_title(&app_handle);
-	update_pixel_format_menu_items(&app_handle);
+	update_window_title(&handle);
+	update_pixel_format_menu_items(&handle);
 
-	redraw(&app_handle);
+	redraw(&handle);
 }
 
 #[tauri::command]
-pub fn activate_open_file(app_handle: AppHandle) {
-	check_file_modified(app_handle, PathBuf::new(), FileModifiedCallback { func: |handle, _| {
+pub fn activate_open_file(handle: AppHandle) {
+	check_file_modified(handle, PathBuf::new(), FileModifiedCallback { func: |handle, _| {
 		open_file_dialog(handle.clone());
 	}});
 }
 
-pub fn open_file_dialog(app_handle: AppHandle) {
-	let file_handle = create_open_dialog(&app_handle, true)
+pub fn open_file_dialog(handle: AppHandle) {
+	let file_handle = create_open_dialog(&handle, true)
 		.set_title("Open Sprite")
 		.pick_file();
 	if let Some(file_handle) = file_handle {
-		app_handle.emit("show_spinner", ()).unwrap();
+		handle.emit("show_spinner", ()).unwrap();
 		spawn(async move {
-			if let Err(why) = open_file_from_path(&app_handle, &file_handle.as_path()) {
+			if let Err(why) = open_file_from_path(&handle, file_handle.as_path()) {
 				error_dialog(why.to_string());
 			};
-			app_handle.emit("hide_spinner", ()).unwrap();
+			handle.emit("hide_spinner", ()).unwrap();
 		});
 	}
 }
 
-pub fn open_file_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
-	let sprite_info = get_sprite_info(app_handle, file_path)?;
+pub fn open_file_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+	let sprite_info = get_sprite_info(handle, file_path)?;
 
-	reset_state(app_handle);
-	let file_state: State<FileState> = app_handle.state();
+	reset_state(handle);
+	let file_state: State<FileState> = handle.state();
 	if let Some(file_title) = file_path.file_name() {
 		if let Some(file_title_str) = file_title.to_str() {
 			*file_state.file_title.lock().unwrap() = file_title_str.to_string();
@@ -245,15 +245,15 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(
 		}
 	}
 	if is_background {
-		view_as_bg(app_handle.clone());
+		view_as_bg(handle.clone());
 	} else {
-		view_as_sprite(app_handle.clone());
+		view_as_sprite(handle.clone());
 	}
 
-	update_window_title(app_handle);
-	update_pixel_format_menu_items(app_handle);
+	update_window_title(handle);
+	update_pixel_format_menu_items(handle);
 
-	app_handle.emit("redraw", RedrawPayload{
+	handle.emit("redraw", RedrawPayload{
 		frame_count: file_state.frames.lock().unwrap().len(),
 		selected_frames: Vec::new(),
 		cols: *file_state.cols.lock().unwrap(),
@@ -263,56 +263,56 @@ pub fn open_file_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(
 	Ok(())
 }
 
-pub fn drop_files(app_handle: &AppHandle, file_paths: &[PathBuf]) -> Result<(), Box<dyn Error>> {
-	let file_state: State<FileState> = app_handle.state();
+pub fn drop_files(handle: &AppHandle, file_paths: &[PathBuf]) -> Result<(), Box<dyn Error>> {
+	let file_state: State<FileState> = handle.state();
 	let file_is_open = *file_state.file_is_open.lock().unwrap();
 	let frames = file_state.frames.lock().unwrap().clone();
 	if (file_is_open && !frames.is_empty()) || file_paths.len() > 1 {
 		if !file_is_open {
-			reset_state(app_handle);
+			reset_state(handle);
 			*file_state.file_is_open.lock().unwrap() = true;
-			update_window_title(app_handle);
+			update_window_title(handle);
 		}
 		for file_path in file_paths.iter() {
-			insert_image_from_path(app_handle, file_path)?;
+			insert_image_from_path(handle, file_path)?;
 		}
 	} else if file_paths.len() == 1 {
-		open_file_from_path(app_handle, &file_paths[0])?;
+		open_file_from_path(handle, &file_paths[0])?;
 	}
 	Ok(())
 }
 
 #[tauri::command]
-pub fn activate_insert_image(app_handle: AppHandle) {
-	let file_handles = create_open_dialog(&app_handle, true)
+pub fn activate_insert_image(handle: AppHandle) {
+	let file_handles = create_open_dialog(&handle, true)
 		.set_title("Insert Image")
 		.pick_files();
 	if let Some(file_handles) = file_handles {
-		app_handle.emit("show_spinner", ()).unwrap();
+		handle.emit("show_spinner", ()).unwrap();
 		spawn(async move {
 			for file_handle in file_handles {
-				if let Err(why) =  insert_image_from_path(&app_handle, &file_handle.as_path()) {
+				if let Err(why) =  insert_image_from_path(&handle, file_handle.as_path()) {
 					error_dialog(why.to_string());
 				};
 			}
-			app_handle.emit("hide_spinner", ()).unwrap();
+			handle.emit("hide_spinner", ()).unwrap();
 		});
 	}
 }
 
-pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
-	let sprite_info = get_sprite_info(app_handle, file_path)?;
-	add_state_to_history(app_handle);
+pub fn insert_image_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+	let sprite_info = get_sprite_info(handle, file_path)?;
+	add_state_to_history(handle);
 
 	let new_frames = sprite_info.frames;
 
-	let file_state: State<FileState> = app_handle.state();
-	let selection_state: State<SelectionState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
+	let selection_state: State<SelectionState> = handle.state();
 
 	if !*file_state.file_is_open.lock().unwrap() {
-		reset_state(app_handle);
+		reset_state(handle);
 		*file_state.file_is_open.lock().unwrap() = true;
-		update_window_title(app_handle);
+		update_window_title(handle);
 	}
 
 	let mut frames = file_state.frames.lock().unwrap();
@@ -325,8 +325,8 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &Path) -> Resul
 
 	if insert_point <= frames.len() {
 		frames.splice(insert_point..insert_point, new_frames.iter().cloned());
-		*selected_frames = (insert_point..(insert_point + new_frames.len())).map(usize::from).collect();
-		app_handle.emit("redraw", RedrawPayload{
+		*selected_frames = (insert_point..(insert_point + new_frames.len())).collect();
+		handle.emit("redraw", RedrawPayload{
 			frame_count: frames.len(),
 			selected_frames: selected_frames.clone(),
 			cols: *file_state.cols.lock().unwrap(),
@@ -338,33 +338,33 @@ pub fn insert_image_from_path(app_handle: &AppHandle, file_path: &Path) -> Resul
 }
 
 #[tauri::command]
-pub fn activate_replace_frame(app_handle: AppHandle, selection_state: State<SelectionState>) {
+pub fn activate_replace_frame(handle: AppHandle, selection_state: State<SelectionState>) {
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
 	if !selected_frames.is_empty() {
-		let file_handle = create_open_dialog(&app_handle, true)
+		let file_handle = create_open_dialog(&handle, true)
 			.set_title("Replace Frame")
 			.pick_file();
 		if let Some(file_handle) = file_handle {
-			app_handle.emit("show_spinner", ()).unwrap();
+			handle.emit("show_spinner", ()).unwrap();
 			spawn(async move {
 				let path = file_handle.as_path().to_path_buf();
-				if let Err(why) =  replace_frame_from_path(&app_handle, &path) {
+				if let Err(why) =  replace_frame_from_path(&handle, &path) {
 					error_dialog(why.to_string());
 				};
-				app_handle.emit("hide_spinner", ()).unwrap();
+				handle.emit("hide_spinner", ()).unwrap();
 			});
 		}
 	}
 }
 
-pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> Result<(), Box<dyn Error>> {
-	let sprite_info = get_sprite_info(app_handle, file_path)?;
-	add_state_to_history(app_handle);
+pub fn replace_frame_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+	let sprite_info = get_sprite_info(handle, file_path)?;
+	add_state_to_history(handle);
 
 	let new_frames = sprite_info.frames;
 
-	let file_state: State<FileState> = app_handle.state();
-	let selection_state: State<SelectionState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
+	let selection_state: State<SelectionState> = handle.state();
 
 	let mut frames = file_state.frames.lock().unwrap();
 	let mut selected_frames = selection_state.selected_frames.lock().unwrap();
@@ -380,9 +380,9 @@ pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> R
 
 	frames.splice(insert_point..insert_point, new_frames.iter().cloned());
 
-	*selected_frames = (insert_point..(insert_point + new_frames.len())).map(usize::from).collect();
+	*selected_frames = (insert_point..(insert_point + new_frames.len())).collect();
 
-	app_handle.emit("redraw", RedrawPayload{
+	handle.emit("redraw", RedrawPayload{
 		frame_count: frames.len(),
 		selected_frames: selected_frames.clone(),
 		cols: *file_state.cols.lock().unwrap(),
@@ -392,10 +392,10 @@ pub fn replace_frame_from_path(app_handle: &AppHandle, file_path: &PathBuf) -> R
 	Ok(())
 }
 
-pub fn get_sprite_info(app_handle: &AppHandle, file_path: &Path) -> Result<SpriteInfo, Box<dyn Error>> {
+pub fn get_sprite_info(handle: &AppHandle, file_path: &Path) -> Result<SpriteInfo, Box<dyn Error>> {
 	let bytes = fs::read(file_path)?;
 
-	let file_state: State<FileState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
 	let palette = file_state.palette.lock().unwrap();
 
 	let extension_err = "File does not have a valid file extension (\".spr\", \".s16\", \".c16\", \".blk\", etc.)";
@@ -481,16 +481,16 @@ pub fn get_sprite_info(app_handle: &AppHandle, file_path: &Path) -> Result<Sprit
 }
 
 #[tauri::command]
-pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
+pub fn activate_save_file(handle: AppHandle, file_state: State<FileState>) {
 	let file_path_opt = file_state.file_path.lock().unwrap().clone();
 	match file_path_opt {
 		Some(file_path) => {
 			if !*file_state.read_only.lock().unwrap() {
-				app_handle.emit("show_spinner", ()).unwrap();
-				if let Err(why) = save_file_to_path(&app_handle, &file_path) {
+				handle.emit("show_spinner", ()).unwrap();
+				if let Err(why) = save_file_to_path(&handle, &file_path) {
 					error_dialog(why.to_string());
 				}
-				app_handle.emit("hide_spinner", ()).unwrap();
+				handle.emit("hide_spinner", ()).unwrap();
 			} else if file_path.ends_with(".png") || file_path.ends_with(".PNG") {
 				error_dialog("Use Export PNG or Export Spritesheet instead.".to_string());
 			} else if file_path.ends_with(".gif") || file_path.ends_with(".GIF") {
@@ -502,38 +502,38 @@ pub fn activate_save_file(app_handle: AppHandle, file_state: State<FileState>) {
 			}
 		}
 		_ => {
-			activate_save_as(app_handle);
+			activate_save_as(handle);
 		}
 	}
 }
 
 #[tauri::command]
-pub fn activate_save_as(app_handle: AppHandle) {
-	let file_handle = create_save_dialog(&app_handle, None, None)
+pub fn activate_save_as(handle: AppHandle) {
+	let file_handle = create_save_dialog(&handle, None, None)
 		.set_title("Save As")
 		.add_filter("Sprites", &["spr", "SPR", "s16", "S16", "c16", "C16", "m16", "M16", "n16", "N16", "blk", "BLK", "dta", "DTA", "photo album", "Photo Album", "PHOTO ALBUM"])
 		.save_file();
 	if let Some(file_handle) = file_handle {
-		app_handle.emit("show_spinner", ()).unwrap();
+		handle.emit("show_spinner", ()).unwrap();
 		spawn(async move {
-			if let Err(why) = save_file_to_path(&app_handle, &file_handle.as_path()) {
+			if let Err(why) = save_file_to_path(&handle, file_handle.as_path()) {
 				error_dialog(why.to_string());
 			}
-			app_handle.emit("hide_spinner", ()).unwrap();
+			handle.emit("hide_spinner", ()).unwrap();
 		});
 	}
 }
 
-pub fn save_file_to_path(app_handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+pub fn save_file_to_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	let extension_err = "File does not have a valid file extension (\".spr\", \".s16\", \".c16\", \".blk\")";
 	let extension = file_path.extension().ok_or(extension_err)?;
 	let extension_str = extension.to_str().ok_or(extension_err)?;
 
-	let file_state: State<FileState> = app_handle.state();
+	let file_state: State<FileState> = handle.state();
 	let palette = file_state.palette.lock().unwrap().clone();
 	let sprite_info = SpriteInfo{
 		frames: file_state.frames.lock().unwrap().clone(),
-		pixel_format: file_state.pixel_format.lock().unwrap().clone(),
+		pixel_format: *file_state.pixel_format.lock().unwrap(),
 		cols: *file_state.cols.lock().unwrap() as u16,
 		rows: *file_state.rows.lock().unwrap() as u16,
 		read_only: false
@@ -560,7 +560,7 @@ pub fn save_file_to_path(app_handle: &AppHandle, file_path: &Path) -> Result<(),
 	*file_state.file_is_modified.lock().unwrap() = false;
 	*file_state.read_only.lock().unwrap() = false;
 
-	update_window_title(app_handle);
+	update_window_title(handle);
 
 	Ok(())
 }
@@ -571,16 +571,16 @@ pub fn set_bg_size(file_state: State<FileState>, cols: usize, rows: usize) {
 	*file_state.rows.lock().unwrap() = rows;
 }
 
-pub fn set_pixel_format(app_handle: &AppHandle, new_pixel_format: PixelFormat) {
-	let file_state: State<FileState> = app_handle.state();
+pub fn set_pixel_format(handle: &AppHandle, new_pixel_format: PixelFormat) {
+	let file_state: State<FileState> = handle.state();
 	*file_state.pixel_format.lock().unwrap() = new_pixel_format;
-	update_pixel_format_menu_items(app_handle);
+	update_pixel_format_menu_items(handle);
 }
 
-fn update_pixel_format_menu_items(app_handle: &AppHandle) {
-	let file_state: State<FileState> = app_handle.state();
-	let pixel_format = file_state.pixel_format.lock().unwrap().clone();
-	if let Some(menu) = app_handle.menu() {
+fn update_pixel_format_menu_items(handle: &AppHandle) {
+	let file_state: State<FileState> = handle.state();
+	let pixel_format = *file_state.pixel_format.lock().unwrap();
+	if let Some(menu) = handle.menu() {
 		if let Some(MenuItemKind::Submenu(edit_menu)) = menu.get("edit") {
 			if let Some(MenuItemKind::Check(menu_item)) = edit_menu.get("pixel_format_555") {
 				menu_item.set_checked(pixel_format == PixelFormat::Format555).unwrap();

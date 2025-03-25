@@ -36,31 +36,31 @@ pub fn get_file_path(file_state: State<FileState>, extension: String) -> String 
 }
 
 #[tauri::command]
-pub fn select_png_path(app_handle: AppHandle, file_path: String) {
-	let file_handle = create_save_dialog(&app_handle, Some("png"), Some(&file_path))
+pub fn select_png_path(handle: AppHandle, file_path: String) {
+	let file_handle = create_save_dialog(&handle, Some("png"), Some(&file_path))
 		.set_title("Export PNG")
 		.add_filter("PNG Images", &["png", "PNG"])
 		.save_file();
 	if let Some(file_handle) = file_handle {
 		let path_string = file_handle.as_path().to_string_lossy();
-		app_handle.emit("update_export_png_path", path_string).unwrap();
+		handle.emit("update_export_png_path", path_string).unwrap();
 	}
 }
 
 #[tauri::command]
-pub fn select_gif_path(app_handle: AppHandle, file_path: String) {
-	let file_handle = create_save_dialog(&app_handle, Some("gif"), Some(&file_path))
+pub fn select_gif_path(handle: AppHandle, file_path: String) {
+	let file_handle = create_save_dialog(&handle, Some("gif"), Some(&file_path))
 		.set_title("Export GIF")
 		.add_filter("GIF Images", &["gif", "GIF"])
 		.save_file();
 	if let Some(file_handle) = file_handle {
 		let path_string = file_handle.as_path().to_string_lossy();
-		app_handle.emit("update_export_gif_path", path_string).unwrap();
+		handle.emit("update_export_gif_path", path_string).unwrap();
 	}
 }
 
 #[tauri::command]
-pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, file_path: String, frames_to_export: String) {
+pub fn export_png(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, file_path: String, frames_to_export: String) {
 	let file_path = PathBuf::from(&file_path);
 	let frames = file_state.frames.lock().unwrap();
 	let selected_frames = selection_state.selected_frames.lock().unwrap();
@@ -103,12 +103,12 @@ pub fn export_png(app_handle: AppHandle, file_state: State<FileState>, selection
 			}
 		}
 	}
-	app_handle.emit("notify", "Exported PNG file(s) succesfully".to_string()).unwrap();
-	app_handle.emit("successful_png_export", "".to_string()).unwrap();
+	handle.emit("notify", "Exported PNG file(s) succesfully".to_string()).unwrap();
+	handle.emit("successful_png_export", "".to_string()).unwrap();
 }
 
 #[tauri::command]
-pub fn export_gif(app_handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, file_path: String, frames_to_export: String, frame_delay: u32) {
+pub fn export_gif(handle: AppHandle, file_state: State<FileState>, selection_state: State<SelectionState>, file_path: String, frames_to_export: String, frame_delay: u32) {
 	let delay = Delay::from_numer_denom_ms(frame_delay, 1);
 	let mut gif_frames: Vec<GifFrame> = Vec::new();
 	let frames = file_state.frames.lock().unwrap();
@@ -127,8 +127,8 @@ pub fn export_gif(app_handle: AppHandle, file_state: State<FileState>, selection
 			gif_encoder.set_repeat(Repeat::Infinite).unwrap();
 			match gif_encoder.encode_frames(gif_frames) {
 				Ok(()) => {
-					app_handle.emit("notify", "Exported GIF file succesfully".to_string()).unwrap();
-					app_handle.emit("successful_gif_export", "".to_string()).unwrap();
+					handle.emit("notify", "Exported GIF file succesfully".to_string()).unwrap();
+					handle.emit("successful_gif_export", "".to_string()).unwrap();
 				}
 				Err(why) => error_dialog(why.to_string())
 			}
@@ -146,10 +146,8 @@ pub fn export_spritesheet(file_state: State<FileState>, file_path: String, cols:
 				if let Err(why) = encode_bmp(&spritesheet_image, PathBuf::from(file_path)) {
 					error_dialog(why.to_string());
 				}
-			} else {
-				if let Err(why) = encode_png(&spritesheet_image, PathBuf::from(file_path)) {
-					error_dialog(why.to_string());
-				}
+			} else if let Err(why) = encode_png(&spritesheet_image, PathBuf::from(file_path)) {
+				error_dialog(why.to_string());
 			}
 		},
 		Err(why) => {
@@ -257,10 +255,8 @@ pub fn export_spritebuilder_spritesheet(file_state: State<FileState>, file_path:
 		if let Err(why) = encode_bmp(&spritesheet_image, PathBuf::from(file_path)) {
 			error_dialog(why.to_string());
 		}
-	} else {
-		if let Err(why) = encode_png(&spritesheet_image, PathBuf::from(file_path)) {
-			error_dialog(why.to_string());
-		}
+	} else if let Err(why) = encode_png(&spritesheet_image, PathBuf::from(file_path)) {
+		error_dialog(why.to_string());
 	}
 }
 
