@@ -161,17 +161,23 @@ fn import_spritesheet_as_frames(file_path: &Path, cols: u32, rows: u32) -> Resul
 			let image_x = tile_x * tile_width;
 			let image_y = tile_y * tile_height;
 			let mut image = RgbaImage::new(tile_width, tile_height);
+			let mut empty_image = true;
 			for y in 0..tile_height {
 				for x in 0..tile_width {
 					if image_x + x < png_image.width() && image_y + y < png_image.height() {
 						let pixel = *png_image.get_pixel(image_x + x, image_y + y);
+						if pixel[3] == 255 {
+							empty_image = false;
+						}
 						image.put_pixel(x, y, pixel);
 					} else {
 						return Err("Invalid spritesheet dimensions".into());
 					}
 				}
 			}
-			frames.push(Frame{ image, color_indexes: Vec::new() })
+			if !empty_image {
+				frames.push(Frame{ image, color_indexes: Vec::new() })
+			}
 		}
 	}
 

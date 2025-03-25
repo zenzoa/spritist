@@ -289,6 +289,7 @@ fn main() {
 			export::export_png,
 			export::export_gif,
 			export::export_spritesheet,
+			export::export_spritebuilder_spritesheet,
 			error_dialog,
 			try_quit
 		])

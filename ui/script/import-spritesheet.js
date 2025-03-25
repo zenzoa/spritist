@@ -1,7 +1,7 @@
 class ImportSpritesheet {
 	static cols = 10
 	static rows = 10
-	static lastCutStyle = 'cut-manual'
+	static lastCutStyle = 'cut-grid'
 	static lastButtonId = 'import-spritesheet-confirm-button'
 
 	static isOpen() {
@@ -23,9 +23,9 @@ class ImportSpritesheet {
 	static setup() {
 		const pathInput = document.getElementById('import-spritesheet-path')
 
-		const cutStyleAuto = document.getElementById('import-spritesheet-cut-style-auto')
-		const cutStyleManual = document.getElementById('import-spritesheet-cut-style-manual')
-		const cutManualInfo = document.getElementById('import-spritesheet-cut-manual-info')
+		const cutStyleSB = document.getElementById('import-spritesheet-cut-sb')
+		const cutStyleGrid = document.getElementById('import-spritesheet-cut-grid')
+		const cutGridInfo = document.getElementById('import-spritesheet-cut-grid-info')
 
 		const widthInput = document.getElementById('import-spritesheet-width')
 		const heightInput = document.getElementById('import-spritesheet-height')
@@ -47,8 +47,8 @@ class ImportSpritesheet {
 		document.getElementById('import-spritesheet-cancel-button')
 			.addEventListener('click', ImportSpritesheet.close)
 
-		cutStyleAuto.addEventListener('click', () => update(false))
-		cutStyleManual.addEventListener('click', () => update(false))
+		cutStyleSB.addEventListener('click', () => update(false))
+		cutStyleGrid.addEventListener('click', () => update(false))
 
 		tileWidthInput.addEventListener('input', () => update(true))
 		tileWidthInput.addEventListener('click', () => update(true))
@@ -62,7 +62,7 @@ class ImportSpritesheet {
 
 		const onConfirm = (lastButtonId, tauriAction) => {
 			const filePath = pathInput.value
-			if (cutStyleAuto.checked) {
+			if (cutStyleSB.checked) {
 				tauri_invoke('import_spritebuilder_spritesheet', { filePath })
 			} else {
 				const cols = parseInt(colsInput.value)
@@ -91,10 +91,10 @@ class ImportSpritesheet {
 
 		tauri_listen('import_spritesheet', (event) => {
 			pathInput.value = event.payload.file_path
-			if (ImportSpritesheet.lastCutStyle === 'cut-auto') {
-				cutStyleAuto.checked = true
+			if (ImportSpritesheet.lastCutStyle === 'cut-sb') {
+				cutStyleSB.checked = true
 			} else {
-				cutStyleManual.checked = true
+				cutStyleGrid.checked = true
 			}
 			widthInput.value = event.payload.width
 			heightInput.value = event.payload.height
@@ -117,13 +117,13 @@ class ImportSpritesheet {
 
 			let isError = false
 
-			if (cutStyleAuto.checked) {
-				ImportSpritesheet.lastCutStyle = 'cut-auto'
-				cutManualInfo.classList.add('hidden')
+			if (cutStyleSB.checked) {
+				ImportSpritesheet.lastCutStyle = 'cut-sb'
+				cutGridInfo.classList.add('hidden')
 
 			} else {
-				ImportSpritesheet.lastCutStyle = 'cut-manual'
-				cutManualInfo.classList.remove('hidden')
+				ImportSpritesheet.lastCutStyle = 'cut-grid'
+				cutGridInfo.classList.remove('hidden')
 
 				if (changedTileSize && !isNaN(tileWidth) && !isNaN(tileHeight)) {
 					cols = width / tileWidth
@@ -168,7 +168,7 @@ class ImportSpritesheet {
 				}
 			}
 
-			if (cutStyleAuto.checked || (!isError && width === tileWidth * cols && height === tileHeight * rows)) {
+			if (cutStyleSB.checked || (!isError && width === tileWidth * cols && height === tileHeight * rows)) {
 				confirmButton.innerText = 'Import'
 				confirmButton.removeAttribute('disabled')
 				exportSprButton.removeAttribute('disabled')

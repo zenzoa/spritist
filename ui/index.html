@@ -228,16 +228,36 @@
 							<img src="library/mono-icons/svg/folder.svg" alt="Open">
 						</button>
 					</div>
-					<div class="input-row two-columns">
-						<label>
-							<span>Columns:</span>
-							<input id="export-spritesheet-cols" type="number" step="1" min="1"></input>
-						</label>
-						<label>
-							<span>Rows:</span>
-							<input id="export-spritesheet-rows" type="number" step="1" min="1"></input>
-						</label>
+					<div class="input-group">
+						<label><input id="export-spritesheet-combine-sb" type="radio" name="combine-style" value="combine-sb"><span>Combine SpriteBuilder-style</span></label>
+						<div id="export-spritesheet-combine-sb-info" class="info-block">
+							<div class="input-row two-columns">
+								<label>
+									<span>Max Width:</span>
+									<input id="export-spritesheet-max-width" type="number" step="1" min="1" value="640"></input>
+								</label>
+								<label>
+									<span>Gap Color:</span>
+									<input id="export-spritesheet-gap-color" type="text" pattern="#?[0-9a-fA-F]{6}" value="#00ffff"></input>
+								</label>
+							</div>
+						</div>
+						<br>
+						<label><input id="export-spritesheet-combine-grid" type="radio" name="combine-style" value="combine-grid"><span>Combine as grid</span></label>
+						<div id="export-spritesheet-combine-grid-info" class="info-block">
+							<div class="input-row two-columns">
+								<label>
+									<span>Columns:</span>
+									<input id="export-spritesheet-cols" type="number" step="1" min="1"></input>
+								</label>
+								<label>
+									<span>Rows:</span>
+									<input id="export-spritesheet-rows" type="number" step="1" min="1"></input>
+								</label>
+							</div>
+						</div>
 					</div>
+
 					<div class="input-row button-row">
 						<button id="export-spritesheet-cancel-button" class="text-button">
 							Cancel
@@ -270,10 +290,10 @@
 						</label>
 					</div>
 					<div class="input-group">
-						<label><input id="import-spritesheet-cut-style-auto" type="radio" name="cut-style" value="cut-auto"><span>Cut SpriteBuilder-style</span></label>
+						<label><input id="import-spritesheet-cut-sb" type="radio" name="cut-style" value="cut-sb"><span>Cut SpriteBuilder-style</span></label>
 						<br>
-						<label><input id="import-spritesheet-cut-style-manual" type="radio" name="cut-style" value="cut-manual"><span>Cut manually</span></label>
-						<div id="import-spritesheet-cut-manual-info">
+						<label><input id="import-spritesheet-cut-grid" type="radio" name="cut-style" value="cut-grid"><span>Cut as grid</span></label>
+						<div id="import-spritesheet-cut-grid-info" class="info-block">
 							<div class="input-row two-columns">
 								<label>
 									<span>Width:</span>

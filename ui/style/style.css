@@ -555,3 +555,7 @@ hr {
 .input-row.two-columns label > input {
 	flex-basis: 80px;
 }
+
+.info-block {
+	margin-top: 16px;
+}

@@ -1,4 +1,6 @@
 class ExportSpritesheet {
+	static lastCombineStyle = 'combine-grid'
+
 	static isOpen() {
 		return document.getElementById('export-spritesheet-dialog').classList.contains('open')
 	}
@@ -21,6 +23,13 @@ class ExportSpritesheet {
 		const pathInput = document.getElementById('export-spritesheet-path')
 		const fileButton = document.getElementById('export-spritesheet-select-file-button')
 
+		const combineStyleSB = document.getElementById('export-spritesheet-combine-sb')
+		const combineSBInfo = document.getElementById('export-spritesheet-combine-sb-info')
+		const maxWidthInput = document.getElementById('export-spritesheet-max-width')
+		const gapColorInput = document.getElementById('export-spritesheet-gap-color')
+
+		const combineStyleGrid = document.getElementById('export-spritesheet-combine-grid')
+		const combineGridInfo = document.getElementById('export-spritesheet-combine-grid-info')
 		const colsInput = document.getElementById('export-spritesheet-cols')
 		const rowsInput = document.getElementById('export-spritesheet-rows')
 
@@ -39,11 +48,23 @@ class ExportSpritesheet {
 			})
 		})
 
+		combineStyleSB.addEventListener('click', () => update(false))
+		combineStyleGrid.addEventListener('click', () => update(false))
+
+		gapColorInput.addEventListener('change', () => validateGapColor())
+
 		confirmButton.addEventListener('click', () => {
 			const filePath = pathInput.value
-			const cols = parseInt(colsInput.value)
-			const rows = parseInt(rowsInput.value)
-			tauri_invoke('export_spritesheet', { filePath, cols, rows })
+			if (combineStyleSB.checked) {
+				console.log('export_spritebuilder_spritesheet')
+				const maxWidth = parseInt(maxWidthInput.value)
+				const dividerColor = gapColorInput.value
+				tauri_invoke('export_spritebuilder_spritesheet', { filePath, maxWidth, dividerColor })
+			} else {
+				const cols = parseInt(colsInput.value)
+				const rows = parseInt(rowsInput.value)
+				tauri_invoke('export_spritesheet', { filePath, cols, rows })
+			}
 			ExportSpritesheet.close()
 		})
 
@@ -61,7 +82,7 @@ class ExportSpritesheet {
 			const cols = parseInt(colsInput.value)
 			const rows = Math.ceil(Sprite.frameCount / cols)
 			rowsInput.value = rows
-			update(cols, rows)
+			update(true, cols, rows)
 		}
 		colsInput.addEventListener('input', onUpdateColsInput)
 		colsInput.addEventListener('click', onUpdateColsInput)
@@ -70,7 +91,7 @@ class ExportSpritesheet {
 			const rows = parseInt(rowsInput.value)
 			const cols = Math.ceil(Sprite.frameCount / rows)
 			colsInput.value = cols
-			update(cols, rows)
+			update(true, cols, rows)
 		}
 		rowsInput.addEventListener('input', onUpdateRowsInput)
 		rowsInput.addEventListener('click', onUpdateRowsInput)
@@ -91,7 +112,14 @@ class ExportSpritesheet {
 			}
 			colsInput.value = squarestFactor
 			rowsInput.value = Math.ceil(frameCount / squarestFactor)
-			update(frameCount, 1)
+
+			if (ExportSpritesheet.lastCombineStyle === 'combine-sb') {
+				combineStyleSB.checked = true
+				update(false)
+			} else {
+				combineStyleGrid.checked = true
+				update(true, frameCount, 1)
+			}
 
 			ExportSpritesheet.open()
 			ExportSpritesheet.focusConfirmButton()
@@ -105,13 +133,36 @@ class ExportSpritesheet {
 			ExportSpritesheet.close()
 		})
 
-		const update = (cols, rows) => {
-			if (cols * rows >= Sprite.frameCount) {
+		const re = /#?[0-9a-fA-F]{6}/
+		const validateGapColor = () => {
+			if (re.test(gapColorInput.value)) {
 				confirmButton.innerText = 'Export'
 				confirmButton.removeAttribute('disabled')
 			} else {
-				confirmButton.innerText = '[ Invalid Dimensions ]'
+				confirmButton.innerText = '[ Invalid Gap Color ]'
 				confirmButton.setAttribute('disabled', '')
+			}
+		}
+
+		const update = (updateGridInfo, cols, rows) => {
+			if (combineStyleSB.checked) {
+				ExportSpritesheet.lastCombineStyle = 'combine-sb'
+				combineSBInfo.classList.remove('hidden')
+				combineGridInfo.classList.add('hidden')
+
+			} else {
+				if (updateGridInfo) {
+					if (cols * rows >= Sprite.frameCount) {
+						confirmButton.innerText = 'Export'
+						confirmButton.removeAttribute('disabled')
+					} else {
+						confirmButton.innerText = '[ Invalid Dimensions ]'
+						confirmButton.setAttribute('disabled', '')
+					}
+				}
+				ExportSpritesheet.lastCombineStyle = 'combine-grid'
+				combineSBInfo.classList.add('hidden')
+				combineGridInfo.classList.remove('hidden')
 			}
 		}
 	}

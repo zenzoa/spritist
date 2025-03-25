@@ -8,7 +8,9 @@ use tauri::{ AppHandle, State, Emitter };
 
 use image::{
 	Delay,
+	Rgba,
 	RgbaImage,
+	GenericImage,
 	Frame as GifFrame,
 	codecs::gif::{ GifEncoder, Repeat }
 };
@@ -17,7 +19,8 @@ use crate::{
 	error_dialog,
 	file::{ FileState, Frame, create_save_dialog },
 	selection::SelectionState,
-	format::png::encode as encode_png
+	format::png::encode as encode_png,
+	format::bmp::encode as encode_bmp
 };
 
 #[tauri::command]
@@ -138,9 +141,15 @@ pub fn export_gif(app_handle: AppHandle, file_state: State<FileState>, selection
 pub fn export_spritesheet(file_state: State<FileState>, file_path: String, cols: u32, rows: u32) {
 	let frames = file_state.frames.lock().unwrap();
 	match combine_frames(&frames, cols as usize, rows as usize, true) {
-		Ok(image) => {
-			if let Err(why) = encode_png(&image, PathBuf::from(file_path)) {
-				error_dialog(why.to_string());
+		Ok(spritesheet_image) => {
+			if file_path.to_lowercase().ends_with(".bmp") {
+				if let Err(why) = encode_bmp(&spritesheet_image, PathBuf::from(file_path)) {
+					error_dialog(why.to_string());
+				}
+			} else {
+				if let Err(why) = encode_png(&spritesheet_image, PathBuf::from(file_path)) {
+					error_dialog(why.to_string());
+				}
 			}
 		},
 		Err(why) => {
@@ -178,4 +187,90 @@ fn combine_frames(frames: &Vec<Frame>, cols: usize, rows: usize, by_rows: bool) 
 	}
 
 	Ok(output_image)
+}
+
+#[tauri::command]
+pub fn export_spritebuilder_spritesheet(file_state: State<FileState>, file_path: String, max_width: u32, divider_color: String) {
+	let divider_color = hex_to_rgba(divider_color).ok().unwrap_or(Rgba::<u8>([0, 255, 255, 255]));
+	// TODO: check to see if color is used in any frame
+	let margin = 5;
+	let frames = file_state.frames.lock().unwrap();
+
+	let mut frame_rows = Vec::new();
+	let mut current_frame_row = Vec::new();
+	let mut spritesheet_width = 0;
+	let mut row_width = margin;
+	let mut spritesheet_height = margin;
+	let mut row_height = 0;
+
+	for frame in frames.iter() {
+		if row_width + frame.image.width() + margin <= max_width {
+			row_width += frame.image.width() + margin;
+			if frame.image.height() + margin > row_height {
+				row_height = frame.image.height() + margin;
+			}
+			current_frame_row.push(frame);
+
+		} else {
+			if !current_frame_row.is_empty() {
+				frame_rows.push(current_frame_row);
+				if row_width > spritesheet_width {
+					spritesheet_width = row_width;
+				}
+				spritesheet_height += row_height;
+			}
+			current_frame_row = vec![frame];
+			row_width = margin;
+			row_height = 0;
+		}
+	}
+	if !current_frame_row.is_empty() {
+		frame_rows.push(current_frame_row);
+		if row_width > spritesheet_width {
+			spritesheet_width = row_width;
+		}
+		spritesheet_height += row_height;
+	}
+
+	let mut spritesheet_image = RgbaImage::new(spritesheet_width, spritesheet_height);
+
+	for (_x, _y, pixel) in spritesheet_image.enumerate_pixels_mut() {
+		*pixel = divider_color;
+	}
+
+	let mut x = margin;
+	let mut y = margin;
+	for frame_row in frame_rows {
+		let mut max_height = 0;
+		for frame in frame_row {
+			let _ = spritesheet_image.copy_from(&frame.image, x, y);
+			x += frame.image.width() + margin;
+			if frame.image.height() > max_height {
+				max_height = frame.image.height();
+			}
+		}
+		x = margin;
+		y += max_height + margin;
+	}
+
+	if file_path.to_lowercase().ends_with(".bmp") {
+		if let Err(why) = encode_bmp(&spritesheet_image, PathBuf::from(file_path)) {
+			error_dialog(why.to_string());
+		}
+	} else {
+		if let Err(why) = encode_png(&spritesheet_image, PathBuf::from(file_path)) {
+			error_dialog(why.to_string());
+		}
+	}
+}
+
+fn hex_to_rgba(hex_color: String) -> Result<Rgba<u8>, Box<dyn Error>> {
+	let hex_color = hex_color.replace('#', "");
+	if hex_color.len() != 6 {
+		return Err("Hex color must be 6 characters long.".into());
+	}
+	let r = u8::from_str_radix(&hex_color[0..2], 16)?;
+	let g = u8::from_str_radix(&hex_color[2..4], 16)?;
+	let b = u8::from_str_radix(&hex_color[4..6], 16)?;
+	Ok(Rgba::<u8>([r, g, b, 255]))
 }
