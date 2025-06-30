@@ -4,6 +4,8 @@ use std::{
 	path::PathBuf
 };
 
+use rand::random;
+
 use tauri::{ AppHandle, State, Emitter };
 
 use image::{
@@ -20,7 +22,8 @@ use crate::{
 	file::{ FileState, Frame, create_save_dialog },
 	selection::SelectionState,
 	format::png::encode as encode_png,
-	format::bmp::encode as encode_bmp
+	format::bmp::encode as encode_bmp,
+	format::{ PixelFormat, encode_pixel, parse_pixel }
 };
 
 #[tauri::command]
@@ -188,67 +191,83 @@ fn combine_frames(frames: &Vec<Frame>, cols: usize, rows: usize, by_rows: bool) 
 }
 
 #[tauri::command]
-pub fn export_spritebuilder_spritesheet(file_state: State<FileState>, file_path: String, max_width: u32, divider_color: String) {
-	let divider_color = hex_to_rgba(divider_color).ok().unwrap_or(Rgba::<u8>([0, 255, 255, 255]));
-	// TODO: check to see if color is used in any frame
+pub fn export_spritebuilder_spritesheet(file_state: State<FileState>, file_path: String) {
 	let margin = 5;
 	let frames = file_state.frames.lock().unwrap();
 
-	let mut frame_rows = Vec::new();
-	let mut current_frame_row = Vec::new();
-	let mut spritesheet_width = 0;
-	let mut row_width = margin;
+	// get all used colors
+	let mut used_colors = Vec::new();
+	for frame in frames.iter() {
+		for pixel in frame.image.pixels() {
+			let color = encode_pixel(pixel, PixelFormat::Format555);
+			if !used_colors.contains(&color) {
+				used_colors.push(color);
+			}
+		}
+	}
+
+	// find unused color for divider color
+	let mut divider_color = Rgba::<u8>([0, 255, 255, 255]);
+	for _try in 0..10000 {
+		let color = random::<u16>();
+		if !used_colors.contains(&color) {
+			divider_color = parse_pixel(color, PixelFormat::Format555);
+			break;
+		}
+	}
+
+	// get spritesheet width
+	let mut max_width = 640;
+	for frame in frames.iter() {
+		if frame.image.width() > max_width {
+			max_width = frame.image.width();
+		}
+	}
+	max_width += margin * 2;
+
+	// get spritesheet height
 	let mut spritesheet_height = margin;
 	let mut row_height = 0;
-
+	let mut max_width_used = 0;
+	let mut width_used = margin;
 	for frame in frames.iter() {
-		if row_width + frame.image.width() + margin <= max_width {
-			row_width += frame.image.width() + margin;
-			if frame.image.height() + margin > row_height {
-				row_height = frame.image.height() + margin;
+		if width_used + frame.image.width() + margin > max_width {
+			if width_used > max_width_used {
+				max_width_used = width_used;
 			}
-			current_frame_row.push(frame);
-
-		} else {
-			if !current_frame_row.is_empty() {
-				frame_rows.push(current_frame_row);
-				if row_width > spritesheet_width {
-					spritesheet_width = row_width;
-				}
-				spritesheet_height += row_height;
-			}
-			current_frame_row = vec![frame];
-			row_width = margin;
-			row_height = 0;
+			width_used = margin;
+			spritesheet_height += row_height + margin;
+		}
+		width_used += frame.image.width() + margin;
+		if frame.image.height() > row_height {
+			row_height = frame.image.height();
 		}
 	}
-	if !current_frame_row.is_empty() {
-		frame_rows.push(current_frame_row);
-		if row_width > spritesheet_width {
-			spritesheet_width = row_width;
-		}
-		spritesheet_height += row_height;
-	}
+	spritesheet_height += row_height + margin;
+	let spritesheet_width = max_width_used;
 
+	// create spritesheet image
 	let mut spritesheet_image = RgbaImage::new(spritesheet_width, spritesheet_height);
 
-	for (_x, _y, pixel) in spritesheet_image.enumerate_pixels_mut() {
-		*pixel = divider_color;
+	// fill spritesheet with divider color
+	for pixel in spritesheet_image.pixels_mut() {
+		*pixel = divider_color.clone();
 	}
 
+	// draw sprites
 	let mut x = margin;
 	let mut y = margin;
-	for frame_row in frame_rows {
-		let mut max_height = 0;
-		for frame in frame_row {
-			let _ = spritesheet_image.copy_from(&frame.image, x, y);
-			x += frame.image.width() + margin;
-			if frame.image.height() > max_height {
-				max_height = frame.image.height();
-			}
+	let mut row_height = 0;
+	for frame in frames.iter() {
+		if x + frame.image.width() + margin > spritesheet_width {
+			x = margin;
+			y += row_height + margin;
 		}
-		x = margin;
-		y += max_height + margin;
+		let _ = spritesheet_image.copy_from(&frame.image, x, y);
+		x += frame.image.width() + margin;
+		if frame.image.height() > row_height {
+			row_height = frame.image.height();
+		}
 	}
 
 	if file_path.to_lowercase().ends_with(".bmp") {
@@ -258,15 +277,4 @@ pub fn export_spritebuilder_spritesheet(file_state: State<FileState>, file_path:
 	} else if let Err(why) = encode_png(&spritesheet_image, PathBuf::from(file_path)) {
 		error_dialog(why.to_string());
 	}
-}
-
-fn hex_to_rgba(hex_color: String) -> Result<Rgba<u8>, Box<dyn Error>> {
-	let hex_color = hex_color.replace('#', "");
-	if hex_color.len() != 6 {
-		return Err("Hex color must be 6 characters long.".into());
-	}
-	let r = u8::from_str_radix(&hex_color[0..2], 16)?;
-	let g = u8::from_str_radix(&hex_color[2..4], 16)?;
-	let b = u8::from_str_radix(&hex_color[4..6], 16)?;
-	Ok(Rgba::<u8>([r, g, b, 255]))
 }

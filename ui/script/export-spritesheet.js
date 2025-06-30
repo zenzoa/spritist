@@ -24,9 +24,6 @@ class ExportSpritesheet {
 		const fileButton = document.getElementById('export-spritesheet-select-file-button')
 
 		const combineStyleSB = document.getElementById('export-spritesheet-combine-sb')
-		const combineSBInfo = document.getElementById('export-spritesheet-combine-sb-info')
-		const maxWidthInput = document.getElementById('export-spritesheet-max-width')
-		const gapColorInput = document.getElementById('export-spritesheet-gap-color')
 
 		const combineStyleGrid = document.getElementById('export-spritesheet-combine-grid')
 		const combineGridInfo = document.getElementById('export-spritesheet-combine-grid-info')
@@ -51,15 +48,10 @@ class ExportSpritesheet {
 		combineStyleSB.addEventListener('click', () => update(false))
 		combineStyleGrid.addEventListener('click', () => update(false))
 
-		gapColorInput.addEventListener('change', () => validateGapColor())
-
 		confirmButton.addEventListener('click', () => {
 			const filePath = pathInput.value
 			if (combineStyleSB.checked) {
-				console.log('export_spritebuilder_spritesheet')
-				const maxWidth = parseInt(maxWidthInput.value)
-				const dividerColor = gapColorInput.value
-				tauri_invoke('export_spritebuilder_spritesheet', { filePath, maxWidth, dividerColor })
+				tauri_invoke('export_spritebuilder_spritesheet', { filePath })
 			} else {
 				const cols = parseInt(colsInput.value)
 				const rows = parseInt(rowsInput.value)
@@ -133,21 +125,9 @@ class ExportSpritesheet {
 			ExportSpritesheet.close()
 		})
 
-		const re = /#?[0-9a-fA-F]{6}/
-		const validateGapColor = () => {
-			if (re.test(gapColorInput.value)) {
-				confirmButton.innerText = 'Export'
-				confirmButton.removeAttribute('disabled')
-			} else {
-				confirmButton.innerText = '[ Invalid Gap Color ]'
-				confirmButton.setAttribute('disabled', '')
-			}
-		}
-
 		const update = (updateGridInfo, cols, rows) => {
 			if (combineStyleSB.checked) {
 				ExportSpritesheet.lastCombineStyle = 'combine-sb'
-				combineSBInfo.classList.remove('hidden')
 				combineGridInfo.classList.add('hidden')
 
 			} else {
@@ -161,7 +141,6 @@ class ExportSpritesheet {
 					}
 				}
 				ExportSpritesheet.lastCombineStyle = 'combine-grid'
-				combineSBInfo.classList.add('hidden')
 				combineGridInfo.classList.remove('hidden')
 			}
 		}

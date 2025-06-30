@@ -8,7 +8,7 @@ use tauri::{ Manager, AppHandle, State, Emitter };
 
 use rfd::{ MessageDialog, MessageButtons, MessageDialogResult };
 
-use image::{ Rgba, RgbaImage, ImageReader };
+use image::{ GenericImage, ImageReader, Rgba, RgbaImage };
 
 use crate::{
 	error_dialog,
@@ -17,12 +17,6 @@ use crate::{
 	state::{ RedrawPayload, reset_state, update_window_title },
 	file::{ FileState, Frame, SpriteInfo, open_file_from_path, create_open_dialog }
 };
-
-struct SpritesheetFrame {
-	x: u32,
-	width: u32,
-	pixels: Vec<Rgba<u8>>
-}
 
 struct SpritesheetCallback {
 	func: fn(&AppHandle, &Path, Vec<Frame>, u16, u16) -> Result<(), Box<dyn Error>>
@@ -220,77 +214,87 @@ pub fn import_spritesheet(handle: AppHandle, file_path: String, cols: u32, rows:
 	}
 }
 
+fn get_next_sprite(spritesheet: &mut RgbaImage, margin: u32, divider_color: &Rgba<u8>) -> Option<RgbaImage> {
+	for y in margin..spritesheet.height()-margin {
+		for x in margin..spritesheet.width()-margin {
+			if spritesheet.get_pixel(x, y) != divider_color {
+				// find width
+				let mut sprite_width = 0;
+				for last_x in x..spritesheet.width() {
+					if spritesheet.get_pixel(last_x, y) == divider_color {
+						sprite_width = last_x - x;
+						break;
+					} else if last_x == spritesheet.width() - 1 {
+						sprite_width = spritesheet.width() - x;
+						break;
+					}
+				}
+
+				// find height
+				let mut sprite_height = 0;
+				for last_y in y..spritesheet.height() {
+					if spritesheet.get_pixel(x, last_y) == divider_color {
+						sprite_height = last_y - y;
+						break;
+					} else if last_y == spritesheet.height() - 1 {
+						sprite_height = spritesheet.height() - y;
+						break;
+					}
+				}
+
+				if sprite_width == 0 || sprite_height == 0 {
+					return None;
+				}
+
+				// copy sprite to new image
+				let mut subimage = spritesheet.sub_image(x, y, sprite_width, sprite_height);
+				let sprite = subimage.to_image();
+
+				// remove sprite from spritesheet
+				for y2 in 0..sprite_height {
+					for x2 in 0..sprite_width {
+						subimage.put_pixel(x2, y2, divider_color.clone());
+					}
+				}
+
+				return Some(sprite);
+			}
+		}
+	}
+	None
+}
+
 #[tauri::command]
 pub fn import_spritebuilder_spritesheet(handle: AppHandle, file_path: String) {
 	let file_path = Path::new(&file_path);
 
 	if let Ok(spritesheet) = get_image(file_path) {
 		let divider_color = spritesheet.get_pixel(0, 0);
-		let mut y = 0;
+		let mut spritesheet = spritesheet.clone();
+		let mut frames: Vec<Frame> = Vec::new();
 
-		let mut frames: Vec<SpritesheetFrame> = Vec::new();
-
-		loop {
-			let mut frame_row: Vec<SpritesheetFrame> = Vec::new();
-			let mut current_pixels: Vec<Rgba<u8>> = Vec::new();
+		// find margin
+		let mut margin = 0;
+		for y in 0..spritesheet.height() {
 			for x in 0..spritesheet.width() {
-				let pixel = spritesheet.get_pixel(x, y);
-				if pixel == divider_color {
-					if !current_pixels.is_empty() {
-						let width = current_pixels.len() as u32;
-						let new_frame = SpritesheetFrame {
-							x: x - width,
-							width,
-							pixels: current_pixels.clone()
-						};
-						frame_row.push(new_frame);
-						current_pixels = Vec::new();
-					}
-				} else {
-					current_pixels.push(*pixel);
+				if margin == 0 && spritesheet.get_pixel(x, y) != divider_color {
+					margin = u32::min(x, y);
+					break;
 				}
-			}
-
-			let mut last_y = y;
-			for frame in frame_row.iter_mut() {
-				for frame_y in y..spritesheet.height() {
-					let mut divider_row = true;
-					let mut pixel_row = Vec::new();
-					for frame_x in frame.x..(frame.x + frame.width) {
-						let pixel = spritesheet.get_pixel(frame_x, frame_y);
-						pixel_row.push(*pixel);
-						if pixel != divider_color {
-							divider_row = false;
-						}
-					}
-					if frame_y > last_y {
-						last_y = frame_y;
-					}
-					if divider_row {
-						break;
-					} else {
-						frame.pixels.extend(pixel_row);
-					}
-				}
-			}
-			frames.extend(frame_row);
-			y = last_y + 1;
-			if y >= spritesheet.height() {
-				break;
 			}
 		}
 
-		let frame_images: Vec<Frame> = frames.iter().map(|frame| {
-			let width = frame.width;
-			let height = frame.pixels.len() as u32 / width;
-			let mut image = RgbaImage::new(width, height);
-			for (i, pixel) in frame.pixels.iter().enumerate() {
-				let x = i as u32 % width;
-				let y = i as u32 / width;
-				image.put_pixel(x, y, *pixel);
+		// divide into sprites
+		for _try in 0..10000 {
+			if let Some(next_sprite) = get_next_sprite(&mut spritesheet, margin, &divider_color) {
+				frames.push(Frame {
+					image: next_sprite,
+					color_indexes: Vec::new()
+				});
+			} else {
+				break;
 			}
-			Frame { image, color_indexes: Vec::new() }
-		}).collect();
+		}
 
 		reset_state(&handle);
 
@@ -305,7 +309,7 @@ pub fn import_spritebuilder_spritesheet(handle: AppHandle, file_path: String) {
 		*file_state.file_path.lock().unwrap() = Some(c16_file_path);
 		*file_state.file_is_modified.lock().unwrap() = true;
 		*file_state.file_is_open.lock().unwrap() = true;
-		*file_state.frames.lock().unwrap() = frame_images;
+		*file_state.frames.lock().unwrap() = frames;
 
 		view_as_sprite(handle.clone());
 
