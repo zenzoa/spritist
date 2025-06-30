@@ -12,7 +12,7 @@ use image::{ Rgba, RgbaImage, ImageReader };
 
 use crate::{
 	error_dialog,
-	format::{ PixelFormat, spr, s16, c16 },
+	format::{ PixelFormat, spr, s16, c16, black_to_transparent },
 	view::{ view_as_bg, view_as_sprite },
 	state::{ RedrawPayload, reset_state, update_window_title },
 	file::{ FileState, Frame, SpriteInfo, open_file_from_path, create_open_dialog }
@@ -390,5 +390,13 @@ pub fn import_spritesheet_export_c16(handle: AppHandle, file_path: String, cols:
 }
 
 fn get_image(file_path: &Path) -> Result<RgbaImage, Box<dyn Error>> {
-	Ok(ImageReader::open(file_path)?.decode()?.to_rgba8())
+	let img = ImageReader::open(file_path)?.decode()?.to_rgba8();
+	let extension_err = "File does not have a valid file extension (\".png\" or \".bmp\")";
+	let extension = file_path.extension().ok_or(extension_err)?;
+	let extension_str = extension.to_str().ok_or(extension_err)?;
+	match extension_str.to_lowercase().as_str() {
+		"png" => Ok(img),
+		"bmp" => Ok(black_to_transparent(img)),
+		_ => Err(extension_err.into())
+	}
 }

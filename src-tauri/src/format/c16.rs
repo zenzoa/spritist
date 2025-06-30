@@ -13,7 +13,7 @@ use super::{
 use crate::file::{ Frame, SpriteInfo };
 
 struct FileHeader {
-	pixel_format: u32, // 2 = 555, 3 = 565
+	flags: u32,
 	image_count: u16
 }
 
@@ -26,7 +26,7 @@ struct ImageHeader {
 fn read_file_header(buffer: &mut Bytes) -> Result<FileHeader, Box<dyn Error>> {
 	if buffer.remaining() < 6 { return Err(file_header_error()); }
 	Ok(FileHeader {
-		pixel_format: buffer.get_u32_le(),
+		flags: buffer.get_u32_le(),
 		image_count: buffer.get_u16_le()
 	})
 }
@@ -80,9 +80,10 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 	let mut frames: Vec<Frame> = Vec::new();
 	let mut buffer = Bytes::copy_from_slice(contents);
 	let file_header = read_file_header(&mut buffer)?;
-	let pixel_format = match file_header.pixel_format {
-		2 => PixelFormat::Format555,
-		_ => PixelFormat::Format565
+	let pixel_format = if file_header.flags & 0x00000001 == 1 {
+		PixelFormat::Format565
+	} else {
+		PixelFormat::Format555
 	};
 	let mut image_headers: Vec<ImageHeader> = Vec::new();
 	for _ in 0..file_header.image_count {
@@ -175,7 +176,16 @@ fn write_color_run(buffer: &mut BytesMut, color_run: &Vec<Rgba<u8>>, pixel_forma
 	let run_header = 1 | ((color_run.len() << 1) & 0xfffe);
 	buffer.put_u16_le(run_header as u16);
 	for pixel in color_run {
-		buffer.put_u16_le(encode_pixel(pixel, pixel_format));
+		let encoded_pixel = encode_pixel(pixel, pixel_format);
+		if encoded_pixel == 0 {
+			// if solid black, save as dark grey
+			buffer.put_u16_le(match pixel_format {
+				PixelFormat::Format555 => 0x0421,
+				PixelFormat::Format565 => 0x0821
+			});
+		} else {
+			buffer.put_u16_le(encoded_pixel);
+		}
 	}
 }
 

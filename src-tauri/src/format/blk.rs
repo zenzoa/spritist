@@ -13,7 +13,7 @@ use super::{
 use crate::file::{ Frame, SpriteInfo };
 
 struct FileHeader {
-	pixel_format: u32, // 0 = 555, 1 = 565
+	flags: u32,
 	cols: u16,
 	rows: u16,
 	image_count: u16
@@ -28,7 +28,7 @@ struct ImageHeader {
 fn read_file_header(buffer: &mut Bytes) -> Result<FileHeader, Box<dyn Error>> {
 	if buffer.remaining() < 6 { return Err(file_header_error()); }
 	Ok(FileHeader {
-		pixel_format: buffer.get_u32_le(),
+		flags: buffer.get_u32_le(),
 		cols: buffer.get_u16_le(),
 		rows: buffer.get_u16_le(),
 		image_count: buffer.get_u16_le() // this should equal cols * rows
@@ -69,9 +69,10 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 	let mut frames: Vec<Frame> = Vec::new();
 	let mut buffer = Bytes::copy_from_slice(contents);
 	let file_header = read_file_header(&mut buffer)?;
-	let pixel_format = match file_header.pixel_format {
-		0 => PixelFormat::Format555,
-		_ => PixelFormat::Format565
+	let pixel_format = if file_header.flags & 0x00000001 == 1 {
+		PixelFormat::Format565
+	} else {
+		PixelFormat::Format555
 	};
 	let mut image_headers: Vec<ImageHeader> = Vec::new();
 	for _ in 0..file_header.image_count {
@@ -113,7 +114,7 @@ fn write_image_data(image: &RgbaImage, pixel_format: PixelFormat) -> BytesMut {
 	for y in 0..128 {
 		for x in 0..128 {
 			let pixel = image.get_pixel(x, y);
-			buffer.put_u16_le(encode_pixel(pixel, pixel_format));
+			buffer.put_u16_le(encode_pixel(&pixel, pixel_format));
 		}
 	}
 	buffer

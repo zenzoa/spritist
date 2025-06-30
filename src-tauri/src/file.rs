@@ -38,7 +38,8 @@ use crate::{
 		c16,
 		blk,
 		dta,
-		photo_album
+		photo_album,
+		black_to_transparent
 	},
 	view::{
 		view_as_sprite,
@@ -451,7 +452,9 @@ pub fn get_sprite_info(handle: &AppHandle, file_path: &Path) -> Result<SpriteInf
 			})
 		},
 		"bmp" => {
-			let image = ImageReader::with_format(Cursor::new(bytes), ImageFormat::Bmp).decode()?.to_rgba8();
+			let image = black_to_transparent(
+				ImageReader::with_format(Cursor::new(bytes), ImageFormat::Bmp).decode()?.to_rgba8()
+			);
 			let frame = Frame { image, color_indexes: Vec::new() };
 			Ok(SpriteInfo {
 				frames: vec![frame],

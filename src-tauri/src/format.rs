@@ -1,5 +1,5 @@
 use std::error::Error;
-use image::Rgba;
+use image::{ GenericImage, Rgba, RgbaImage };
 
 pub mod png;
 pub mod bmp;
@@ -37,24 +37,27 @@ pub fn parse_pixel(pixel: u16, pixel_format: PixelFormat) -> Rgba<u8> {
 }
 
 fn parse_pixel_555(pixel: u16) -> Rgba<u8> {
-	let r = ((pixel & 0x7c00) >> 7) as u8;
-	let g = ((pixel & 0x03e0) >> 2) as u8;
-	let b = ((pixel & 0x001f) << 3) as u8;
-	Rgba([r, g, b, 255])
+	let r = (pixel >> 7) as u8;
+	let g = (pixel >> 2) as u8;
+	let b = (pixel << 3) as u8;
+	let a = if r == 0 && g == 0 && b == 0 { 0 } else { 255 };
+	Rgba([r, g, b, a])
 }
 
 fn parse_pixel_565(pixel: u16) -> Rgba<u8> {
-	let r = ((pixel & 0xf800) >> 8) as u8;
-	let g = ((pixel & 0x07e0) >> 3) as u8;
-	let b = ((pixel & 0x001f) << 3) as u8;
-	Rgba([r, g, b, 255])
+	let r = (pixel >> 8) as u8;
+	let g = (pixel >> 3) as u8;
+	let b = (pixel << 3) as u8;
+	let a = if r == 0 && g == 0 && b == 0 { 0 } else { 255 };
+	Rgba([r, g, b, a])
 }
 
 pub fn parse_pixel_565_be(pixel: u16) -> Rgba<u8> {
-	let r = ((pixel & 0xf800) >> 8) as u8;
-	let g = ((pixel & 0x07c0) >> 3) as u8;
-	let b = ((pixel & 0x003e) << 2) as u8;
-	Rgba([r, g, b, 255])
+	let r = (pixel >> 8) as u8;
+	let g = (pixel >> 3) as u8;
+	let b = (pixel << 2) as u8;
+	let a = if r == 0 && g == 0 && b == 0 { 0 } else { 255 };
+	Rgba([r, g, b, a])
 }
 
 pub fn encode_pixel(pixel: &Rgba<u8>, pixel_format: PixelFormat) -> u16 {
@@ -65,15 +68,26 @@ pub fn encode_pixel(pixel: &Rgba<u8>, pixel_format: PixelFormat) -> u16 {
 }
 
 fn encode_pixel_555(pixel: &Rgba<u8>) -> u16 {
-	let r = ((pixel[0] as u16) << 7) & 0x7c00;
-	let g = ((pixel[1] as u16) << 2) & 0x03e0;
-	let b = ((pixel[2] as u16) >> 3) & 0x001f;
+	let r = ((pixel[0] as u16) & 0xf8) << 7;
+	let g = ((pixel[1] as u16) & 0xf8) << 2;
+	let b = ((pixel[2] as u16) & 0xf8) >> 3;
 	r | g | b
 }
 
 fn encode_pixel_565(pixel: &Rgba<u8>) -> u16 {
-	let r = ((pixel[0] as u16) << 8) & 0xf800;
-	let g = ((pixel[1] as u16) << 3) & 0x07c0;
-	let b = ((pixel[2] as u16) >> 3) & 0x003e;
+	let r = ((pixel[0] as u16) & 0xf8) << 8;
+	let g = ((pixel[1] as u16) & 0xfc) << 3;
+	let b = ((pixel[2] as u16) & 0xf8) >> 3;
 	r | g | b
+}
+
+pub fn black_to_transparent(img: RgbaImage) -> RgbaImage {
+	let mut img2 = RgbaImage::new(img.width(), img.height());
+	let _ = img2.copy_from(&img, 0, 0);
+	for pixel in img2.pixels_mut() {
+		if pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0 {
+			pixel[3] = 0;
+		}
+	}
+	img2
 }

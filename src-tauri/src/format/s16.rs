@@ -13,7 +13,7 @@ use super::{
 use crate::file::{ Frame, SpriteInfo };
 
 struct FileHeader {
-	pixel_format: u32, // 0 = 555, 1 = 565
+	flags: u32,
 	image_count: u16
 }
 
@@ -26,7 +26,7 @@ struct ImageHeader {
 fn read_file_header(buffer: &mut Bytes) -> Result<FileHeader, Box<dyn Error>> {
 	if buffer.remaining() < 6 { return Err(file_header_error()); }
 	Ok(FileHeader {
-		pixel_format: buffer.get_u32_le(),
+		flags: buffer.get_u32_le(),
 		image_count: buffer.get_u16_le()
 	})
 }
@@ -51,10 +51,7 @@ fn read_image_data(contents: &[u8], header: &ImageHeader, pixel_format: PixelFor
 		for x in 0..header.width {
 			if buffer.remaining() < 2 { return Err(image_error()); }
 			let pixel_data = buffer.get_u16_le();
-			let mut color = parse_pixel(pixel_data, pixel_format);
-			if color[0] == 0 && color[1] == 0 && color[2] == 0 {
-				color[3] = 0;
-			}
+			let color = parse_pixel(pixel_data, pixel_format);
 			image.put_pixel(x.into(), y.into(), color);
 		}
 	}
@@ -65,9 +62,10 @@ pub fn decode(contents: &[u8]) -> Result<SpriteInfo, Box<dyn Error>> {
 	let mut frames: Vec<Frame> = Vec::new();
 	let mut buffer = Bytes::copy_from_slice(contents);
 	let file_header = read_file_header(&mut buffer)?;
-	let pixel_format = match file_header.pixel_format {
-		0 => PixelFormat::Format555,
-		_ => PixelFormat::Format565
+	let pixel_format = if file_header.flags & 0x00000001 == 1 {
+		PixelFormat::Format565
+	} else {
+		PixelFormat::Format555
 	};
 	let mut image_headers: Vec<ImageHeader> = Vec::new();
 	for _ in 0..file_header.image_count {
@@ -114,7 +112,16 @@ fn write_image_data(image: &RgbaImage, pixel_format: PixelFormat) -> Bytes {
 			if pixel[3] == 0 {
 				buffer.put_u16_le(0);
 			} else {
-				buffer.put_u16_le(encode_pixel(pixel, pixel_format));
+				let encoded_pixel = encode_pixel(pixel, pixel_format);
+				if encoded_pixel == 0 {
+					// if solid black, save as dark grey
+					buffer.put_u16_le(match pixel_format {
+						PixelFormat::Format555 => 0x0421,
+						PixelFormat::Format565 => 0x0821
+					});
+				} else {
+					buffer.put_u16_le(encoded_pixel);
+				}
 			}
 		}
 	}
