@@ -5,9 +5,11 @@ pub mod png;
 pub mod bmp;
 pub mod spr;
 pub mod s16;
+pub mod s32;
 pub mod m16;
 pub mod c16;
 pub mod blk;
+pub mod blk32;
 pub mod dta;
 pub mod photo_album;
 

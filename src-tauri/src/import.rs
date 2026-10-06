@@ -24,8 +24,26 @@ struct SpritesheetCallback {
 
 #[tauri::command]
 pub fn activate_import_png_as_blk(handle: AppHandle) {
-	if let Some(file_path) = activate_import(&handle, "Import PNG as BLK".to_string()) {
-		if let Err(why) = import_png_as_blk_from_path(&handle, &file_path) {
+	activate_import_png_as_background(handle, "Import PNG as BLK", "blk");
+}
+
+#[tauri::command]
+pub fn activate_import_png_as_blk32(handle: AppHandle) {
+	activate_import_png_as_background(handle, "Import PNG as BLK32", "blk32");
+}
+
+#[tauri::command]
+pub fn activate_import_png_as_c1_hd_background(handle: AppHandle) {
+	if let Some(file_path) = activate_import(&handle, "Import PNG as C1 HD S32 Background".to_string()) {
+		if let Err(why) = import_png_as_c1_hd_background_from_path(&handle, &file_path) {
+			error_dialog(why.to_string());
+		}
+	}
+}
+
+fn activate_import_png_as_background(handle: AppHandle, title: &str, extension: &str) {
+	if let Some(file_path) = activate_import(&handle, title.to_string()) {
+		if let Err(why) = import_png_as_background_from_path(&handle, &file_path, extension) {
 			error_dialog(why.to_string());
 		}
 	}
@@ -64,26 +82,64 @@ fn choose_image_file(handle: &AppHandle, title: &str) -> Option<PathBuf> {
 		.pick_file()
 }
 
-fn import_png_as_blk_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+fn import_png_as_background_from_path(handle: &AppHandle, file_path: &Path, extension: &str) -> Result<(), Box<dyn Error>> {
 	let png_image = get_image(file_path)?;
 
 	let cols = (png_image.width() as f32 / 128.0).ceil() as u32;
 	let rows = (png_image.height() as f32 / 128.0).ceil() as u32;
+	let frames = tile_background_frames(&png_image, cols, rows, 128, 128, true)?;
+
+	set_imported_background(handle, file_path, extension, frames, cols, rows)
+}
+
+fn import_png_as_c1_hd_background_from_path(handle: &AppHandle, file_path: &Path) -> Result<(), Box<dyn Error>> {
+	const COLS: u32 = 58;
+	const ROWS: u32 = 8;
+	const TILE_WIDTH: u32 = 288;
+	const TILE_HEIGHT: u32 = 300;
+
+	let png_image = get_image(file_path)?;
+	let expected_width = COLS * TILE_WIDTH;
+	let expected_height = ROWS * TILE_HEIGHT;
+	if png_image.width() != expected_width || png_image.height() != expected_height {
+		return Err(format!(
+			"Invalid C1 HD background dimensions: expected {}x{}, got {}x{}",
+			expected_width,
+			expected_height,
+			png_image.width(),
+			png_image.height()
+		).into());
+	}
+
+	let frames = tile_background_frames(&png_image, COLS, ROWS, TILE_WIDTH, TILE_HEIGHT, false)?;
+	set_imported_background(handle, file_path, "s32", frames, COLS, ROWS)
+}
+
+fn tile_background_frames(
+	png_image: &RgbaImage,
+	cols: u32,
+	rows: u32,
+	tile_width: u32,
+	tile_height: u32,
+	allow_padding: bool
+) -> Result<Vec<Frame>, Box<dyn Error>> {
 
 	let mut frames: Vec<Frame> = Vec::new();
 	for col in 0..cols {
 		for row in 0..rows {
-			let tile_x = col * 128_u32;
-			let tile_y = row * 128_u32;
-			let mut tile_image = RgbaImage::new(128, 128);
-			for y in 0..128 {
-				for x in 0..128 {
+			let tile_x = col * tile_width;
+			let tile_y = row * tile_height;
+			let mut tile_image = RgbaImage::new(tile_width, tile_height);
+			for y in 0..tile_height {
+				for x in 0..tile_width {
 					let image_x = tile_x + x;
 					let image_y = tile_y + y;
 					let pixel = if image_x < png_image.width() && image_y < png_image.height() {
 						*png_image.get_pixel(image_x, image_y)
-					} else {
+					} else if allow_padding {
 						Rgba([0, 0, 0, 255])
+					} else {
+						return Err("Invalid background tile dimensions".into());
 					};
 					tile_image.put_pixel(x, y, pixel);
 				}
@@ -94,18 +150,28 @@ fn import_png_as_blk_from_path(handle: &AppHandle, file_path: &Path) -> Result<(
 			});
 		}
 	}
+	Ok(frames)
+}
 
+fn set_imported_background(
+	handle: &AppHandle,
+	file_path: &Path,
+	extension: &str,
+	frames: Vec<Frame>,
+	cols: u32,
+	rows: u32
+) -> Result<(), Box<dyn Error>> {
 	reset_state(handle);
 
-	let blk_file_path = file_path.with_extension("blk");
-	let blk_file_title = match blk_file_path.file_name() {
+	let background_file_path = file_path.with_extension(extension);
+	let background_file_title = match background_file_path.file_name() {
 		Some(file_name) => file_name.to_string_lossy().into_owned(),
 		None => "".to_string()
 	};
 
 	let file_state: State<FileState> = handle.state();
-	*file_state.file_title.lock().unwrap() = blk_file_title;
-	*file_state.file_path.lock().unwrap() = Some(blk_file_path);
+	*file_state.file_title.lock().unwrap() = background_file_title;
+	*file_state.file_path.lock().unwrap() = Some(background_file_path);
 	*file_state.file_is_modified.lock().unwrap() = true;
 	*file_state.file_is_open.lock().unwrap() = true;
 	*file_state.frames.lock().unwrap() = frames;

@@ -225,6 +225,7 @@ window.addEventListener('load', () => {
 	ExportGif.setup()
 	ExportSpritesheet.setup()
 	ImportSpritesheet.setup()
+	tauri_invoke('frontend_ready')
 })
 
 const viewAsSprite = () => {

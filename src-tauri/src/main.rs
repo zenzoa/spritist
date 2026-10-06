@@ -75,6 +75,8 @@ fn main() {
 					&PredefinedMenuItem::separator(handle)?,
 					&Submenu::with_id_and_items(handle, "import", "Import", true, &[
 						&MenuItem::with_id(handle, "import_png_as_blk", "Import PNG as BLK", true, Some("CmdOrCtrl+B"))?,
+						&MenuItem::with_id(handle, "import_png_as_blk32", "Import PNG as BLK32", true, None::<&str>)?,
+						&MenuItem::with_id(handle, "import_png_as_c1_hd_background", "Import PNG as C1 HD S32 Background", true, None::<&str>)?,
 						&MenuItem::with_id(handle, "import_spritesheet", "Import Spritesheet", true, Some("CmdOrCtrl+T"))?,
 					])?,
 					&Submenu::with_id_and_items(handle, "export", "Export", true, &[
@@ -174,6 +176,8 @@ fn main() {
 					"export_gif" => handle.emit("export_gif", "").unwrap(),
 					"export_spritesheet" => handle.emit("export_spritesheet", "").unwrap(),
 					"import_png_as_blk" => import::activate_import_png_as_blk(handle),
+					"import_png_as_blk32" => import::activate_import_png_as_blk32(handle),
+					"import_png_as_c1_hd_background" => import::activate_import_png_as_c1_hd_background(handle),
 					"import_spritesheet" => import::activate_import_spritesheet(handle),
 					"quit" => try_quit(handle),
 
@@ -258,6 +262,7 @@ fn main() {
 			file::activate_open_file,
 			file::activate_save_file,
 			file::activate_save_as,
+			file::frontend_ready,
 			file::activate_insert_image,
 			file::activate_replace_frame,
 			file::set_bg_size,
@@ -280,6 +285,8 @@ fn main() {
 			export::select_png_path,
 			export::select_gif_path,
 			import::activate_import_png_as_blk,
+			import::activate_import_png_as_blk32,
+			import::activate_import_png_as_c1_hd_background,
 			import::activate_import_spritesheet,
 			import::import_spritesheet,
 			import::import_spritebuilder_spritesheet,

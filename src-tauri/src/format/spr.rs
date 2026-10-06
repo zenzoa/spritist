@@ -9,6 +9,7 @@ use crate::{
 };
 
 struct ImageHeader {
+	offset: u32,
 	width: u16,
 	height: u16
 }
@@ -29,8 +30,9 @@ pub fn decode(contents: &[u8], palette: &Palette) -> Result<SpriteInfo, Box<dyn 
 	let mut image_headers: Vec<ImageHeader> = Vec::new();
 	for _ in 0..image_count {
 		if buffer.remaining() < 8 { return Err(image_header_error()); }
-		let _offset = buffer.get_u32_le();
+		let offset = buffer.get_u32_le();
 		image_headers.push(ImageHeader {
+			offset,
 			width: buffer.get_u16_le(),
 			height: buffer.get_u16_le()
 		})
@@ -38,12 +40,21 @@ pub fn decode(contents: &[u8], palette: &Palette) -> Result<SpriteInfo, Box<dyn 
 
 	// image data
 	for image_header in image_headers {
+		let image_size = usize::from(image_header.width)
+			.checked_mul(usize::from(image_header.height))
+			.ok_or_else(image_error)?;
+		let image_start = image_header.offset as usize;
+		let image_end = image_start.checked_add(image_size).ok_or_else(image_error)?;
+		if image_start < 2 + (usize::from(image_count) * 8) || image_end > contents.len() {
+			return Err(image_error());
+		}
+		let image_data = &contents[image_start..image_end];
 		let mut image = RgbaImage::new(image_header.width.into(), image_header.height.into());
 		let mut color_indexes: Vec<u8> = Vec::new();
 		for y in 0..image_header.height {
 			for x in 0..image_header.width {
-				if buffer.remaining() < 1 { return Err(image_error()); }
-				let color_index = buffer.get_u8();
+				let pixel_index = (usize::from(y) * usize::from(image_header.width)) + usize::from(x);
+				let color_index = image_data[pixel_index];
 				color_indexes.push(color_index);
 				let pixel = palette.get_color(color_index);
 				image.put_pixel(x.into(), y.into(), pixel);
@@ -259,4 +270,26 @@ pub fn encode(sprite_info: SpriteInfo, palette: &Palette) -> Result<Bytes, Box<d
 	buffer.extend_from_slice(&images_buffer);
 
 	Ok(buffer.freeze())
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::palette::original_palette;
+
+	#[test]
+	fn reads_sprite_pixels_at_declared_offsets() {
+		let mut contents = vec![
+			2, 0,
+			18, 0, 0, 0, 1, 0, 1, 0,
+			25, 0, 0, 0, 1, 0, 1, 0,
+		];
+		contents.extend_from_slice(&[1, 0, 0, 0, 0, 0, 0, 2]);
+
+		let decoded = decode(&contents, &original_palette()).unwrap();
+
+		assert_eq!(decoded.frames.len(), 2);
+		assert_eq!(decoded.frames[0].color_indexes, vec![1]);
+		assert_eq!(decoded.frames[1].color_indexes, vec![2]);
+	}
 }

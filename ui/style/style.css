@@ -31,6 +31,7 @@
 	--bg-mode-cols: 0;
 	--bg-mode-rows: 0;
 	--info-display: block;
+	--max-item-height: 0px;
 }
 
 html, body {
@@ -242,7 +243,7 @@ main {
 .bg-mode #frame-list {
 	display: grid;
 	grid-template-columns: repeat(var(--bg-mode-cols), var(--max-item-width));
-	grid-template-rows: repeat(var(--bg-mode-rows), var(--max-item-width));
+	grid-template-rows: repeat(var(--bg-mode-rows), var(--max-item-height));
 	grid-auto-flow: column;
 	gap: 0;
 }

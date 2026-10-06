@@ -113,15 +113,11 @@ fn write_file_header(buffer: &mut BytesMut, pixel_format: PixelFormat, image_cou
 }
 
 fn write_image_header(buffer: &mut BytesMut, width: u16, height: u16, line_offsets: Vec<u32>) {
-	if line_offsets.len() > 1 {
-		buffer.put_u32_le(line_offsets[0]);
-		buffer.put_u16_le(width);
-		buffer.put_u16_le(height);
-		if line_offsets.len() > 2 {
-			for line_offset in line_offsets[1..].iter() {
-				buffer.put_u32_le(*line_offset);
-			}
-		}
+	buffer.put_u32_le(line_offsets[0]);
+	buffer.put_u16_le(width);
+	buffer.put_u16_le(height);
+	for line_offset in line_offsets.iter().skip(1) {
+		buffer.put_u32_le(*line_offset);
 	}
 }
 
@@ -221,4 +217,29 @@ pub fn encode(sprite_info: SpriteInfo) -> Result<Bytes, Box<dyn Error>> {
 	buffer.unsplit(images_buffer);
 
 	Ok(buffer.freeze())
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn tiny_images_round_trip() {
+		for (width, height) in [(1, 1), (1, 2), (2, 1), (2, 2)] {
+			let sprite = SpriteInfo {
+				frames: vec![Frame {
+					image: RgbaImage::from_pixel(width, height, Rgba([255, 0, 0, 255])),
+					color_indexes: Vec::new(),
+				}],
+				pixel_format: PixelFormat::Format565,
+				cols: 0,
+				rows: 0,
+				read_only: false,
+			};
+
+			let encoded = encode(sprite).unwrap();
+			let decoded = decode(&encoded).unwrap();
+			assert_eq!(decoded.frames[0].image.dimensions(), (width, height));
+		}
+	}
 }

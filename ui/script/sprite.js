@@ -4,6 +4,7 @@ class Sprite {
 	static rows = 0
 	static frameElements = []
 	static maxItemWidth = 0
+	static maxItemHeight = 0
 	static timestamp = 0
 	static imagesLoaded = 0
 	static scale = 1
@@ -78,6 +79,7 @@ class Sprite {
 		frameList.style.minHeight = originalHeight + 'px'
 
 		Sprite.maxItemWidth = 0
+		Sprite.maxItemHeight = 0
 		Sprite.timestamp = Date.now()
 
 		document.documentElement.style.setProperty('--img-scale', `${Sprite.scale}00%`)
@@ -123,6 +125,9 @@ class Sprite {
 		if (Sprite.maxItemWidth < scaledWidth) {
 			Sprite.maxItemWidth = scaledWidth
 		}
+		if (Sprite.maxItemHeight < scaledHeight) {
+			Sprite.maxItemHeight = scaledHeight
+		}
 
 		Sprite.imagesLoaded++
 		if (Sprite.imagesLoaded >= Sprite.frameCount) {
@@ -135,6 +140,7 @@ class Sprite {
 		frameList.style.minHeight = 'unset'
 		Sprite.imagesLoaded = 0
 		document.documentElement.style.setProperty('--max-item-width', `${Sprite.maxItemWidth}px`)
+		document.documentElement.style.setProperty('--max-item-height', `${Sprite.maxItemHeight}px`)
 	}
 
 	static updateSelectedFrames() {
